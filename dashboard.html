@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hilax Hospital - Dashboard</title>
+    <link rel="stylesheet" href="./css/dashboard.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div id="loadingScreen" class="loading-screen">
+        <div class="loading-content">
+            <div class="logo-container">
+                <div class="pulse-circle"></div>
+                <div class="pulse-circle delay-1"></div>
+                <div class="pulse-circle delay-2"></div>
+            </div>
+            <h2>LOADING DASHBOARD</h2>
+            <div class="loading-bar">
+                <div class="loading-progress"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Dashboard -->
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <nav class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="hospital-logo">
+                    <i class="fas fa-hospital"></i>
+                </div>
+                <h1>HILAX HOSPITAL</h1>
+                <p class="subtitle">Management System</p>
+            </div>
+
+            <div class="user-info">
+                <div class="user-avatar">
+                    <i class="fas fa-user-md"></i>
+                </div>
+                <div class="user-details">
+                    <span class="user-name" id="userName">User Name</span>
+                    <span class="user-role" id="userRole">Role</span>
+                </div>
+            </div>
+
+            <ul class="sidebar-menu" id="sidebarMenu">
+                <!-- Menu items populated by JavaScript -->
+            </ul>
+
+            <div class="sidebar-footer">
+                <button class="logout-btn" id="logoutBtn">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Logout</span>
+                </button>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Top Navigation -->
+            <header class="top-nav">
+                <div class="nav-left">
+                    <button class="menu-toggle" id="menuToggle">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <h2 id="pageTitle">Dashboard Overview</h2>
+                </div>
+                <div class="nav-right">
+                    <div class="current-time" id="currentTime"></div>
+                </div>
+            </header>
+
+            <!-- Dashboard Content -->
+            <div class="content-area" id="contentArea">
+                <!-- Dynamic content loads here -->
+                <div class="welcome-message" id="welcomeMessage">
+                    <div class="welcome-content">
+                        <h1>Welcome to Hilax Hospital</h1>
+                        <p>Select a menu item to manage the system</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="./js/role-config.js"></script>
+    <script src="./js/dashboard.js"></script>
+</body>
+</html>

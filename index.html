@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hilax Hospital - Login</title>
+    <link rel="stylesheet" href="./css/style.css">
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div id="loadingScreen" class="loading-screen">
+        <div class="loading-content">
+            <div class="logo-container">
+                <div class="pulse-circle"></div>
+                <div class="pulse-circle delay-1"></div>
+                <div class="pulse-circle delay-2"></div>
+            </div>
+            <h2>HILAX HOSPITAL</h2>
+            <div class="loading-bar">
+                <div class="loading-progress"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Login Page -->
+    <div id="loginPage" class="login-page hidden">
+        <div class="background-overlay"></div>
+        
+        <div class="login-container">
+            <div class="login-box">
+                <div class="logo-section">
+                    <div class="logo-circle"></div>
+                    <h1>HILAX HOSPITAL</h1>
+                    <p class="subtitle">Management System</p>
+                </div>
+
+                <form id="loginForm" class="login-form">
+                    <div class="form-group">
+                        <label for="username">Username</label>
+                        <input type="text" id="username" name="username" required autocomplete="off">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <input type="password" id="password" name="password" required>
+                    </div>
+
+                    <button type="submit" class="login-btn">
+                        <span>Sign In</span>
+                        <svg class="arrow-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <path d="M5 12h14M12 5l7 7-7 7"/>
+                        </svg>
+                    </button>
+
+                    <div id="errorMessage" class="error-message hidden"></div>
+                </form>
+
+                <div class="login-footer">
+                    <p>Demo System • For Testing Purposes Only</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Loading animation
+        window.addEventListener('load', function() {
+            setTimeout(function() {
+                document.getElementById('loadingScreen').classList.add('fade-out');
+                setTimeout(function() {
+                    document.getElementById('loadingScreen').style.display = 'none';
+                    document.getElementById('loginPage').classList.remove('hidden');
+                    document.getElementById('loginPage').classList.add('fade-in');
+                }, 500);
+            }, 3000);
+        });
+
+        // Hardcoded credentials
+        const users = {
+            'admin': { password: 'admin123', role: 'HR/Admin', name: 'John Admin' },
+            'doctor': { password: 'doc123', role: 'Physician', name: 'Dr. Smith' },
+            'nurse': { password: 'nurse123', role: 'Nurse', name: 'Nurse Jane' },
+            'pharmacist': { password: 'pharma123', role: 'Pharmacist', name: 'Pharmacist Bob' },
+            'medtech': { password: 'med123', role: 'MedTech', name: 'Lab Tech Sarah' },
+            'radtech': { password: 'rad123', role: 'RadTech', name: 'Radiology Tech Mike' },
+            'patient': { password: 'pat123', role: 'Patient', name: 'Patient Mary', patientId: 'P001' }
+        };
+
+        // Login form handler
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const username = document.getElementById('username').value.trim().toLowerCase();
+            const password = document.getElementById('password').value;
+            const errorMessage = document.getElementById('errorMessage');
+            
+            // Validate credentials
+            if (users[username] && users[username].password === password) {
+                // Success
+                errorMessage.classList.add('hidden');
+                
+                // Store user session
+                sessionStorage.setItem('currentUser', JSON.stringify({
+                    username: username,
+                    role: users[username].role,
+                    name: users[username].name,
+                    patientId: users[username].patientId || null
+                }));
+                
+                // Show success message
+                errorMessage.textContent = 'Login successful! Redirecting...';
+                errorMessage.className = 'success-message';
+                
+                // Redirect to dashboard (placeholder for now)
+                setTimeout(function() {
+                    window.location.href = 'dashboard.html';
+                }, 1000);
+            } else {
+                // Error
+                errorMessage.textContent = 'Invalid username or password';
+                errorMessage.className = 'error-message';
+                errorMessage.classList.remove('hidden');
+            }
+        });
+
+        // Clear error on input
+        document.getElementById('username').addEventListener('input', function() {
+            document.getElementById('errorMessage').classList.add('hidden');
+        });
+        
+        document.getElementById('password').addEventListener('input', function() {
+            document.getElementById('errorMessage').classList.add('hidden');
+        });
+    </script>
+</body>
+</html>
