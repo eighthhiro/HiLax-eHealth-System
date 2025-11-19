@@ -21,7 +21,7 @@
 }
 
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: "Inter",'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background: var(--content-bg);
     overflow-x: hidden;
 }

@@ -61,11 +61,13 @@ class Dashboard {
             menuContainer.appendChild(menuItem);
         });
 
-        // Set first menu item as active
+        // Set first menu item as active and load it
         if (menuItems.length > 0) {
             const firstMenuItem = menuContainer.querySelector('.menu-item');
             if (firstMenuItem) {
                 firstMenuItem.classList.add('active');
+                const firstPageId = firstMenuItem.dataset.page;
+                this.loadPageContent(firstPageId);
             }
         }
     }
@@ -90,9 +92,6 @@ class Dashboard {
     loadPageContent(pageId) {
         const contentArea = document.getElementById('contentArea');
         
-        // Hide welcome message
-        document.getElementById('welcomeMessage').style.display = 'none';
-
         // For now, show a simple content based on page
         // In a real application, you would fetch data and render complex components
         const role = this.currentUser.role;
