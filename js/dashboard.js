@@ -3,6 +3,8 @@ class Dashboard {
     constructor() {
         this.currentUser = null;
         this.currentPage = 'dashboard';
+        this.contentGenerator = null;
+        this.patientStorage = new Map(); // In-memory storage for patient data
         this.init();
     }
 
@@ -21,6 +23,13 @@ class Dashboard {
             return;
         }
         this.currentUser = JSON.parse(userData);
+        this.contentGenerator = new ContentGenerator(this.currentUser);
+        
+        // Add role class to body for CSS targeting
+        document.body.classList.remove('patient-role', 'admin-role', 'physician-role', 'nurse-role', 'pharmacist-role', 'medtech-role', 'radtech-role');
+        if (this.currentUser.role === 'Patient') {
+            document.body.classList.add('patient-role');
+        }
     }
 
     loadUserData() {
@@ -29,6 +38,9 @@ class Dashboard {
         // Update UI with user data
         document.getElementById('userName').textContent = this.currentUser.name;
         document.getElementById('userRole').textContent = this.currentUser.role;
+
+        // Load saved patients from localStorage
+        this.loadPatientsFromStorage();
 
         // Build sidebar menu based on role
         this.buildSidebarMenu();
@@ -92,234 +104,428 @@ class Dashboard {
     loadPageContent(pageId) {
         const contentArea = document.getElementById('contentArea');
         
-        // For now, show a simple content based on page
-        // In a real application, you would fetch data and render complex components
-        const role = this.currentUser.role;
-        
         let content = '';
+        
+        // Only show bento banner on dashboard page
+        if (pageId === 'dashboard') {
+            content = this.contentGenerator.getBentoBanner();
+        }
+        
+        let pageContent = '';
         switch(pageId) {
             case 'dashboard':
-                content = this.getDashboardContent();
+                pageContent = this.contentGenerator.getDashboardContent();
                 break;
             case 'all-patients':
-                content = this.getAllPatientsContent();
+                pageContent = this.contentGenerator.getAllPatientsContent();
                 break;
             case 'prescriptions':
-                content = this.getPrescriptionsContent();
+                pageContent = this.contentGenerator.getPrescriptionsContent();
                 break;
             default:
-                content = this.getDefaultContent(pageId);
+                pageContent = this.contentGenerator.getDefaultContent(pageId);
         }
 
+        content += pageContent;
         contentArea.innerHTML = content;
-    }
-
-    getDashboardContent() {
-        const role = this.currentUser.role;
-        return `
-            <div class="dashboard-overview">
-                <div class="cards-grid">
-                    <div class="card">
-                        <div class="card-header">
-                            <div class="card-icon">
-                                <i class="fas fa-user-injured"></i>
-                            </div>
-                            <h3 class="card-title">Patients</h3>
-                        </div>
-                        <div class="card-content">
-                            <p>Manage patient information and records</p>
-                            <div class="stat-number">1,247</div>
-                        </div>
-                    </div>
-
-                    <div class="card">
-                        <div class="card-header">
-                            <div class="card-icon">
-                                <i class="fas fa-prescription"></i>
-                            </div>
-                            <h3 class="card-title">Prescriptions</h3>
-                        </div>
-                        <div class="card-content">
-                            <p>View and manage medication orders</p>
-                            <div class="stat-number">89</div>
-                        </div>
-                    </div>
-
-                    <div class="card">
-                        <div class="card-header">
-                            <div class="card-icon">
-                                <i class="fas fa-flask"></i>
-                            </div>
-                            <h3 class="card-title">Lab Results</h3>
-                        </div>
-                        <div class="card-content">
-                            <p>Access laboratory test results</p>
-                            <div class="stat-number">156</div>
-                        </div>
-                    </div>
-
-                    <div class="card">
-                        <div class="card-header">
-                            <div class="card-icon">
-                                <i class="fas fa-heartbeat"></i>
-                            </div>
-                            <h3 class="card-title">Vital Signs</h3>
-                        </div>
-                        <div class="card-content">
-                            <p>Monitor patient vital statistics</p>
-                            <div class="stat-number">Active: 42</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="recent-activity">
-                    <div class="card">
-                        <div class="card-header">
-                            <h3 class="card-title">
-                                <i class="fas fa-history"></i>
-                                Recent Activity
-                            </h3>
-                        </div>
-                        <div class="card-content">
-                            <div class="activity-list">
-                                <div class="activity-item">
-                                    <i class="fas fa-user-plus success"></i>
-                                    <span>New patient registered - John Doe</span>
-                                    <small>2 minutes ago</small>
-                                </div>
-                                <div class="activity-item">
-                                    <i class="fas fa-prescription info"></i>
-                                    <span>Prescription updated for Patient #P001</span>
-                                    <small>15 minutes ago</small>
-                                </div>
-                                <div class="activity-item">
-                                    <i class="fas fa-flask warning"></i>
-                                    <span>Lab results available for Patient #P045</span>
-                                    <small>1 hour ago</small>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-    }
-
-    getAllPatientsContent() {
-        return `
-            <div class="patients-management">
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">
-                            <i class="fas fa-users"></i>
-                            All Patients
-                        </h3>
-                        <button class="btn btn-primary">
-                            <i class="fas fa-plus"></i>
-                            Add New Patient
-                        </button>
-                    </div>
-                    <div class="card-content">
-                        <div class="data-table">
-                            <div class="table-row header">
-                                <div>Patient ID</div>
-                                <div>Name</div>
-                                <div>Age</div>
-                                <div>Status</div>
-                            </div>
-                            <div class="table-row">
-                                <div>P001</div>
-                                <div>John Smith</div>
-                                <div>45</div>
-                                <div><span class="status-badge active">Active</span></div>
-                            </div>
-                            <div class="table-row">
-                                <div>P002</div>
-                                <div>Maria Garcia</div>
-                                <div>32</div>
-                                <div><span class="status-badge discharged">Discharged</span></div>
-                            </div>
-                            <div class="table-row">
-                                <div>P003</div>
-                                <div>Robert Johnson</div>
-                                <div>68</div>
-                                <div><span class="status-badge active">Active</span></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-    }
-
-    getPrescriptionsContent() {
-        const role = this.currentUser.role;
-        let actionButtons = '';
         
-        if (role === 'Physician' || role === 'HR/Admin') {
-            actionButtons = `
-                <button class="btn btn-primary">
-                    <i class="fas fa-plus"></i>
-                    New Prescription
-                </button>
+        // Attach event listeners after content is loaded
+        this.attachPageEventListeners(pageId);
+    }
+
+    attachPageEventListeners(pageId) {
+        // Attach listeners based on the page
+        if (pageId === 'all-patients') {
+            this.attachPatientPageListeners();
+        }
+    }
+
+    attachPatientPageListeners() {
+        const role = this.currentUser.role;
+        
+        // Only add listeners for non-patient roles
+        if (role !== 'Patient') {
+            const editButtons = document.querySelectorAll('.btn-edit');
+            const deleteButtons = document.querySelectorAll('.btn-delete');
+            const addPatientBtn = document.getElementById('addPatientBtn');
+            
+            editButtons.forEach(btn => {
+                btn.addEventListener('click', (e) => this.editPatient(e));
+            });
+            
+            deleteButtons.forEach(btn => {
+                btn.addEventListener('click', (e) => this.deletePatient(e));
+            });
+            
+            if (addPatientBtn) {
+                addPatientBtn.addEventListener('click', () => this.addPatient());
+            }
+        } else {
+            // Patient role
+            const editProfileBtn = document.getElementById('editPatientBtn');
+            if (editProfileBtn) {
+                editProfileBtn.addEventListener('click', () => this.editPatientProfile());
+            }
+        }
+    }
+
+    addPatient() {
+        this.showAddPatientModal();
+    }
+
+    showAddPatientModal() {
+        // Generate next patient ID (LIFO - Last In, First Out)
+        const nextId = this.generateNextPatientId();
+        
+        const modal = document.createElement('div');
+        modal.className = 'modal-overlay';
+        modal.id = 'addPatientModal';
+        modal.innerHTML = `
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Add New Patient</h2>
+                    <button class="modal-close" id="closeModal">&times;</button>
+                </div>
+                <form id="addPatientForm" class="modal-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="patientId">Patient ID</label>
+                            <input type="text" id="patientId" value="${nextId}" disabled readonly>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="surname">Surname *</label>
+                            <input type="text" id="surname" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="givenName">Given Name *</label>
+                            <input type="text" id="givenName" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="middleInitial">Middle Initial</label>
+                            <input type="text" id="middleInitial" maxlength="1">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="age">Age *</label>
+                            <input type="number" id="age" min="0" max="150" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="status">Status *</label>
+                            <select id="status" required>
+                                <option value="">Select Status</option>
+                                <option value="Active">Active</option>
+                                <option value="Admitted">Admitted</option>
+                                <option value="Discharged">Discharged</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="recordsUrl">Records (URL/Link)</label>
+                            <input type="url" id="recordsUrl" placeholder="https://example.com/records" />
+                            <small>Enter a link to patient records, lab results, or medical documents</small>
+                        </div>
+                    </div>
+
+                    <div class="modal-actions">
+                        <button type="button" class="btn btn-secondary" id="cancelBtn">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Add Patient</button>
+                    </div>
+                </form>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        // Event listeners
+        document.getElementById('closeModal').addEventListener('click', () => this.closeModal());
+        document.getElementById('cancelBtn').addEventListener('click', () => this.closeModal());
+        document.getElementById('addPatientForm').addEventListener('submit', (e) => this.handleAddPatient(e));
+    }
+
+    generateNextPatientId() {
+        // Extract all current patient IDs from the table (fresh scan each time)
+        const rows = document.querySelectorAll('.patients-table tbody tr');
+        let maxNumber = 0;
+        
+        // If no rows exist, start from P001
+        if (rows.length === 0) {
+            return 'P001';
+        }
+        
+        rows.forEach(row => {
+            const idElement = row.querySelector('td:first-child');
+            if (idElement) {
+                const id = idElement.textContent.trim();
+                if (id && id.startsWith('P')) {
+                    const num = parseInt(id.substring(1));
+                    if (!isNaN(num) && num > maxNumber) {
+                        maxNumber = num;
+                    }
+                }
+            }
+        });
+        
+        return `P${String(maxNumber + 1).padStart(3, '0')}`;
+    }
+
+    handleAddPatient(e) {
+        e.preventDefault();
+
+        const surname = document.getElementById('surname').value.trim();
+        const givenName = document.getElementById('givenName').value.trim();
+        const middleInitial = document.getElementById('middleInitial').value.trim();
+        const age = document.getElementById('age').value;
+        const status = document.getElementById('status').value;
+        const recordsUrl = document.getElementById('recordsUrl').value.trim();
+        const patientId = document.getElementById('patientId').value;
+
+        // Format full name
+        const fullName = middleInitial 
+            ? `${surname}, ${givenName} ${middleInitial}.`
+            : `${surname}, ${givenName}`;
+
+        // Create patient data object
+        const patientData = {
+            id: patientId,
+            fullName: fullName,
+            surname: surname,
+            givenName: givenName,
+            middleInitial: middleInitial,
+            age: age,
+            status: status,
+            recordsUrl: recordsUrl || null
+        };
+
+        // Save patient to storage first
+        this.savePatientToStorage(patientData);
+        
+        // Add patient to the list dynamically
+        this.addPatientToList(patientId, fullName, age, status, recordsUrl);
+        
+        // Close modal
+        this.closeModal();
+        
+        // Show success message
+        alert(`Patient ${patientId} - ${fullName} added successfully!`);
+    }
+
+    addPatientToList(patientId, fullName, age, status, recordsUrl) {
+        const tbody = document.querySelector('.patients-table tbody');
+        if (!tbody) return;
+
+        // Determine status badge class
+        let statusClass = 'active';
+        if (status === 'Discharged') statusClass = 'discharged';
+        if (status === 'Admitted') statusClass = 'admitted';
+        
+        // Create new patient row
+        const newRow = document.createElement('tr');
+        newRow.className = 'patient-row';
+        
+        const editDeleteButtons = `
+            <button class="btn btn-sm btn-edit" title="Edit">
+                <i class="fas fa-edit"></i>
+            </button>
+            <button class="btn btn-sm btn-delete" title="Delete">
+                <i class="fas fa-trash-alt"></i>
+            </button>
+        `;
+        
+        // Generate records content
+        let recordsContent = '<span class="no-record">No file</span>';
+        if (recordsUrl) {
+            recordsContent = `<a href="${recordsUrl}" target="_blank" class="record-link">
+                <i class="fas fa-external-link-alt"></i>
+                View Records
+            </a>`;
+        }
+        
+        newRow.innerHTML = `
+            <td>${patientId}</td>
+            <td>${fullName}</td>
+            <td>${age}</td>
+            <td><span class="status-badge ${statusClass}">${status}</span></td>
+            <td class="records-column">${recordsContent}</td>
+            <td class="actions-column">
+                ${editDeleteButtons}
+            </td>
+        `;
+        
+        // Append new row to table body
+        tbody.appendChild(newRow);
+        
+        // Reattach event listeners to new buttons
+        const editBtn = newRow.querySelector('.btn-edit');
+        const deleteBtn = newRow.querySelector('.btn-delete');
+        
+        editBtn.addEventListener('click', (e) => this.editPatient(e));
+        deleteBtn.addEventListener('click', (e) => this.deletePatient(e));
+    }
+
+    closeModal() {
+        const modal = document.getElementById('addPatientModal');
+        if (modal) {
+            modal.remove();
+        }
+    }
+
+    editPatient(event) {
+        const patientRow = event.target.closest('tr');
+        const patientId = patientRow.querySelector('td:first-child').textContent;
+        alert(`Edit Patient: ${patientId} - functionality coming soon!`);
+        // TODO: Implement edit patient modal/form
+    }
+
+    deletePatient(event) {
+        const patientRow = event.target.closest('tr');
+        const patientId = patientRow.querySelector('td:first-child').textContent;
+        
+        if (confirm(`Are you sure you want to delete patient ${patientId}?`)) {
+            // Remove row from table
+            patientRow.remove();
+            
+            // Remove from storage
+            this.deletePatientFromStorage(patientId);
+            
+            // Renumber all remaining patients
+            this.renumberPatientIds();
+            
+            // Update IDs in storage
+            this.updateStorageAfterRenumber();
+            
+            alert(`Deleted Patient: ${patientId}`);
+        }
+    }
+
+    renumberPatientIds() {
+        const rows = document.querySelectorAll('.patients-table tbody tr');
+        let counter = 1;
+        
+        rows.forEach((row) => {
+            const idCell = row.querySelector('td:first-child');
+            if (idCell) {
+                const newId = `P${String(counter).padStart(3, '0')}`;
+                idCell.textContent = newId;
+                counter++;
+            }
+        });
+    }
+
+    editPatientProfile() {
+        alert('Edit Profile functionality - coming soon!');
+        // TODO: Implement edit profile modal/form for patient
+    }
+
+    updateRecordsCell(patientId, recordsUrl) {
+        // Find the patient row and update the records cell
+        const rows = document.querySelectorAll('.patients-table tbody tr');
+        rows.forEach(row => {
+            const id = row.querySelector('td:first-child').textContent.trim();
+            if (id === patientId) {
+                const recordsCell = row.querySelector('.records-column');
+                if (recordsCell) {
+                    recordsCell.innerHTML = `
+                        <a href="${recordsUrl}" target="_blank" class="record-link" title="View Records">
+                            <i class="fas fa-external-link-alt"></i>
+                            <span>View</span>
+                        </a>
+                    `;
+                }
+            }
+        });
+    }
+
+    previewFile(patientId) {
+        if (!window.patientFiles || !window.patientFiles[patientId]) {
+            alert('No file available for this patient');
+            return;
+        }
+        
+        const file = window.patientFiles[patientId];
+        const fileType = file.type;
+        const fileName = file.name;
+        
+        const previewModal = document.createElement('div');
+        previewModal.className = 'modal-overlay';
+        previewModal.id = 'previewModal';
+        
+        let previewContent = '';
+        
+        if (fileType.startsWith('image/')) {
+            // Preview image
+            const blob = new Blob([file.data], { type: fileType });
+            const url = URL.createObjectURL(blob);
+            previewContent = `<img src="${url}" style="max-width: 100%; max-height: 80vh; border-radius: 8px;">`;
+        } else if (fileType === 'application/pdf') {
+            // For PDF, show file info and download option
+            previewContent = `
+                <div style="text-align: center; padding: 40px;">
+                    <i class="fas fa-file-pdf" style="font-size: 80px; color: #e74c3c; margin-bottom: 20px; display: block;"></i>
+                    <h3>PDF Document</h3>
+                    <p>${fileName}</p>
+                    <p style="color: #888; font-size: 14px;">${(file.size / 1024).toFixed(2)} KB</p>
+                    <p style="margin-top: 20px; color: #666; font-size: 13px;">PDF preview requires a PDF viewer plugin</p>
+                </div>
+            `;
+        } else {
+            // For other documents
+            previewContent = `
+                <div style="text-align: center; padding: 40px;">
+                    <i class="fas fa-file" style="font-size: 80px; color: #3498db; margin-bottom: 20px; display: block;"></i>
+                    <h3>${fileName}</h3>
+                    <p style="color: #888; font-size: 14px;">${(file.size / 1024).toFixed(2)} KB</p>
+                </div>
             `;
         }
-
-        return `
-            <div class="prescriptions-management">
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">
-                            <i class="fas fa-prescription"></i>
-                            Prescriptions
-                        </h3>
-                        ${actionButtons}
+        
+        previewModal.innerHTML = `
+            <div class="modal-content preview-modal">
+                <div class="modal-header">
+                    <h2>${fileName}</h2>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="btn btn-sm" id="downloadBtn" style="background: var(--info-blue); color: white; border: none; padding: 8px 16px;">
+                            <i class="fas fa-download"></i>
+                            Download
+                        </button>
+                        <button class="modal-close" id="closePreview">&times;</button>
                     </div>
-                    <div class="card-content">
-                        <div class="data-table">
-                            <div class="table-row header">
-                                <div>Prescription ID</div>
-                                <div>Patient</div>
-                                <div>Medication</div>
-                                <div>Status</div>
-                            </div>
-                            <div class="table-row">
-                                <div>RX001</div>
-                                <div>John Smith (P001)</div>
-                                <div>Amoxicillin 500mg</div>
-                                <div><span class="status-badge active">Active</span></div>
-                            </div>
-                            <div class="table-row">
-                                <div>RX002</div>
-                                <div>Maria Garcia (P002)</div>
-                                <div>Lisinopril 10mg</div>
-                                <div><span class="status-badge completed">Completed</span></div>
-                            </div>
-                        </div>
-                    </div>
+                </div>
+                <div class="modal-preview-body">
+                    ${previewContent}
                 </div>
             </div>
         `;
+        
+        document.body.appendChild(previewModal);
+        
+        // Download button handler
+        document.getElementById('downloadBtn').addEventListener('click', () => {
+            this.downloadFile(fileName, file.data, fileType);
+        });
+        
+        document.getElementById('closePreview').addEventListener('click', () => previewModal.remove());
+        previewModal.addEventListener('click', (e) => {
+            if (e.target === previewModal) previewModal.remove();
+        });
     }
 
-    getDefaultContent(pageId) {
-        return `
-            <div class="default-content">
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">
-                            <i class="fas fa-cog"></i>
-                            ${pageId.charAt(0).toUpperCase() + pageId.slice(1).replace('-', ' ')}
-                        </h3>
-                    </div>
-                    <div class="card-content">
-                        <p>This section is under development. Content for ${pageId} will be implemented soon.</p>
-                        <p><strong>Role:</strong> ${this.currentUser.role}</p>
-                        <p><strong>Permissions:</strong> ${ROLE_PERMISSIONS[this.currentUser.role]?.view.slice(0, 3).join(', ')}...</p>
-                    </div>
-                </div>
-            </div>
-        `;
+    downloadFile(fileName, fileData, fileType) {
+        const blob = new Blob([fileData], { type: fileType });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
     }
 
     setupEventListeners() {
@@ -351,6 +557,81 @@ class Dashboard {
         });
         
         document.getElementById('currentTime').textContent = `${dateString} • ${timeString}`;
+    }
+
+    savePatientToStorage(patientData) {
+        try {
+            // Store in memory map
+            this.patientStorage.set(patientData.id, patientData);
+            
+            // Convert map to array and save to localStorage
+            const patientsArray = Array.from(this.patientStorage.values());
+            localStorage.setItem('patients', JSON.stringify(patientsArray));
+        } catch (error) {
+            console.error('Error saving patient to localStorage:', error);
+        }
+    }
+
+    deletePatientFromStorage(patientId) {
+        try {
+            this.patientStorage.delete(patientId);
+            const patientsArray = Array.from(this.patientStorage.values());
+            localStorage.setItem('patients', JSON.stringify(patientsArray));
+        } catch (error) {
+            console.error('Error deleting patient from localStorage:', error);
+        }
+    }
+
+    loadPatientsFromStorage() {
+        try {
+            const stored = localStorage.getItem('patients');
+            if (stored) {
+                const patientsArray = JSON.parse(stored);
+                patientsArray.forEach(patient => {
+                    this.patientStorage.set(patient.id, patient);
+                });
+            }
+        } catch (error) {
+            console.error('Error loading patients from localStorage:', error);
+        }
+    }
+
+    updateStorageAfterRenumber() {
+        try {
+            const rows = document.querySelectorAll('.patients-table tbody tr');
+            const updatedPatients = new Map();
+            
+            rows.forEach((row) => {
+                const idCell = row.querySelector('td:first-child');
+                const nameCell = row.querySelector('td:nth-child(2)');
+                
+                if (idCell && nameCell) {
+                    const newId = idCell.textContent.trim();
+                    const name = nameCell.textContent.trim();
+                    
+                    // Find the original patient data
+                    let patientData = null;
+                    for (let [oldId, patient] of this.patientStorage) {
+                        if (patient.fullName === name) {
+                            patientData = patient;
+                            break;
+                        }
+                    }
+                    
+                    if (patientData) {
+                        // Update the ID
+                        patientData.id = newId;
+                        updatedPatients.set(newId, patientData);
+                    }
+                }
+            });
+            
+            this.patientStorage = updatedPatients;
+            const patientsArray = Array.from(this.patientStorage.values());
+            localStorage.setItem('patients', JSON.stringify(patientsArray));
+        } catch (error) {
+            console.error('Error updating storage after renumber:', error);
+        }
     }
 }
 
