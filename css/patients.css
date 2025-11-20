@@ -1,0 +1,115 @@
+/* Patients Table Styles */
+.patients-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    table-layout: fixed;
+}
+
+.patients-table thead {
+    background: var(--light-pink);
+}
+
+.patients-table th {
+    padding: 20px 25px;
+    text-align: center;
+    font-weight: 600;
+    border-bottom: 2px solid #ddd;
+    font-size: 14px;
+    color: var(--text-dark);
+    vertical-align: middle;
+}
+
+.patients-table th:nth-child(1) { width: 9%; }
+.patients-table th:nth-child(2) { width: 20%; }
+.patients-table th:nth-child(3) { width: 7%; }
+.patients-table th:nth-child(4) { width: 12%; }
+.patients-table th:nth-child(5) { width: 14%; }
+.patients-table th:nth-child(6) { width: 16%; }
+.patients-table th:nth-child(7) { width: 22%; }
+
+/* Actions column header centered */
+.patients-table th:nth-child(7) {
+    text-align: center;
+}
+
+.patients-table td {
+    padding: 20px 25px;
+    text-align: center;
+    border-bottom: 1px solid #f0f0f0;
+    vertical-align: middle;
+    font-size: 14px;
+    overflow: visible;
+    white-space: nowrap;
+}
+
+/* Actions column cells centered to match header */
+.patients-table td:nth-child(7) {
+    text-align: center;
+}
+
+.patients-table tbody tr {
+    transition: background 0.2s ease;
+}
+
+.patients-table tbody tr:hover {
+    background: rgba(212, 165, 165, 0.08);
+}
+
+.patients-table .status-badge {
+    display: inline-block;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    white-space: nowrap;
+    text-align: center;
+}
+
+.patients-table .status-badge.active {
+    background: rgba(39, 174, 96, 0.15);
+    color: #27ae60;
+}
+
+.patients-table .status-badge.admitted {
+    background: rgba(243, 156, 18, 0.15);
+    color: #f39c12;
+}
+
+.patients-table .status-badge.discharged {
+    background: rgba(52, 73, 94, 0.15);
+    color: #34495e;
+}
+
+.record-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--info-blue);
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 13px;
+    transition: all 0.2s ease;
+}
+
+.record-link:hover {
+    color: #2980b9;
+    text-decoration: underline;
+}
+
+.record-link i {
+    font-size: 12px;
+}
+
+.no-record {
+    color: var(--text-light);
+    font-size: 13px;
+    font-style: italic;
+}
+
+.patients-table .btn-edit,
+.patients-table .btn-delete {
+    margin-right: 6px;
+}

@@ -27,14 +27,12 @@ const ROLE_PERMISSIONS = {
             { icon: 'fas fa-tachometer-alt', text: 'Dashboard', id: 'dashboard' },
             { icon: 'fas fa-users', text: 'All Patients', id: 'all-patients' },
             { icon: 'fas fa-user-md', text: 'All Staff', id: 'all-staff' },
-            { icon: 'fas fa-file-medical', text: 'Medical Records', id: 'medical-records' },
             { icon: 'fas fa-flask', text: 'Lab Results', id: 'lab-results' },
             { icon: 'fas fa-x-ray', text: 'Imaging Results', id: 'imaging-results' },
             { icon: 'fas fa-prescription', text: 'Prescriptions', id: 'prescriptions' },
             { icon: 'fas fa-heartbeat', text: 'Vital Signs', id: 'vital-signs' },
             { icon: 'fas fa-money-bill-wave', text: 'Billing', id: 'billing' },
-            { icon: 'fas fa-pills', text: 'Drug Dispensing', id: 'drug-dispensing' },
-            { icon: 'fas fa-cog', text: 'System Settings', id: 'settings' }
+            { icon: 'fas fa-pills', text: 'Drug Dispensing', id: 'drug-dispensing' }
         ]
     },
     'Physician': {

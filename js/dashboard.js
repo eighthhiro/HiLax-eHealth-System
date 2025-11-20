@@ -119,6 +119,9 @@ class Dashboard {
             case 'all-patients':
                 pageContent = this.contentGenerator.getAllPatientsContent();
                 break;
+            case 'all-staff':
+                pageContent = this.contentGenerator.getAllStaffContent();
+                break;
             case 'prescriptions':
                 pageContent = this.contentGenerator.getPrescriptionsContent();
                 break;
@@ -203,14 +206,14 @@ class Dashboard {
                             <label for="givenName">Given Name *</label>
                             <input type="text" id="givenName" required>
                         </div>
-                        <div class="form-group">
-                            <label for="middleInitial">Middle Initial</label>
-                            <input type="text" id="middleInitial" maxlength="1">
-                        </div>
                     </div>
 
-                    <div class="form-row">
-                        <div class="form-group">
+                    <div class="form-row form-row-small-fields">
+                        <div class="form-group form-group-small">
+                            <label for="middleInitial">M.I.</label>
+                            <input type="text" id="middleInitial" maxlength="1">
+                        </div>
+                        <div class="form-group form-group-small">
                             <label for="age">Age *</label>
                             <input type="number" id="age" min="0" max="150" required>
                         </div>
@@ -221,6 +224,28 @@ class Dashboard {
                                 <option value="Active">Active</option>
                                 <option value="Admitted">Admitted</option>
                                 <option value="Discharged">Discharged</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="doctor">Assigned Doctor *</label>
+                            <select id="doctor" required>
+                                <option value="">Select Doctor</option>
+                                <option value="Dr. Sta. Maria">Dr. Sta. Maria</option>
+                                <option value="Dr. Salvador">Dr. Salvador</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="department">Department *</label>
+                            <select id="department" required>
+                                <option value="">Select Department</option>
+                                <option value="Cardiology">Cardiology</option>
+                                <option value="Emergency">Emergency</option>
+                                <option value="General Medicine">General Medicine</option>
+                                <option value="Pediatrics">Pediatrics</option>
+                                <option value="Surgery">Surgery</option>
                             </select>
                         </div>
                     </div>
@@ -283,6 +308,8 @@ class Dashboard {
         const middleInitial = document.getElementById('middleInitial').value.trim();
         const age = document.getElementById('age').value;
         const status = document.getElementById('status').value;
+        const doctor = document.getElementById('doctor').value;
+        const department = document.getElementById('department').value;
         const recordsUrl = document.getElementById('recordsUrl').value.trim();
         const patientId = document.getElementById('patientId').value;
 
@@ -300,6 +327,8 @@ class Dashboard {
             middleInitial: middleInitial,
             age: age,
             status: status,
+            doctor: doctor,
+            department: department,
             recordsUrl: recordsUrl || null
         };
 
@@ -307,16 +336,16 @@ class Dashboard {
         this.savePatientToStorage(patientData);
         
         // Add patient to the list dynamically
-        this.addPatientToList(patientId, fullName, age, status, recordsUrl);
+        this.addPatientToList(patientId, fullName, age, status, doctor, recordsUrl);
         
         // Close modal
         this.closeModal();
         
         // Show success message
-        alert(`Patient ${patientId} - ${fullName} added successfully!`);
+        this.showNotification(`Patient ${patientId} - ${fullName} added successfully!`, 'success');
     }
 
-    addPatientToList(patientId, fullName, age, status, recordsUrl) {
+    addPatientToList(patientId, fullName, age, status, doctor, recordsUrl) {
         const tbody = document.querySelector('.patients-table tbody');
         if (!tbody) return;
 
@@ -352,10 +381,9 @@ class Dashboard {
             <td>${fullName}</td>
             <td>${age}</td>
             <td><span class="status-badge ${statusClass}">${status}</span></td>
-            <td class="records-column">${recordsContent}</td>
-            <td class="actions-column">
-                ${editDeleteButtons}
-            </td>
+            <td>${doctor}</td>
+            <td>${recordsContent}</td>
+            <td>${editDeleteButtons}</td>
         `;
         
         // Append new row to table body
@@ -378,30 +406,282 @@ class Dashboard {
 
     editPatient(event) {
         const patientRow = event.target.closest('tr');
-        const patientId = patientRow.querySelector('td:first-child').textContent;
-        alert(`Edit Patient: ${patientId} - functionality coming soon!`);
-        // TODO: Implement edit patient modal/form
+        const patientId = patientRow.querySelector('td:first-child').textContent.trim();
+        
+        // Get patient data from storage
+        const patientData = this.patientStorage.get(patientId);
+        if (!patientData) {
+            this.showNotification('Patient data not found', 'error');
+            return;
+        }
+        
+        this.showEditPatientModal(patientData);
+    }
+
+    showEditPatientModal(patientData) {
+        const modal = document.createElement('div');
+        modal.className = 'modal-overlay';
+        modal.id = 'editPatientModal';
+        modal.innerHTML = `
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Edit Patient</h2>
+                    <button class="modal-close" id="closeEditModal">&times;</button>
+                </div>
+                <form id="editPatientForm" class="modal-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="editPatientId">Patient ID</label>
+                            <input type="text" id="editPatientId" value="${patientData.id}" disabled readonly>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="editSurname">Surname *</label>
+                            <input type="text" id="editSurname" value="${patientData.surname}" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="editGivenName">Given Name *</label>
+                            <input type="text" id="editGivenName" value="${patientData.givenName}" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row form-row-small-fields">
+                        <div class="form-group form-group-small">
+                            <label for="editMiddleInitial">M.I.</label>
+                            <input type="text" id="editMiddleInitial" value="${patientData.middleInitial || ''}" maxlength="1">
+                        </div>
+                        <div class="form-group form-group-small">
+                            <label for="editAge">Age *</label>
+                            <input type="number" id="editAge" value="${patientData.age}" min="0" max="150" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="editStatus">Status *</label>
+                            <select id="editStatus" required>
+                                <option value="Active" ${patientData.status === 'Active' ? 'selected' : ''}>Active</option>
+                                <option value="Admitted" ${patientData.status === 'Admitted' ? 'selected' : ''}>Admitted</option>
+                                <option value="Discharged" ${patientData.status === 'Discharged' ? 'selected' : ''}>Discharged</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="editDoctor">Assigned Doctor *</label>
+                            <select id="editDoctor" required>
+                                <option value="Dr. Sta. Maria" ${patientData.doctor === 'Dr. Sta. Maria' ? 'selected' : ''}>Dr. Sta. Maria</option>
+                                <option value="Dr. Salvador" ${patientData.doctor === 'Dr. Salvador' ? 'selected' : ''}>Dr. Salvador</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="editDepartment">Department *</label>
+                            <select id="editDepartment" required>
+                                <option value="">Select Department</option>
+                                <option value="Cardiology" ${patientData.department === 'Cardiology' ? 'selected' : ''}>Cardiology</option>
+                                <option value="Emergency" ${patientData.department === 'Emergency' ? 'selected' : ''}>Emergency</option>
+                                <option value="General Medicine" ${patientData.department === 'General Medicine' ? 'selected' : ''}>General Medicine</option>
+                                <option value="Pediatrics" ${patientData.department === 'Pediatrics' ? 'selected' : ''}>Pediatrics</option>
+                                <option value="Surgery" ${patientData.department === 'Surgery' ? 'selected' : ''}>Surgery</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group" style="flex: 1;">
+                            <label for="editRecordsUrl">Records URL (Link to medical records)</label>
+                            <input type="url" id="editRecordsUrl" placeholder="https://example.com/records" value="${patientData.recordsUrl || ''}">
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                        <button type="button" class="btn btn-secondary" id="cancelEditBtn">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        // Event listeners
+        document.getElementById('closeEditModal').addEventListener('click', () => this.closeEditModal());
+        document.getElementById('cancelEditBtn').addEventListener('click', () => this.closeEditModal());
+        document.getElementById('editPatientForm').addEventListener('submit', (e) => this.handleEditPatient(e));
+    }
+
+    handleEditPatient(e) {
+        e.preventDefault();
+
+        const patientId = document.getElementById('editPatientId').value;
+        const surname = document.getElementById('editSurname').value.trim();
+        const givenName = document.getElementById('editGivenName').value.trim();
+        const middleInitial = document.getElementById('editMiddleInitial').value.trim();
+        const age = document.getElementById('editAge').value;
+        const status = document.getElementById('editStatus').value;
+        const doctor = document.getElementById('editDoctor').value;
+        const department = document.getElementById('editDepartment').value;
+        const recordsUrl = document.getElementById('editRecordsUrl').value.trim();
+
+        // Format full name
+        const fullName = middleInitial 
+            ? `${surname}, ${givenName} ${middleInitial}.`
+            : `${surname}, ${givenName}`;
+
+        // Update patient data object
+        const patientData = {
+            id: patientId,
+            fullName: fullName,
+            surname: surname,
+            givenName: givenName,
+            middleInitial: middleInitial,
+            age: age,
+            status: status,
+            doctor: doctor,
+            department: department,
+            recordsUrl: recordsUrl || null
+        };
+
+        // Update storage
+        this.savePatientToStorage(patientData);
+        
+        // Update the table row
+        this.updatePatientRow(patientId, fullName, age, status, doctor, recordsUrl);
+        
+        // Close modal
+        this.closeEditModal();
+        
+        // Show success message
+        this.showNotification(`Patient ${patientId} updated successfully!`, 'success');
+    }
+
+    updatePatientRow(patientId, fullName, age, status, doctor, recordsUrl) {
+        const rows = document.querySelectorAll('.patients-table tbody tr');
+        
+        rows.forEach(row => {
+            const id = row.querySelector('td:first-child').textContent.trim();
+            if (id === patientId) {
+                // Determine status badge class
+                let statusClass = 'active';
+                if (status === 'Discharged') statusClass = 'discharged';
+                if (status === 'Admitted') statusClass = 'admitted';
+                
+                // Generate records content
+                let recordsContent = '<span class="no-record">No file</span>';
+                if (recordsUrl) {
+                    recordsContent = `<a href="${recordsUrl}" target="_blank" class="record-link">
+                        <i class="fas fa-external-link-alt"></i>
+                        View Records
+                    </a>`;
+                }
+                
+                // Update cells
+                row.querySelector('td:nth-child(2)').textContent = fullName;
+                row.querySelector('td:nth-child(3)').textContent = age;
+                row.querySelector('td:nth-child(4)').innerHTML = `<span class="status-badge ${statusClass}">${status}</span>`;
+                row.querySelector('td:nth-child(5)').textContent = doctor;
+                row.querySelector('td:nth-child(6)').innerHTML = recordsContent;
+            }
+        });
+    }
+
+    closeEditModal() {
+        const modal = document.getElementById('editPatientModal');
+        if (modal) {
+            modal.remove();
+        }
+    }
+
+    showNotification(message, type = 'success') {
+        const notification = document.createElement('div');
+        notification.className = 'notification-modal';
+        notification.innerHTML = `
+            <div class="notification-content ${type}">
+                <div class="notification-icon">
+                    <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
+                </div>
+                <p class="notification-message">${message}</p>
+                <button class="notification-close" onclick="this.parentElement.parentElement.remove()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        `;
+        
+        document.body.appendChild(notification);
+        
+        // Auto remove after 3 seconds
+        setTimeout(() => {
+            if (notification.parentElement) {
+                notification.style.opacity = '0';
+                setTimeout(() => notification.remove(), 300);
+            }
+        }, 3000);
+    }
+
+    showConfirmModal(message, onConfirm) {
+        const modal = document.createElement('div');
+        modal.className = 'modal-overlay';
+        modal.id = 'confirmModal';
+        modal.innerHTML = `
+            <div class="modal-content confirm-modal">
+                <div class="modal-header">
+                    <h2>Confirm Action</h2>
+                    <button class="modal-close" id="closeConfirmModal">&times;</button>
+                </div>
+                <div class="confirm-body">
+                    <div class="confirm-icon">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <p class="confirm-message">${message}</p>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" id="cancelConfirmBtn">Cancel</button>
+                    <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
+                        <i class="fas fa-trash"></i> Yes, Delete
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        
+        // Event listeners
+        document.getElementById('closeConfirmModal').addEventListener('click', () => {
+            modal.remove();
+        });
+        
+        document.getElementById('cancelConfirmBtn').addEventListener('click', () => {
+            modal.remove();
+        });
+        
+        document.getElementById('confirmDeleteBtn').addEventListener('click', () => {
+            modal.remove();
+            onConfirm();
+        });
     }
 
     deletePatient(event) {
         const patientRow = event.target.closest('tr');
         const patientId = patientRow.querySelector('td:first-child').textContent;
         
-        if (confirm(`Are you sure you want to delete patient ${patientId}?`)) {
-            // Remove row from table
-            patientRow.remove();
-            
-            // Remove from storage
-            this.deletePatientFromStorage(patientId);
-            
-            // Renumber all remaining patients
-            this.renumberPatientIds();
-            
-            // Update IDs in storage
-            this.updateStorageAfterRenumber();
-            
-            alert(`Deleted Patient: ${patientId}`);
-        }
+        this.showConfirmModal(
+            `Are you sure you want to delete patient ${patientId}?`,
+            () => {
+                // Remove row from table
+                patientRow.remove();
+                
+                // Remove from storage
+                this.deletePatientFromStorage(patientId);
+                
+                // Renumber all remaining patients
+                this.renumberPatientIds();
+                
+                // Update IDs in storage
+                this.updateStorageAfterRenumber();
+                
+                this.showNotification(`Deleted Patient: ${patientId}`, 'success');
+            }
+        );
     }
 
     renumberPatientIds() {
@@ -444,7 +724,7 @@ class Dashboard {
 
     previewFile(patientId) {
         if (!window.patientFiles || !window.patientFiles[patientId]) {
-            alert('No file available for this patient');
+            this.showNotification('No file available for this patient', 'error');
             return;
         }
         

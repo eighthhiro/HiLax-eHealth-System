@@ -230,10 +230,9 @@ class ContentGenerator {
                     <td>${patient.fullName}</td>
                     <td>${patient.age}</td>
                     <td><span class="status-badge ${statusClass}">${patient.status}</span></td>
-                    <td class="records-column">${recordsContent}</td>
-                    <td class="actions-column">
-                        ${editDeleteButtons}
-                    </td>
+                    <td>${patient.doctor || 'Unassigned'}</td>
+                    <td>${recordsContent}</td>
+                    <td>${editDeleteButtons}</td>
                 </tr>
             `;
         });
@@ -266,6 +265,7 @@ class ContentGenerator {
                                     <th>Name</th>
                                     <th>Age</th>
                                     <th>Status</th>
+                                    <th>Doctor</th>
                                     <th>Records</th>
                                     <th>Actions</th>
                                 </tr>
@@ -346,6 +346,307 @@ class ContentGenerator {
                         <p>This section is under development. Content for ${pageId} will be implemented soon.</p>
                         <p><strong>Role:</strong> ${this.currentUser.role}</p>
                         <p><strong>Permissions:</strong> ${ROLE_PERMISSIONS[this.currentUser.role]?.view.slice(0, 3).join(', ')}...</p>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    // All Staff Organizational Hierarchy
+    getAllStaffContent() {
+        const role = this.currentUser.role;
+        
+        let addStaffButton = '';
+        if (role === 'HR/Admin') {
+            addStaffButton = `
+                <button class="btn btn-primary btn-with-tooltip" id="addStaffBtn">
+                    <i class="fas fa-user-plus"></i>
+                    Add New Staff
+                    <span class="tooltip-text">You need Director approval</span>
+                </button>
+            `;
+        }
+
+        return `
+            <div class="staff-management">
+                <div class="card">
+                    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+                        <h3 class="card-title">
+                            <i class="fas fa-sitemap"></i>
+                            Organizational Hierarchy
+                        </h3>
+                        ${addStaffButton}
+                    </div>
+                    <div class="card-content">
+                        <div class="org-tree">
+                            <!-- Hospital Administrator -->
+                            <div class="tree-level level-1">
+                                <div class="tree-node executive">
+                                    <div class="node-icon">
+                                        <i class="fas fa-user-tie"></i>
+                                    </div>
+                                    <div class="node-content">
+                                        <h4>Hospital Administrator</h4>
+                                        <p class="node-name">Dr. Maria Santos</p>
+                                        <span class="node-badge">Executive</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Department Heads -->
+                            <div class="tree-level level-2">
+                                <!-- Medical Director -->
+                                <div class="tree-branch">
+                                    <div class="tree-node director">
+                                        <div class="node-icon">
+                                            <i class="fas fa-user-md"></i>
+                                        </div>
+                                        <div class="node-content">
+                                            <h4>Medical Director</h4>
+                                            <p class="node-name">Dr. Ramon Cruz</p>
+                                            <span class="node-badge">Director</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Physicians under Medical Director -->
+                                    <div class="tree-children">
+                                        <div class="tree-node physician">
+                                            <div class="node-icon">
+                                                <i class="fas fa-stethoscope"></i>
+                                            </div>
+                                            <div class="node-content">
+                                                <h4>Chief Physician</h4>
+                                                <p class="node-name">Dr. Isabella Reyes</p>
+                                                <span class="node-badge">Physician</span>
+                                            </div>
+                                        </div>
+                                        <div class="tree-node physician">
+                                            <div class="node-icon">
+                                                <i class="fas fa-stethoscope"></i>
+                                            </div>
+                                            <div class="node-content">
+                                                <h4>Senior Physician</h4>
+                                                <p class="node-name">Dr. Salvador</p>
+                                                <span class="node-badge">Physician</span>
+                                            </div>
+                                        </div>
+                                        <div class="tree-node physician">
+                                            <div class="node-icon">
+                                                <i class="fas fa-stethoscope"></i>
+                                            </div>
+                                            <div class="node-content">
+                                                <h4>Physician</h4>
+                                                <p class="node-name">Dr. Sta.Maria</p>
+                                                <span class="node-badge">Physician</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Nursing Director -->
+                                <div class="tree-branch">
+                                    <div class="tree-node director">
+                                        <div class="node-icon">
+                                            <i class="fas fa-user-nurse"></i>
+                                        </div>
+                                        <div class="node-content">
+                                            <h4>Director of Nursing</h4>
+                                            <p class="node-name">Josefina Torres, RN</p>
+                                            <span class="node-badge">Director</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Nurses under Nursing Director -->
+                                    <div class="tree-children">
+                                        <div class="tree-node nurse">
+                                            <div class="node-icon">
+                                                <i class="fas fa-heartbeat"></i>
+                                            </div>
+                                            <div class="node-content">
+                                                <h4>Head Nurse</h4>
+                                                <p class="node-name">Maria Lourdes Santos, RN</p>
+                                                <span class="node-badge">Nurse</span>
+                                            </div>
+                                        </div>
+                                        <div class="tree-node nurse">
+                                            <div class="node-icon">
+                                                <i class="fas fa-heartbeat"></i>
+                                            </div>
+                                            <div class="node-content">
+                                                <h4>Senior Nurse</h4>
+                                                <p class="node-name">Angelica Dela Cruz, RN</p>
+                                                <span class="node-badge">Nurse</span>
+                                            </div>
+                                        </div>
+                                        <div class="tree-node nurse">
+                                            <div class="node-icon">
+                                                <i class="fas fa-heartbeat"></i>
+                                            </div>
+                                            <div class="node-content">
+                                                <h4>Staff Nurse</h4>
+                                                <p class="node-name">Nurse Berna, RN</p>
+                                                <span class="node-badge">Nurse</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Pharmacy Director -->
+                                <div class="tree-branch">
+                                    <div class="tree-node director">
+                                        <div class="node-icon">
+                                            <i class="fas fa-pills"></i>
+                                        </div>
+                                        <div class="node-content">
+                                            <h4>Pharmacy Director</h4>
+                                            <p class="node-name">Dr. Antonio Garcia, RPh</p>
+                                            <span class="node-badge">Director</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Pharmacists -->
+                                    <div class="tree-children">
+                                        <div class="tree-node pharmacist">
+                                            <div class="node-icon">
+                                                <i class="fas fa-prescription-bottle"></i>
+                                            </div>
+                                            <div class="node-content">
+                                                <h4>Senior Pharmacist</h4>
+                                                <p class="node-name">Carmen Lopez, RPh</p>
+                                                <span class="node-badge">Pharmacist</span>
+                                            </div>
+                                        </div>
+                                        <div class="tree-node pharmacist">
+                                            <div class="node-icon">
+                                                <i class="fas fa-prescription-bottle"></i>
+                                            </div>
+                                            <div class="node-content">
+                                                <h4>Pharmacist</h4>
+                                                <p class="node-name">Pharmacist Jer, RPh</p>
+                                                <span class="node-badge">Pharmacist</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Laboratory & Imaging Section -->
+                            <div class="tree-level level-3">
+                                <!-- Lab Director -->
+                                <div class="tree-branch">
+                                    <div class="tree-node director">
+                                        <div class="node-icon">
+                                            <i class="fas fa-microscope"></i>
+                                        </div>
+                                        <div class="node-content">
+                                            <h4>Laboratory Director</h4>
+                                            <p class="node-name">Dr. Ricardo Fernandez</p>
+                                            <span class="node-badge">Director</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- MedTechs -->
+                                    <div class="tree-children">
+                                        <div class="tree-node medtech">
+                                            <div class="node-icon">
+                                                <i class="fas fa-vial"></i>
+                                            </div>
+                                            <div class="node-content">
+                                                <h4>Senior Med Tech</h4>
+                                                <p class="node-name">Patricia Aquino, RMT</p>
+                                                <span class="node-badge">MedTech</span>
+                                            </div>
+                                        </div>
+                                        <div class="tree-node medtech">
+                                            <div class="node-icon">
+                                                <i class="fas fa-vial"></i>
+                                            </div>
+                                            <div class="node-content">
+                                                <h4>Medical Technologist</h4>
+                                                <p class="node-name">Lab Tech Cristel, RMT</p>
+                                                <span class="node-badge">MedTech</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Radiology Director -->
+                                <div class="tree-branch">
+                                    <div class="tree-node director">
+                                        <div class="node-icon">
+                                            <i class="fas fa-x-ray"></i>
+                                        </div>
+                                        <div class="node-content">
+                                            <h4>Radiology Director</h4>
+                                            <p class="node-name">Dr. Rodrigo Villanueva</p>
+                                            <span class="node-badge">Director</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- RadTechs -->
+                                    <div class="tree-children">
+                                        <div class="tree-node radtech">
+                                            <div class="node-icon">
+                                                <i class="fas fa-radiation"></i>
+                                            </div>
+                                            <div class="node-content">
+                                                <h4>Senior Rad Tech</h4>
+                                                <p class="node-name">Stephanie Ramos, RT</p>
+                                                <span class="node-badge">RadTech</span>
+                                            </div>
+                                        </div>
+                                        <div class="tree-node radtech">
+                                            <div class="node-icon">
+                                                <i class="fas fa-radiation"></i>
+                                            </div>
+                                            <div class="node-content">
+                                                <h4>Radiologic Technologist</h4>
+                                                <p class="node-name">Radiology Tech Rafael, RT</p>
+                                                <span class="node-badge">RadTech</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- HR/Admin Director -->
+                                <div class="tree-branch">
+                                    <div class="tree-node director">
+                                        <div class="node-icon">
+                                            <i class="fas fa-user-cog"></i>
+                                        </div>
+                                        <div class="node-content">
+                                            <h4>HR/Admin Director</h4>
+                                            <p class="node-name">Veronica Pascual</p>
+                                            <span class="node-badge">Director</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Admin Staff -->
+                                    <div class="tree-children">
+                                        <div class="tree-node admin">
+                                            <div class="node-icon">
+                                                <i class="fas fa-clipboard-check"></i>
+                                            </div>
+                                            <div class="node-content">
+                                                <h4>Senior Admin</h4>
+                                                <p class="node-name">Luisa Santiago</p>
+                                                <span class="node-badge">Admin</span>
+                                            </div>
+                                        </div>
+                                        <div class="tree-node admin">
+                                            <div class="node-icon">
+                                                <i class="fas fa-clipboard-check"></i>
+                                            </div>
+                                            <div class="node-content">
+                                                <h4>Admin Staff</h4>
+                                                <p class="node-name">Chief Admin</p>
+                                                <span class="node-badge">Admin</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
