@@ -11,8 +11,10 @@ class PharmacistContent {
         return `
             <div class="dashboard-overview">
                 ${this.getBentoBanner()}
-                ${sharedContent.getAnnouncementsSection()}
-                <div class="cards-grid">
+                <div class="dashboard-flex-row">
+                    ${sharedContent.getAnnouncementsSection()}
+                    <div class="dashboard-cards-wrapper">
+                        <div class="cards-grid">
                     <div class="card">
                         <div class="card-header">
                             <div class="card-icon">
@@ -49,17 +51,7 @@ class PharmacistContent {
                             <div class="stat-number">12</div>
                         </div>
                     </div>
-                    <div class="card">
-                        <div class="card-header">
-                            <div class="card-icon">
-                                <i class="fas fa-check-circle"></i>
-                            </div>
-                            <h3 class="card-title">Verified</h3>
-                        </div>
-                        <div class="card-content">
-                            <p>Prescriptions verified this week</p>
-                            <div class="stat-number">234</div>
-                        </div>
+                </div>
                     </div>
                 </div>
             </div>

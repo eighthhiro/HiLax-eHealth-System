@@ -262,9 +262,12 @@ class SharedContent {
             announcement.visibleTo.includes(role) || announcement.visibleTo.includes('All')
         );
 
+        const displayLimit = 3;
         let announcementsList = '';
+        let viewMoreButton = '';
+        
         if (visibleAnnouncements.length > 0) {
-            announcementsList = visibleAnnouncements.slice(0, 3).map(announcement => `
+            announcementsList = visibleAnnouncements.slice(0, displayLimit).map(announcement => `
                 <div class="announcement-item">
                     <div class="announcement-header">
                         <h4>${announcement.title}</h4>
@@ -273,6 +276,15 @@ class SharedContent {
                     <p>${announcement.description}</p>
                 </div>
             `).join('');
+            
+            if (visibleAnnouncements.length > displayLimit) {
+                viewMoreButton = `
+                    <button class="btn btn-view-more-announcements" id="viewMoreAnnouncementsBtn">
+                        <i class="fas fa-chevron-down"></i>
+                        View All ${visibleAnnouncements.length} Announcements
+                    </button>
+                `;
+            }
         } else {
             announcementsList = '<p class="no-announcements">No announcements at this time.</p>';
         }
@@ -290,6 +302,7 @@ class SharedContent {
                         <div class="announcements-list">
                             ${announcementsList}
                         </div>
+                        ${viewMoreButton}
                     </div>
                 </div>
             </div>

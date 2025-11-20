@@ -11,8 +11,10 @@ class NurseContent {
         return `
             <div class="dashboard-overview">
                 ${this.getBentoBanner()}
-                ${sharedContent.getAnnouncementsSection()}
-                <div class="cards-grid">
+                <div class="dashboard-flex-row">
+                    ${sharedContent.getAnnouncementsSection()}
+                    <div class="dashboard-cards-wrapper">
+                        <div class="cards-grid">
                     <div class="card">
                         <div class="card-header">
                             <div class="card-icon">
@@ -49,17 +51,7 @@ class NurseContent {
                             <div class="stat-number">45</div>
                         </div>
                     </div>
-                    <div class="card">
-                        <div class="card-header">
-                            <div class="card-icon">
-                                <i class="fas fa-clipboard-list"></i>
-                            </div>
-                            <h3 class="card-title">Tasks</h3>
-                        </div>
-                        <div class="card-content">
-                            <p>Pending nursing tasks</p>
-                            <div class="stat-number">7</div>
-                        </div>
+                </div>
                     </div>
                 </div>
             </div>

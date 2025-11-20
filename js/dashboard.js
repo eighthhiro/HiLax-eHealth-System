@@ -91,11 +91,16 @@ class Dashboard {
         document.querySelectorAll('.menu-item').forEach(item => {
             item.classList.remove('active');
         });
-        document.querySelector(`[data-page="${pageId}"]`).classList.add('active');
-
-        // Update page title
-        const pageTitle = document.querySelector(`[data-page="${pageId}"] .menu-text`).textContent;
-        document.getElementById('pageTitle').textContent = pageTitle;
+        const activeMenuItem = document.querySelector(`[data-page="${pageId}"]`);
+        if (activeMenuItem) {
+            activeMenuItem.classList.add('active');
+            
+            // Update page title
+            const menuTextEl = activeMenuItem.querySelector('.menu-text');
+            if (menuTextEl) {
+                document.getElementById('pageTitle').textContent = menuTextEl.textContent;
+            }
+        }
 
         // Load page content
         this.loadPageContent(pageId);
@@ -134,6 +139,8 @@ class Dashboard {
             this.attachPatientPageListeners();
         } else if (pageId === 'dashboard') {
             this.attachDashboardListeners();
+        } else if (pageId === 'all-staff') {
+            this.attachStaffPageListeners();
         }
     }
 
@@ -145,6 +152,7 @@ class Dashboard {
 
         const editButtons = document.querySelectorAll('.btn-edit-announcement');
         const deleteButtons = document.querySelectorAll('.btn-delete-announcement');
+        const viewMoreBtn = document.getElementById('viewMoreAnnouncementsBtn');
         
         editButtons.forEach(btn => {
             btn.addEventListener('click', (e) => this.editAnnouncement(e));
@@ -153,6 +161,10 @@ class Dashboard {
         deleteButtons.forEach(btn => {
             btn.addEventListener('click', (e) => this.deleteAnnouncement(e));
         });
+        
+        if (viewMoreBtn) {
+            viewMoreBtn.addEventListener('click', () => this.showAllAnnouncementsModal());
+        }
     }
 
     attachPatientPageListeners() {
@@ -190,6 +202,13 @@ class Dashboard {
             if (editProfileBtn) {
                 editProfileBtn.addEventListener('click', () => this.editPatientProfile());
             }
+        }
+    }
+
+    attachStaffPageListeners() {
+        const addStaffBtn = document.getElementById('addStaffBtn');
+        if (addStaffBtn) {
+            addStaffBtn.addEventListener('click', () => this.showAddStaffModal());
         }
     }
 
@@ -1503,6 +1522,232 @@ class Dashboard {
             modal.remove();
             this.showPersonalInfoModal(info);
         });
+    }
+
+    // View All Announcements Modal
+    showAllAnnouncementsModal() {
+        const role = this.currentUser.role;
+        
+        // Load announcements from localStorage
+        let allAnnouncements = [];
+        try {
+            const stored = localStorage.getItem('announcements');
+            if (stored) {
+                allAnnouncements = JSON.parse(stored);
+            }
+        } catch (error) {
+            console.error('Error loading announcements:', error);
+        }
+        
+        // Filter announcements for current role
+        const visibleAnnouncements = allAnnouncements.filter(announcement => 
+            announcement.visibleTo.includes(role) || announcement.visibleTo.includes('All')
+        );
+        
+        // Sort by date (newest first)
+        visibleAnnouncements.sort((a, b) => new Date(b.date) - new Date(a.date));
+        
+        let announcementsList = '';
+        if (visibleAnnouncements.length > 0) {
+            announcementsList = visibleAnnouncements.map(announcement => {
+                const isAdmin = role === 'HR/Admin';
+                
+                return `
+                    <div class="announcement-item" style="border-bottom: 1px solid #f0f0f0; padding: 25px 0; margin-bottom: 15px;">
+                        <div class="announcement-header" style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
+                            <h4 style="margin: 0; font-size: 16px; font-weight: 600; color: var(--text-dark);">${announcement.title}</h4>
+                            <span class="announcement-date" style="font-size: 12px; color: #999; white-space: nowrap; margin-left: 15px;">${new Date(announcement.date).toLocaleDateString()}</span>
+                        </div>
+                        <p style="margin: 0; color: #666; line-height: 1.6; margin-bottom: ${isAdmin ? '15px' : '0'};">${announcement.description}</p>
+                        ${isAdmin ? `
+                            <div style="display: flex; gap: 10px; margin-top: 10px;">
+                                <button class="btn btn-sm btn-edit-announcement-modal" data-id="${announcement.id}" style="padding: 6px 12px; font-size: 13px; background: var(--secondary-pink); color: white; border: none; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 5px;">
+                                    <i class="fas fa-edit"></i> Edit
+                                </button>
+                                <button class="btn btn-sm btn-delete-announcement-modal" data-id="${announcement.id}" style="padding: 6px 12px; font-size: 13px; background: #dc3545; color: white; border: none; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 5px;">
+                                    <i class="fas fa-trash-alt"></i> Delete
+                                </button>
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            }).join('');
+        } else {
+            announcementsList = '<p style="text-align: center; color: #999; padding: 40px;">No announcements at this time.</p>';
+        }
+        
+        const modal = document.createElement('div');
+        modal.className = 'modal-overlay';
+        modal.id = 'allAnnouncementsModal';
+        modal.innerHTML = `
+            <div class="modal-content" style="max-width: 800px; max-height: 90vh;">
+                <div class="modal-header">
+                    <h2><i class="fas fa-bullhorn"></i> All Announcements</h2>
+                    <button class="modal-close" id="closeAnnouncementsModal">&times;</button>
+                </div>
+                <div class="modal-body" style="max-height: calc(90vh - 120px); overflow-y: auto; padding: 0 25px;">
+                    ${announcementsList}
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        
+        // Event listeners
+        document.getElementById('closeAnnouncementsModal').addEventListener('click', () => modal.remove());
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) modal.remove();
+        });
+        
+        // Edit and delete buttons in modal
+        const editBtnsModal = modal.querySelectorAll('.btn-edit-announcement-modal');
+        const deleteBtnsModal = modal.querySelectorAll('.btn-delete-announcement-modal');
+        
+        editBtnsModal.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                modal.remove();
+                this.editAnnouncement(e);
+            });
+        });
+        
+        deleteBtnsModal.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                modal.remove();
+                this.deleteAnnouncement(e);
+            });
+        });
+    }
+
+    // Staff Management Methods
+    showAddStaffModal() {
+        const modal = document.createElement('div');
+        modal.className = 'modal-overlay';
+        modal.id = 'addStaffModal';
+        modal.innerHTML = `
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Add New Staff Member</h2>
+                    <button class="modal-close" id="closeStaffModal">&times;</button>
+                </div>
+                <form id="addStaffForm" class="modal-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="staffName">Full Name *</label>
+                            <input type="text" id="staffName" placeholder="Enter full name" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="staffDepartment">Department *</label>
+                            <select id="staffDepartment" required>
+                                <option value="">Select Department</option>
+                                <option value="Medical">Medical</option>
+                                <option value="Nursing">Nursing</option>
+                                <option value="Pharmacy">Pharmacy</option>
+                                <option value="Laboratory">Laboratory</option>
+                                <option value="Radiology">Radiology</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="staffPosition">Position *</label>
+                            <select id="staffPosition" required>
+                                <option value="">Select Position</option>
+                                <option value="Director">Director</option>
+                                <option value="Physician">Physician</option>
+                                <option value="Nurse">Nurse</option>
+                                <option value="Pharmacist">Pharmacist</option>
+                                <option value="Medical Technologist">Medical Technologist</option>
+                                <option value="Radiologic Technologist">Radiologic Technologist</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="staffTitle">Job Title</label>
+                            <input type="text" id="staffTitle" placeholder="e.g., Chief Physician, Head Nurse">
+                        </div>
+                        <div class="form-group">
+                            <label for="staffCredentials">Credentials</label>
+                            <input type="text" id="staffCredentials" placeholder="e.g., RN, RPh, MD">
+                        </div>
+                    </div>
+
+                    <div class="modal-actions">
+                        <button type="button" class="btn btn-secondary" id="cancelStaffBtn">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Add Staff Member</button>
+                    </div>
+                </form>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        // Event listeners
+        document.getElementById('closeStaffModal').addEventListener('click', () => modal.remove());
+        document.getElementById('cancelStaffBtn').addEventListener('click', () => modal.remove());
+        document.getElementById('addStaffForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.handleAddStaff(e);
+            modal.remove();
+        });
+    }
+
+    handleAddStaff(e) {
+        const staffName = document.getElementById('staffName').value.trim();
+        const department = document.getElementById('staffDepartment').value;
+        const position = document.getElementById('staffPosition').value;
+        const title = document.getElementById('staffTitle').value.trim();
+        const credentials = document.getElementById('staffCredentials').value.trim();
+
+        // Format display name
+        let displayName = staffName;
+        if (credentials) {
+            displayName += `, ${credentials}`;
+        }
+
+        // Create staff data object
+        const staffData = {
+            id: Date.now().toString(),
+            name: staffName,
+            displayName: displayName,
+            department: department,
+            position: position,
+            title: title || position,
+            credentials: credentials,
+            dateAdded: new Date().toISOString()
+        };
+
+        // Save to localStorage
+        this.saveStaffToStorage(staffData);
+
+        // Show success message
+        this.showNotification(`${displayName} added successfully to ${department} department!`, 'success');
+
+        // Reload the staff page
+        this.loadPageContent('all-staff');
+    }
+
+    saveStaffToStorage(staffData) {
+        let staff = [];
+        try {
+            const stored = localStorage.getItem('staff');
+            if (stored) {
+                staff = JSON.parse(stored);
+            }
+        } catch (error) {
+            console.error('Error loading staff:', error);
+        }
+
+        // Add new staff to beginning of array (LIFO)
+        staff.unshift(staffData);
+        
+        try {
+            localStorage.setItem('staff', JSON.stringify(staff));
+        } catch (error) {
+            console.error('Error saving staff:', error);
+        }
     }
 }
 

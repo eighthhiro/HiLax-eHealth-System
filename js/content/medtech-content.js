@@ -11,8 +11,10 @@ class MedTechContent {
         return `
             <div class="dashboard-overview">
                 ${this.getBentoBanner()}
-                ${sharedContent.getAnnouncementsSection()}
-                <div class="cards-grid">
+                <div class="dashboard-flex-row">
+                    ${sharedContent.getAnnouncementsSection()}
+                    <div class="dashboard-cards-wrapper">
+                        <div class="cards-grid">
                     <div class="card">
                         <div class="card-header">
                             <div class="card-icon">
@@ -49,17 +51,7 @@ class MedTechContent {
                             <div class="stat-number">7</div>
                         </div>
                     </div>
-                    <div class="card">
-                        <div class="card-header">
-                            <div class="card-icon">
-                                <i class="fas fa-exclamation-circle"></i>
-                            </div>
-                            <h3 class="card-title">Critical Results</h3>
-                        </div>
-                        <div class="card-content">
-                            <p>Results requiring immediate attention</p>
-                            <div class="stat-number">3</div>
-                        </div>
+                </div>
                     </div>
                 </div>
             </div>

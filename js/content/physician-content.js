@@ -11,8 +11,10 @@ class PhysicianContent {
         return `
             <div class="dashboard-overview">
                 ${this.getBentoBanner()}
-                ${sharedContent.getAnnouncementsSection()}
-                <div class="cards-grid">
+                <div class="dashboard-flex-row">
+                    ${sharedContent.getAnnouncementsSection()}
+                    <div class="dashboard-cards-wrapper">
+                        <div class="cards-grid">
                     <div class="card">
                         <div class="card-header">
                             <div class="card-icon">
@@ -49,17 +51,7 @@ class PhysicianContent {
                             <div class="stat-number">67</div>
                         </div>
                     </div>
-                    <div class="card">
-                        <div class="card-header">
-                            <div class="card-icon">
-                                <i class="fas fa-flask"></i>
-                            </div>
-                            <h3 class="card-title">Pending Results</h3>
-                        </div>
-                        <div class="card-content">
-                            <p>Lab results awaiting review</p>
-                            <div class="stat-number">12</div>
-                        </div>
+                </div>
                     </div>
                 </div>
             </div>

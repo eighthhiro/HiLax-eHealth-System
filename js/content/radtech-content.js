@@ -11,8 +11,10 @@ class RadTechContent {
         return `
             <div class="dashboard-overview">
                 ${this.getBentoBanner()}
-                ${sharedContent.getAnnouncementsSection()}
-                <div class="cards-grid">
+                <div class="dashboard-flex-row">
+                    ${sharedContent.getAnnouncementsSection()}
+                    <div class="dashboard-cards-wrapper">
+                        <div class="cards-grid">
                     <div class="card">
                         <div class="card-header">
                             <div class="card-icon">
@@ -49,17 +51,7 @@ class RadTechContent {
                             <div class="stat-number">14</div>
                         </div>
                     </div>
-                    <div class="card">
-                        <div class="card-header">
-                            <div class="card-icon">
-                                <i class="fas fa-user-clock"></i>
-                            </div>
-                            <h3 class="card-title">Scheduled</h3>
-                        </div>
-                        <div class="card-content">
-                            <p>Appointments for tomorrow</p>
-                            <div class="stat-number">16</div>
-                        </div>
+                </div>
                     </div>
                 </div>
             </div>

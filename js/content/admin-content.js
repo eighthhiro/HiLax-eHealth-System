@@ -10,8 +10,10 @@ class AdminContent {
         return `
             <div class="dashboard-overview">
                 ${this.getBentoBanner()}
-                ${this.getAnnouncementsSection()}
-                <div class="cards-grid">
+                <div class="dashboard-flex-row">
+                    ${this.getAnnouncementsSection()}
+                    <div class="dashboard-cards-wrapper">
+                        <div class="cards-grid">
                     <div class="card">
                         <div class="card-header">
                             <div class="card-icon">
@@ -48,17 +50,7 @@ class AdminContent {
                             <div class="stat-number">3,421</div>
                         </div>
                     </div>
-                    <div class="card">
-                        <div class="card-header">
-                            <div class="card-icon">
-                                <i class="fas fa-x-ray"></i>
-                            </div>
-                            <h3 class="card-title">Imaging</h3>
-                        </div>
-                        <div class="card-content">
-                            <p>Radiology and imaging results</p>
-                            <div class="stat-number">892</div>
-                        </div>
+                </div>
                     </div>
                 </div>
             </div>
@@ -85,9 +77,12 @@ class AdminContent {
             announcement.visibleTo.includes(role) || announcement.visibleTo.includes('All')
         );
 
+        const displayLimit = 3;
         let announcementsList = '';
+        let viewMoreButton = '';
+        
         if (visibleAnnouncements.length > 0) {
-            announcementsList = visibleAnnouncements.slice(0, 3).map(announcement => `
+            announcementsList = visibleAnnouncements.slice(0, displayLimit).map(announcement => `
                 <div class="announcement-item">
                     <div class="announcement-header">
                         <h4>${announcement.title}</h4>
@@ -106,6 +101,15 @@ class AdminContent {
                     ` : ''}
                 </div>
             `).join('');
+            
+            if (visibleAnnouncements.length > displayLimit) {
+                viewMoreButton = `
+                    <button class="btn btn-view-more-announcements" id="viewMoreAnnouncementsBtn">
+                        <i class="fas fa-chevron-down"></i>
+                        View All ${visibleAnnouncements.length} Announcements
+                    </button>
+                `;
+            }
         } else {
             announcementsList = '<p class="no-announcements">No announcements at this time.</p>';
         }
@@ -134,6 +138,7 @@ class AdminContent {
                         <div class="announcements-list">
                             ${announcementsList}
                         </div>
+                        ${viewMoreButton}
                     </div>
                 </div>
             </div>
@@ -176,11 +181,104 @@ class AdminContent {
         let addStaffButton = '';
         if (role === 'HR/Admin') {
             addStaffButton = `
-                <button class="btn btn-primary btn-with-tooltip" id="addStaffBtn">
+                <button class="btn btn-primary" id="addStaffBtn">
                     <i class="fas fa-user-plus"></i>
                     Add New Staff
-                    <span class="tooltip-text">You need Director approval</span>
                 </button>
+            `;
+        }
+
+        // Load staff from localStorage
+        let addedStaff = [];
+        try {
+            const stored = localStorage.getItem('staff');
+            if (stored) {
+                addedStaff = JSON.parse(stored);
+            }
+        } catch (error) {
+            console.error('Error loading staff:', error);
+        }
+
+        // If no staff in localStorage, use sample data (limited to 3)
+        if (addedStaff.length === 0) {
+            addedStaff = [
+                {
+                    id: 'sample1',
+                    name: 'Dr. Isabella Reyes',
+                    displayName: 'Dr. Isabella Reyes, MD',
+                    department: 'Medical',
+                    position: 'Physician',
+                    title: 'Chief Physician',
+                    credentials: 'MD',
+                    dateAdded: new Date().toISOString()
+                },
+                {
+                    id: 'sample2',
+                    name: 'Maria Lourdes Santos',
+                    displayName: 'Maria Lourdes Santos, RN',
+                    department: 'Nursing',
+                    position: 'Nurse',
+                    title: 'Head Nurse',
+                    credentials: 'RN',
+                    dateAdded: new Date().toISOString()
+                },
+                {
+                    id: 'sample3',
+                    name: 'Dr. Antonio Garcia',
+                    displayName: 'Dr. Antonio Garcia, RPh',
+                    department: 'Pharmacy',
+                    position: 'Pharmacist',
+                    title: 'Pharmacy Director',
+                    credentials: 'RPh',
+                    dateAdded: new Date().toISOString()
+                }
+            ];
+        } else {
+            // Limit to 3 most recent staff members
+            addedStaff = addedStaff.slice(0, 3);
+        }
+
+        // Generate HTML for added staff
+        let addedStaffHTML = '';
+        if (addedStaff.length > 0) {
+            addedStaffHTML = `
+                <div class="added-staff-section" style="margin-bottom: 30px;">
+                    <h3 style="color: var(--dark-pink); margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+                        <i class="fas fa-users"></i>
+                        Recently Added Staff
+                    </h3>
+                    <div class="staff-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px;">
+            `;
+
+            addedStaff.forEach(staff => {
+                const badgeClass = staff.position ? staff.position.toLowerCase().replace(/\s+/g, '-') : 'staff';
+                const displayTitle = staff.title || staff.position || 'Staff Member';
+                const displayName = staff.displayName || staff.name || 'Unknown';
+                const displayDepartment = staff.department || 'Unassigned';
+                const displayPosition = staff.position || 'Staff';
+                
+                addedStaffHTML += `
+                    <div class="staff-card" style="background: white; padding: 20px; border-radius: 10px; border-left: 4px solid var(--secondary-pink); box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
+                        <div style="display: flex; align-items: start; gap: 12px;">
+                            <div style="width: 40px; height: 40px; background: var(--light-pink); border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                <i class="fas fa-user" style="color: var(--dark-pink); font-size: 18px;"></i>
+                            </div>
+                            <div style="flex: 1; min-width: 0;">
+                                <h4 style="margin: 0 0 4px 0; font-size: 15px; color: var(--text-dark); font-weight: 600;">${displayTitle}</h4>
+                                <p style="margin: 0 0 8px 0; font-size: 14px; color: var(--text-dark); font-weight: 500;">${displayName}</p>
+                                <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                                    <span class="node-badge ${badgeClass}" style="font-size: 10px; padding: 4px 8px;">${displayPosition}</span>
+                                    <span style="font-size: 11px; color: #666; padding: 4px 8px; background: #f0f0f0; border-radius: 12px;">${displayDepartment}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            addedStaffHTML += `
+                    </div>
+                </div>
             `;
         }
 
@@ -190,11 +288,17 @@ class AdminContent {
                     <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
                         <h3 class="card-title">
                             <i class="fas fa-sitemap"></i>
-                            Organizational Hierarchy
+                            All Staff
                         </h3>
                         ${addStaffButton}
                     </div>
                     <div class="card-content">
+                        ${addedStaffHTML}
+                        
+                        <h3 style="color: var(--dark-pink); margin-bottom: 20px; ${addedStaff.length > 0 ? 'margin-top: 30px; padding-top: 20px; border-top: 2px solid #f0f0f0;' : ''} display: flex; align-items: center; gap: 10px;">
+                            <i class="fas fa-sitemap"></i>
+                            Organizational Hierarchy
+                        </h3>
                         <div class="org-tree">
                             <!-- Hospital Administrator -->
                             <div class="tree-level level-1">
