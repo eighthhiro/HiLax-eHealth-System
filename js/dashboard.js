@@ -23,7 +23,7 @@ class Dashboard {
             return;
         }
         this.currentUser = JSON.parse(userData);
-        this.contentGenerator = new ContentGenerator(this.currentUser);
+        this.contentGenerator = new ContentFactory(this.currentUser);
         
         // Add role class to body for CSS targeting
         document.body.classList.remove('patient-role', 'admin-role', 'physician-role', 'nurse-role', 'pharmacist-role', 'medtech-role', 'radtech-role');
@@ -104,13 +104,6 @@ class Dashboard {
     loadPageContent(pageId) {
         const contentArea = document.getElementById('contentArea');
         
-        let content = '';
-        
-        // Only show bento banner on dashboard page
-        if (pageId === 'dashboard') {
-            content = this.contentGenerator.getBentoBanner();
-        }
-        
         let pageContent = '';
         switch(pageId) {
             case 'dashboard':
@@ -129,8 +122,7 @@ class Dashboard {
                 pageContent = this.contentGenerator.getDefaultContent(pageId);
         }
 
-        content += pageContent;
-        contentArea.innerHTML = content;
+        contentArea.innerHTML = pageContent;
         
         // Attach event listeners after content is loaded
         this.attachPageEventListeners(pageId);
@@ -140,7 +132,27 @@ class Dashboard {
         // Attach listeners based on the page
         if (pageId === 'all-patients') {
             this.attachPatientPageListeners();
+        } else if (pageId === 'dashboard') {
+            this.attachDashboardListeners();
         }
+    }
+
+    attachDashboardListeners() {
+        const addAnnouncementBtn = document.getElementById('addAnnouncementBtn');
+        if (addAnnouncementBtn) {
+            addAnnouncementBtn.addEventListener('click', () => this.showAddAnnouncementModal());
+        }
+
+        const editButtons = document.querySelectorAll('.btn-edit-announcement');
+        const deleteButtons = document.querySelectorAll('.btn-delete-announcement');
+        
+        editButtons.forEach(btn => {
+            btn.addEventListener('click', (e) => this.editAnnouncement(e));
+        });
+        
+        deleteButtons.forEach(btn => {
+            btn.addEventListener('click', (e) => this.deleteAnnouncement(e));
+        });
     }
 
     attachPatientPageListeners() {
@@ -163,6 +175,15 @@ class Dashboard {
             if (addPatientBtn) {
                 addPatientBtn.addEventListener('click', () => this.addPatient());
             }
+            
+            // Personal info view buttons
+            const viewInfoButtons = document.querySelectorAll('.btn-view-info');
+            viewInfoButtons.forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const patientId = e.currentTarget.getAttribute('data-patient-id');
+                    this.viewPersonalInfo(patientId);
+                });
+            });
         } else {
             // Patient role
             const editProfileBtn = document.getElementById('editPatientBtn');
@@ -258,6 +279,16 @@ class Dashboard {
                         </div>
                     </div>
 
+                    <div class="form-row">
+                        <div class="form-group">
+                            <button type="button" class="btn btn-info" id="addPersonalInfoBtn">
+                                <i class="fas fa-id-card"></i>
+                                Add Personal Information
+                            </button>
+                            <small id="personalInfoStatus" style="display: block; margin-top: 5px; color: #666;">Personal information not added yet</small>
+                        </div>
+                    </div>
+
                     <div class="modal-actions">
                         <button type="button" class="btn btn-secondary" id="cancelBtn">Cancel</button>
                         <button type="submit" class="btn btn-primary">Add Patient</button>
@@ -268,10 +299,14 @@ class Dashboard {
 
         document.body.appendChild(modal);
 
+        // Store temporary personal info
+        this.tempPersonalInfo = null;
+
         // Event listeners
         document.getElementById('closeModal').addEventListener('click', () => this.closeModal());
         document.getElementById('cancelBtn').addEventListener('click', () => this.closeModal());
         document.getElementById('addPatientForm').addEventListener('submit', (e) => this.handleAddPatient(e));
+        document.getElementById('addPersonalInfoBtn').addEventListener('click', () => this.showPersonalInfoModal());
     }
 
     generateNextPatientId() {
@@ -329,8 +364,17 @@ class Dashboard {
             status: status,
             doctor: doctor,
             department: department,
-            recordsUrl: recordsUrl || null
+            recordsUrl: recordsUrl || null,
+            personalInfo: this.tempPersonalInfo || null,
+            prescriptions: [],
+            labResults: [],
+            imagingResults: [],
+            vitalSigns: [],
+            drugDispensing: []
         };
+        
+        // Reset temp personal info
+        this.tempPersonalInfo = null;
 
         // Save patient to storage first
         this.savePatientToStorage(patientData);
@@ -912,6 +956,553 @@ class Dashboard {
         } catch (error) {
             console.error('Error updating storage after renumber:', error);
         }
+    }
+
+    // Announcement Management
+    showAddAnnouncementModal() {
+        const modal = document.createElement('div');
+        modal.className = 'modal-overlay';
+        modal.innerHTML = `
+            <div class="modal-content announcement-modal">
+                <div class="modal-header">
+                    <h3>Add New Announcement</h3>
+                    <button class="modal-close">&times;</button>
+                </div>
+                <form id="announcementForm" class="modal-form">
+                    <div class="form-group">
+                        <label for="announcementTitle">Title *</label>
+                        <input type="text" id="announcementTitle" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="announcementDescription">Description *</label>
+                        <textarea id="announcementDescription" rows="4" required></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Visible To *</label>
+                        <div class="checkbox-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="visibleTo" value="All" id="visibleAll">
+                                <span>All Staff</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="visibleTo" value="HR/Admin">
+                                <span>HR/Admin</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="visibleTo" value="Physician">
+                                <span>Physician</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="visibleTo" value="Nurse">
+                                <span>Nurse</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="visibleTo" value="Pharmacist">
+                                <span>Pharmacist</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="visibleTo" value="MedTech">
+                                <span>MedTech</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="visibleTo" value="RadTech">
+                                <span>RadTech</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="visibleTo" value="Patient">
+                                <span>Patient</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="modal-actions">
+                        <button type="button" class="btn btn-secondary modal-cancel">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Add Announcement</button>
+                    </div>
+                </form>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        
+        const closeBtn = modal.querySelector('.modal-close');
+        const cancelBtn = modal.querySelector('.modal-cancel');
+        const form = modal.querySelector('#announcementForm');
+        const visibleAllCheckbox = modal.querySelector('#visibleAll');
+        const otherCheckboxes = modal.querySelectorAll('input[name="visibleTo"]:not(#visibleAll)');
+        
+        // Handle "All" checkbox
+        visibleAllCheckbox.addEventListener('change', () => {
+            if (visibleAllCheckbox.checked) {
+                otherCheckboxes.forEach(cb => {
+                    cb.checked = false;
+                    cb.disabled = true;
+                });
+            } else {
+                otherCheckboxes.forEach(cb => cb.disabled = false);
+            }
+        });
+        
+        closeBtn.addEventListener('click', () => modal.remove());
+        cancelBtn.addEventListener('click', () => modal.remove());
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) modal.remove();
+        });
+        
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.handleAddAnnouncement(form);
+            modal.remove();
+        });
+    }
+
+    handleAddAnnouncement(form) {
+        const title = form.querySelector('#announcementTitle').value;
+        const description = form.querySelector('#announcementDescription').value;
+        const checkboxes = form.querySelectorAll('input[name="visibleTo"]:checked');
+        const visibleTo = Array.from(checkboxes).map(cb => cb.value);
+        
+        if (visibleTo.length === 0) {
+            this.showNotification('Please select at least one role', 'error');
+            return;
+        }
+        
+        const announcement = {
+            id: Date.now().toString(),
+            title,
+            description,
+            visibleTo,
+            date: new Date().toISOString()
+        };
+        
+        // Load existing announcements
+        let announcements = [];
+        try {
+            const stored = localStorage.getItem('announcements');
+            if (stored) {
+                announcements = JSON.parse(stored);
+            }
+        } catch (error) {
+            console.error('Error loading announcements:', error);
+        }
+        
+        announcements.unshift(announcement);
+        localStorage.setItem('announcements', JSON.stringify(announcements));
+        
+        this.showNotification('Announcement added successfully!', 'success');
+        this.loadPageContent('dashboard');
+    }
+
+    editAnnouncement(e) {
+        const btn = e.target.closest('.btn-edit-announcement');
+        const announcementId = btn.dataset.id;
+        
+        // Load announcements
+        let announcements = [];
+        try {
+            const stored = localStorage.getItem('announcements');
+            if (stored) {
+                announcements = JSON.parse(stored);
+            }
+        } catch (error) {
+            console.error('Error loading announcements:', error);
+            return;
+        }
+        
+        const announcement = announcements.find(a => a.id === announcementId);
+        if (!announcement) return;
+        
+        const modal = document.createElement('div');
+        modal.className = 'modal-overlay';
+        modal.innerHTML = `
+            <div class="modal-content announcement-modal">
+                <div class="modal-header">
+                    <h3>Edit Announcement</h3>
+                    <button class="modal-close">&times;</button>
+                </div>
+                <form id="editAnnouncementForm" class="modal-form">
+                    <div class="form-group">
+                        <label for="editAnnouncementTitle">Title *</label>
+                        <input type="text" id="editAnnouncementTitle" value="${announcement.title}" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="editAnnouncementDescription">Description *</label>
+                        <textarea id="editAnnouncementDescription" rows="4" required>${announcement.description}</textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Visible To *</label>
+                        <div class="checkbox-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="visibleTo" value="All" id="editVisibleAll" ${announcement.visibleTo.includes('All') ? 'checked' : ''}>
+                                <span>All Staff</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="visibleTo" value="HR/Admin" ${announcement.visibleTo.includes('HR/Admin') ? 'checked' : ''}>
+                                <span>HR/Admin</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="visibleTo" value="Physician" ${announcement.visibleTo.includes('Physician') ? 'checked' : ''}>
+                                <span>Physician</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="visibleTo" value="Nurse" ${announcement.visibleTo.includes('Nurse') ? 'checked' : ''}>
+                                <span>Nurse</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="visibleTo" value="Pharmacist" ${announcement.visibleTo.includes('Pharmacist') ? 'checked' : ''}>
+                                <span>Pharmacist</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="visibleTo" value="MedTech" ${announcement.visibleTo.includes('MedTech') ? 'checked' : ''}>
+                                <span>MedTech</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="visibleTo" value="RadTech" ${announcement.visibleTo.includes('RadTech') ? 'checked' : ''}>
+                                <span>RadTech</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="visibleTo" value="Patient" ${announcement.visibleTo.includes('Patient') ? 'checked' : ''}>
+                                <span>Patient</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="modal-actions">
+                        <button type="button" class="btn btn-secondary modal-cancel">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Update Announcement</button>
+                    </div>
+                </form>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        
+        const closeBtn = modal.querySelector('.modal-close');
+        const cancelBtn = modal.querySelector('.modal-cancel');
+        const form = modal.querySelector('#editAnnouncementForm');
+        const visibleAllCheckbox = modal.querySelector('#editVisibleAll');
+        const otherCheckboxes = modal.querySelectorAll('input[name="visibleTo"]:not(#editVisibleAll)');
+        
+        // Handle "All" checkbox
+        visibleAllCheckbox.addEventListener('change', () => {
+            if (visibleAllCheckbox.checked) {
+                otherCheckboxes.forEach(cb => {
+                    cb.checked = false;
+                    cb.disabled = true;
+                });
+            } else {
+                otherCheckboxes.forEach(cb => cb.disabled = false);
+            }
+        });
+        
+        // Check initial state
+        if (visibleAllCheckbox.checked) {
+            otherCheckboxes.forEach(cb => cb.disabled = true);
+        }
+        
+        closeBtn.addEventListener('click', () => modal.remove());
+        cancelBtn.addEventListener('click', () => modal.remove());
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) modal.remove();
+        });
+        
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.handleEditAnnouncement(form, announcementId);
+            modal.remove();
+        });
+    }
+
+    handleEditAnnouncement(form, announcementId) {
+        const title = form.querySelector('#editAnnouncementTitle').value;
+        const description = form.querySelector('#editAnnouncementDescription').value;
+        const checkboxes = form.querySelectorAll('input[name="visibleTo"]:checked');
+        const visibleTo = Array.from(checkboxes).map(cb => cb.value);
+        
+        if (visibleTo.length === 0) {
+            this.showNotification('Please select at least one role', 'error');
+            return;
+        }
+        
+        // Load existing announcements
+        let announcements = [];
+        try {
+            const stored = localStorage.getItem('announcements');
+            if (stored) {
+                announcements = JSON.parse(stored);
+            }
+        } catch (error) {
+            console.error('Error loading announcements:', error);
+            return;
+        }
+        
+        const index = announcements.findIndex(a => a.id === announcementId);
+        if (index !== -1) {
+            announcements[index] = {
+                ...announcements[index],
+                title,
+                description,
+                visibleTo
+            };
+            
+            localStorage.setItem('announcements', JSON.stringify(announcements));
+            this.showNotification('Announcement updated successfully!', 'success');
+            this.loadPageContent('dashboard');
+        }
+    }
+
+    deleteAnnouncement(e) {
+        const btn = e.target.closest('.btn-delete-announcement');
+        const announcementId = btn.dataset.id;
+        
+        this.showConfirmModal('Are you sure you want to delete this announcement?', () => {
+            // Load existing announcements
+            let announcements = [];
+            try {
+                const stored = localStorage.getItem('announcements');
+                if (stored) {
+                    announcements = JSON.parse(stored);
+                }
+            } catch (error) {
+                console.error('Error loading announcements:', error);
+                return;
+            }
+            
+            announcements = announcements.filter(a => a.id !== announcementId);
+            localStorage.setItem('announcements', JSON.stringify(announcements));
+            
+            this.showNotification('Announcement deleted successfully!', 'success');
+            this.loadPageContent('dashboard');
+        });
+    }
+
+    // Personal Information Modal Methods
+    showPersonalInfoModal(existingData = null) {
+        const isEditMode = existingData !== null;
+        const modalTitle = isEditMode ? 'Edit Personal Information' : 'Add Personal Information';
+        const submitButtonText = isEditMode ? 'Update Information' : 'Save Information';
+        
+        const modal = document.createElement('div');
+        modal.className = 'modal-overlay';
+        modal.id = 'personalInfoModal';
+        modal.innerHTML = `
+            <div class="modal-content" style="max-width: 700px;">
+                <div class="modal-header">
+                    <h2>${modalTitle}</h2>
+                    <button class="modal-close" id="closePersonalInfoModal">&times;</button>
+                </div>
+                <form id="personalInfoForm" class="modal-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="height">Height (cm) *</label>
+                            <input type="number" id="height" min="50" max="300" value="${existingData?.height || ''}" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="weight">Weight (kg) *</label>
+                            <input type="number" id="weight" min="1" max="500" step="0.1" value="${existingData?.weight || ''}" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="bloodType">Blood Type *</label>
+                            <select id="bloodType" required>
+                                <option value="">Select Blood Type</option>
+                                <option value="A+" ${existingData?.bloodType === 'A+' ? 'selected' : ''}>A+</option>
+                                <option value="A-" ${existingData?.bloodType === 'A-' ? 'selected' : ''}>A-</option>
+                                <option value="B+" ${existingData?.bloodType === 'B+' ? 'selected' : ''}>B+</option>
+                                <option value="B-" ${existingData?.bloodType === 'B-' ? 'selected' : ''}>B-</option>
+                                <option value="AB+" ${existingData?.bloodType === 'AB+' ? 'selected' : ''}>AB+</option>
+                                <option value="AB-" ${existingData?.bloodType === 'AB-' ? 'selected' : ''}>AB-</option>
+                                <option value="O+" ${existingData?.bloodType === 'O+' ? 'selected' : ''}>O+</option>
+                                <option value="O-" ${existingData?.bloodType === 'O-' ? 'selected' : ''}>O-</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="birthday">Birthday *</label>
+                            <input type="date" id="birthday" value="${existingData?.birthday || ''}" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="contactInfo">Contact Number *</label>
+                            <input type="tel" id="contactInfo" placeholder="+63 912 345 6789" value="${existingData?.contactInfo || ''}" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="address">Address *</label>
+                            <textarea id="address" rows="2" required>${existingData?.address || ''}</textarea>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="emergencyContactPerson">Emergency Contact Person *</label>
+                            <input type="text" id="emergencyContactPerson" value="${existingData?.emergencyContactPerson || ''}" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="emergencyContactNumber">Emergency Contact Number *</label>
+                            <input type="tel" id="emergencyContactNumber" placeholder="+63 912 345 6789" value="${existingData?.emergencyContactNumber || ''}" required>
+                        </div>
+                    </div>
+
+                    <div class="modal-actions">
+                        <button type="button" class="btn btn-secondary" id="cancelPersonalInfoBtn">Cancel</button>
+                        <button type="submit" class="btn btn-primary">${submitButtonText}</button>
+                    </div>
+                </form>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        // Event listeners
+        document.getElementById('closePersonalInfoModal').addEventListener('click', () => modal.remove());
+        document.getElementById('cancelPersonalInfoBtn').addEventListener('click', () => modal.remove());
+        document.getElementById('personalInfoForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.handlePersonalInfoSubmit(e, isEditMode);
+            modal.remove();
+        });
+    }
+
+    handlePersonalInfoSubmit(e, isEditMode = false) {
+        const personalInfo = {
+            height: document.getElementById('height').value,
+            weight: document.getElementById('weight').value,
+            bloodType: document.getElementById('bloodType').value,
+            birthday: document.getElementById('birthday').value,
+            address: document.getElementById('address').value,
+            contactInfo: document.getElementById('contactInfo').value,
+            emergencyContactPerson: document.getElementById('emergencyContactPerson').value,
+            emergencyContactNumber: document.getElementById('emergencyContactNumber').value
+        };
+
+        if (isEditMode) {
+            // In edit mode, update the patient in localStorage
+            const patientId = this.editingPatientId;
+            let patients = [];
+            try {
+                const stored = localStorage.getItem('patients');
+                if (stored) {
+                    patients = JSON.parse(stored);
+                }
+            } catch (error) {
+                console.error('Error loading patients:', error);
+                return;
+            }
+
+            const patientIndex = patients.findIndex(p => p.id === patientId);
+            if (patientIndex !== -1) {
+                patients[patientIndex].personalInfo = personalInfo;
+                localStorage.setItem('patients', JSON.stringify(patients));
+                this.showNotification('Personal information updated successfully!', 'success');
+                this.loadPageContent('allPatients');
+            }
+        } else {
+            // In add mode, store temporarily
+            this.tempPersonalInfo = personalInfo;
+            
+            // Update status text in Add Patient modal
+            const statusEl = document.getElementById('personalInfoStatus');
+            if (statusEl) {
+                statusEl.textContent = 'Personal information added ✓';
+                statusEl.style.color = '#28a745';
+            }
+            
+            this.showNotification('Personal information added! Complete the patient form to save.', 'success');
+        }
+    }
+
+    viewPersonalInfo(patientId) {
+        // Load patient data
+        let patients = [];
+        try {
+            const stored = localStorage.getItem('patients');
+            if (stored) {
+                patients = JSON.parse(stored);
+            }
+        } catch (error) {
+            console.error('Error loading patients:', error);
+            return;
+        }
+
+        const patient = patients.find(p => p.id === patientId);
+        if (!patient || !patient.personalInfo) {
+            this.showNotification('Personal information not found', 'error');
+            return;
+        }
+
+        const info = patient.personalInfo;
+        const modal = document.createElement('div');
+        modal.className = 'modal-overlay';
+        modal.id = 'viewPersonalInfoModal';
+        modal.innerHTML = `
+            <div class="modal-content" style="max-width: 700px;">
+                <div class="modal-header">
+                    <h2>Personal Information - ${patient.fullName}</h2>
+                    <button class="modal-close" id="closeViewInfoModal">&times;</button>
+                </div>
+                <div class="modal-body" style="padding: 20px;">
+                    <div class="info-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px;">
+                        <div class="info-item">
+                            <label style="font-weight: bold; color: #666; display: block; margin-bottom: 5px;">Height</label>
+                            <p style="margin: 0; font-size: 16px;">${info.height} cm</p>
+                        </div>
+                        <div class="info-item">
+                            <label style="font-weight: bold; color: #666; display: block; margin-bottom: 5px;">Weight</label>
+                            <p style="margin: 0; font-size: 16px;">${info.weight} kg</p>
+                        </div>
+                        <div class="info-item">
+                            <label style="font-weight: bold; color: #666; display: block; margin-bottom: 5px;">Blood Type</label>
+                            <p style="margin: 0; font-size: 16px;">${info.bloodType}</p>
+                        </div>
+                        <div class="info-item">
+                            <label style="font-weight: bold; color: #666; display: block; margin-bottom: 5px;">Birthday</label>
+                            <p style="margin: 0; font-size: 16px;">${new Date(info.birthday).toLocaleDateString()}</p>
+                        </div>
+                        <div class="info-item">
+                            <label style="font-weight: bold; color: #666; display: block; margin-bottom: 5px;">Contact Number</label>
+                            <p style="margin: 0; font-size: 16px;">${info.contactInfo}</p>
+                        </div>
+                        <div class="info-item" style="grid-column: 1 / -1;">
+                            <label style="font-weight: bold; color: #666; display: block; margin-bottom: 5px;">Address</label>
+                            <p style="margin: 0; font-size: 16px;">${info.address}</p>
+                        </div>
+                        <div class="info-item">
+                            <label style="font-weight: bold; color: #666; display: block; margin-bottom: 5px;">Emergency Contact Person</label>
+                            <p style="margin: 0; font-size: 16px;">${info.emergencyContactPerson}</p>
+                        </div>
+                        <div class="info-item">
+                            <label style="font-weight: bold; color: #666; display: block; margin-bottom: 5px;">Emergency Contact Number</label>
+                            <p style="margin: 0; font-size: 16px;">${info.emergencyContactNumber}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-primary" id="editPersonalInfoBtn">
+                        <i class="fas fa-edit"></i>
+                        Edit Information
+                    </button>
+                    <button type="button" class="btn btn-secondary" id="closeInfoBtn">Close</button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        // Event listeners
+        document.getElementById('closeViewInfoModal').addEventListener('click', () => modal.remove());
+        document.getElementById('closeInfoBtn').addEventListener('click', () => modal.remove());
+        document.getElementById('editPersonalInfoBtn').addEventListener('click', () => {
+            this.editingPatientId = patientId;
+            modal.remove();
+            this.showPersonalInfoModal(info);
+        });
     }
 }
 

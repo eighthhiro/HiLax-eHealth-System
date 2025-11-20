@@ -1,9 +1,14 @@
 /* Patients Table Styles */
+.patients-management .card-content {
+    overflow-x: auto;
+}
+
 .patients-table {
     width: 100%;
     border-collapse: collapse;
     background: white;
     table-layout: fixed;
+    min-width: 1200px; /* Ensure table has minimum width */
 }
 
 .patients-table thead {
@@ -11,40 +16,41 @@
 }
 
 .patients-table th {
-    padding: 20px 25px;
+    padding: 16px 12px;
     text-align: center;
     font-weight: 600;
     border-bottom: 2px solid #ddd;
-    font-size: 14px;
+    font-size: 13px;
     color: var(--text-dark);
     vertical-align: middle;
 }
 
-.patients-table th:nth-child(1) { width: 9%; }
-.patients-table th:nth-child(2) { width: 20%; }
-.patients-table th:nth-child(3) { width: 7%; }
-.patients-table th:nth-child(4) { width: 12%; }
-.patients-table th:nth-child(5) { width: 14%; }
-.patients-table th:nth-child(6) { width: 16%; }
-.patients-table th:nth-child(7) { width: 22%; }
+.patients-table th:nth-child(1) { width: 8%; }  /* Patient ID */
+.patients-table th:nth-child(2) { width: 18%; } /* Name */
+.patients-table th:nth-child(3) { width: 6%; }  /* Age */
+.patients-table th:nth-child(4) { width: 10%; } /* Status */
+.patients-table th:nth-child(5) { width: 13%; } /* Doctor */
+.patients-table th:nth-child(6) { width: 12%; } /* Personal Info */
+.patients-table th:nth-child(7) { width: 13%; } /* Records */
+.patients-table th:nth-child(8) { width: 20%; } /* Actions */
 
 /* Actions column header centered */
-.patients-table th:nth-child(7) {
+.patients-table th:nth-child(8) {
     text-align: center;
 }
 
 .patients-table td {
-    padding: 20px 25px;
+    padding: 16px 12px;
     text-align: center;
     border-bottom: 1px solid #f0f0f0;
     vertical-align: middle;
-    font-size: 14px;
+    font-size: 13px;
     overflow: visible;
     white-space: nowrap;
 }
 
 /* Actions column cells centered to match header */
-.patients-table td:nth-child(7) {
+.patients-table td:nth-child(8) {
     text-align: center;
 }
 
@@ -105,11 +111,18 @@
 
 .no-record {
     color: var(--text-light);
-    font-size: 13px;
+    font-size: 12px;
     font-style: italic;
 }
 
 .patients-table .btn-edit,
 .patients-table .btn-delete {
-    margin-right: 6px;
+    margin: 0 3px;
+    padding: 6px 10px;
+    font-size: 12px;
+}
+
+.patients-table .btn-sm {
+    padding: 5px 8px;
+    font-size: 11px;
 }
