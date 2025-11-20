@@ -1,5 +1,6 @@
 /* Patients Table Styles */
-.patients-management .card-content {
+.patients-management .card-content,
+.billing-management .card-content {
     overflow-x: auto;
 }
 
@@ -25,17 +26,18 @@
     vertical-align: middle;
 }
 
-.patients-table th:nth-child(1) { width: 8%; }  /* Patient ID */
-.patients-table th:nth-child(2) { width: 18%; } /* Name */
-.patients-table th:nth-child(3) { width: 6%; }  /* Age */
-.patients-table th:nth-child(4) { width: 10%; } /* Status */
-.patients-table th:nth-child(5) { width: 13%; } /* Doctor */
-.patients-table th:nth-child(6) { width: 12%; } /* Personal Info */
-.patients-table th:nth-child(7) { width: 13%; } /* Records */
-.patients-table th:nth-child(8) { width: 20%; } /* Actions */
+.patients-table th:nth-child(1) { width: 7%; }  /* Patient ID */
+.patients-table th:nth-child(2) { width: 16%; } /* Name */
+.patients-table th:nth-child(3) { width: 5%; }  /* Age */
+.patients-table th:nth-child(4) { width: 9%; } /* Status */
+.patients-table th:nth-child(5) { width: 12%; } /* Doctor */
+.patients-table th:nth-child(6) { width: 11%; } /* Personal Info */
+.patients-table th:nth-child(7) { width: 10%; } /* Billing */
+.patients-table th:nth-child(8) { width: 11%; } /* Records */
+.patients-table th:nth-child(9) { width: 19%; } /* Actions */
 
 /* Actions column header centered */
-.patients-table th:nth-child(8) {
+.patients-table th:nth-child(9) {
     text-align: center;
 }
 
@@ -50,7 +52,7 @@
 }
 
 /* Actions column cells centered to match header */
-.patients-table td:nth-child(8) {
+.patients-table td:nth-child(9) {
     text-align: center;
 }
 
@@ -125,4 +127,19 @@
 .patients-table .btn-sm {
     padding: 5px 8px;
     font-size: 11px;
+}
+
+/* Billing Management Specific Styles */
+.billing-management .patients-table {
+    min-width: 900px; /* Smaller min-width for billing table (5 columns vs 9) */
+}
+
+.billing-management .patients-table th:nth-child(1) { width: 15%; }  /* Patient ID */
+.billing-management .patients-table th:nth-child(2) { width: 35%; }  /* Name */
+.billing-management .patients-table th:nth-child(3) { width: 10%; }  /* Age */
+.billing-management .patients-table th:nth-child(4) { width: 20%; }  /* Billing Status */
+.billing-management .patients-table th:nth-child(5) { width: 20%; }  /* Actions */
+
+.billing-management .patients-table td:nth-child(5) {
+    text-align: center;
 }

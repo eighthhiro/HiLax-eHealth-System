@@ -112,6 +112,14 @@ class SharedContent {
                 </button>` : 
                 `<span class="no-record">Not Set</span>`;
             
+            // Generate billing content
+            let billingContent = patient.billing ? 
+                `<button class="btn btn-sm btn-view-billing" data-patient-id="${patient.id}" title="View Billing">
+                    <i class="fas fa-file-invoice-dollar"></i>
+                    View Billing
+                </button>` : 
+                `<span class="no-record">Not Set</span>`;
+            
             tableRows += `
                 <tr class="patient-row">
                     <td>${patient.id}</td>
@@ -120,6 +128,7 @@ class SharedContent {
                     <td><span class="status-badge ${statusClass}">${patient.status}</span></td>
                     <td>${patient.doctor || 'Unassigned'}</td>
                     <td>${personalInfoContent}</td>
+                    <td>${billingContent}</td>
                     <td>${recordsContent}</td>
                     <td>${editDeleteButtons}</td>
                 </tr>
@@ -156,6 +165,7 @@ class SharedContent {
                                     <th>Status</th>
                                     <th>Doctor</th>
                                     <th>Personal Info</th>
+                                    <th>Billing</th>
                                     <th>Records</th>
                                     <th>Actions</th>
                                 </tr>

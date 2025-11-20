@@ -123,6 +123,9 @@ class Dashboard {
             case 'prescriptions':
                 pageContent = this.contentGenerator.getPrescriptionsContent();
                 break;
+            case 'billing':
+                pageContent = this.getBillingContent();
+                break;
             default:
                 pageContent = this.contentGenerator.getDefaultContent(pageId);
         }
@@ -141,6 +144,8 @@ class Dashboard {
             this.attachDashboardListeners();
         } else if (pageId === 'all-staff') {
             this.attachStaffPageListeners();
+        } else if (pageId === 'billing') {
+            this.attachBillingPageListeners();
         }
     }
 
@@ -194,6 +199,16 @@ class Dashboard {
                 btn.addEventListener('click', (e) => {
                     const patientId = e.currentTarget.getAttribute('data-patient-id');
                     this.viewPersonalInfo(patientId);
+                });
+            });
+            
+            // Billing view buttons
+            const viewBillingButtons = document.querySelectorAll('.btn-view-billing');
+            viewBillingButtons.forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const patientId = e.currentTarget.getAttribute('data-patient-id');
+                    this.selectedPatientForBilling = patientId;
+                    this.loadPageContent('billing');
                 });
             });
         } else {
@@ -417,6 +432,27 @@ class Dashboard {
         if (status === 'Discharged') statusClass = 'discharged';
         if (status === 'Admitted') statusClass = 'admitted';
         
+        // Get patient data from storage to check for personal info
+        const patientData = this.patientStorage.get(patientId);
+        const hasPersonalInfo = patientData && patientData.personalInfo;
+        const hasBilling = patientData && patientData.billing;
+        
+        // Generate personal info button
+        const personalInfoContent = hasPersonalInfo
+            ? `<button class="btn btn-sm btn-view-info" data-patient-id="${patientId}">
+                <i class="fas fa-address-card"></i>
+                View Info
+            </button>`
+            : '<span class="no-record">No info</span>';
+        
+        // Generate billing button
+        const billingContent = hasBilling
+            ? `<button class="btn btn-sm btn-view-billing" data-patient-id="${patientId}">
+                <i class="fas fa-file-invoice-dollar"></i>
+                View Billing
+            </button>`
+            : '<span class="no-record">Not Set</span>';
+        
         // Create new patient row
         const newRow = document.createElement('tr');
         newRow.className = 'patient-row';
@@ -445,6 +481,8 @@ class Dashboard {
             <td>${age}</td>
             <td><span class="status-badge ${statusClass}">${status}</span></td>
             <td>${doctor}</td>
+            <td>${personalInfoContent}</td>
+            <td>${billingContent}</td>
             <td>${recordsContent}</td>
             <td>${editDeleteButtons}</td>
         `;
@@ -452,12 +490,29 @@ class Dashboard {
         // Append new row to table body
         tbody.appendChild(newRow);
         
-        // Reattach event listeners to new buttons
+        // Attach event listeners
         const editBtn = newRow.querySelector('.btn-edit');
         const deleteBtn = newRow.querySelector('.btn-delete');
+        const viewInfoBtn = newRow.querySelector('.btn-view-info');
+        const viewBillingBtn = newRow.querySelector('.btn-view-billing');
         
         editBtn.addEventListener('click', (e) => this.editPatient(e));
         deleteBtn.addEventListener('click', (e) => this.deletePatient(e));
+        
+        if (viewInfoBtn) {
+            viewInfoBtn.addEventListener('click', (e) => {
+                const patientId = e.currentTarget.dataset.patientId;
+                this.viewPersonalInfo(patientId);
+            });
+        }
+        
+        if (viewBillingBtn) {
+            viewBillingBtn.addEventListener('click', (e) => {
+                const patientId = e.currentTarget.dataset.patientId;
+                this.selectedPatientForBilling = patientId;
+                this.loadPageContent('billing');
+            });
+        }
     }
 
     closeModal() {
@@ -1354,7 +1409,7 @@ class Dashboard {
                     <div class="form-row">
                         <div class="form-group">
                             <label for="address">Address *</label>
-                            <textarea id="address" rows="2" required>${existingData?.address || ''}</textarea>
+                            <input type="text" id="address" placeholder="Enter full address" value="${existingData?.address || ''}" required>
                         </div>
                     </div>
 
@@ -1419,8 +1474,11 @@ class Dashboard {
             if (patientIndex !== -1) {
                 patients[patientIndex].personalInfo = personalInfo;
                 localStorage.setItem('patients', JSON.stringify(patients));
+                this.editingPatientId = null; // Clear the editing patient ID
                 this.showNotification('Personal information updated successfully!', 'success');
                 this.loadPageContent('allPatients');
+            } else {
+                this.showNotification('Patient not found!', 'error');
             }
         } else {
             // In add mode, store temporarily
@@ -1749,7 +1807,579 @@ class Dashboard {
             console.error('Error saving staff:', error);
         }
     }
+
+    // Billing Management Methods
+    getBillingContent() {
+        // Load patients from localStorage
+        let patients = [];
+        try {
+            const stored = localStorage.getItem('patients');
+            if (stored) {
+                patients = JSON.parse(stored);
+            }
+        } catch (error) {
+            console.error('Error loading patients:', error);
+        }
+
+        // Generate patient rows for billing
+        let patientRows = '';
+        patients.forEach(patient => {
+            const hasBilling = patient.billing ? true : false;
+            const billingStatus = hasBilling ? 
+                '<span class="status-badge active">Billed</span>' : 
+                '<span class="status-badge discharged">Not Billed</span>';
+            
+            const actionButton = hasBilling ?
+                `<button class="btn btn-sm btn-view-receipt" data-patient-id="${patient.id}">
+                    <i class="fas fa-receipt"></i>
+                    View Receipt
+                </button>` :
+                `<button class="btn btn-sm btn-create-billing" data-patient-id="${patient.id}">
+                    <i class="fas fa-plus"></i>
+                    Create Billing
+                </button>`;
+
+            patientRows += `
+                <tr>
+                    <td>${patient.id}</td>
+                    <td>${patient.fullName}</td>
+                    <td>${patient.age}</td>
+                    <td>${billingStatus}</td>
+                    <td>${actionButton}</td>
+                </tr>
+            `;
+        });
+
+        return `
+            <div class="billing-management">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-file-invoice-dollar"></i>
+                            Billing Management
+                        </h3>
+                    </div>
+                    <div class="card-content">
+                        <table class="patients-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 15%;">Patient ID</th>
+                                    <th style="width: 35%;">Name</th>
+                                    <th style="width: 10%;">Age</th>
+                                    <th style="width: 20%;">Billing Status</th>
+                                    <th style="width: 20%;">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${patientRows || '<tr><td colspan="5" style="text-align: center;">No patients found</td></tr>'}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    attachBillingPageListeners() {
+        const createBillingBtns = document.querySelectorAll('.btn-create-billing');
+        const viewReceiptBtns = document.querySelectorAll('.btn-view-receipt');
+
+        createBillingBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const patientId = e.currentTarget.getAttribute('data-patient-id');
+                this.showBillingForm(patientId);
+            });
+        });
+
+        viewReceiptBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const patientId = e.currentTarget.getAttribute('data-patient-id');
+                this.showBillingReceipt(patientId);
+            });
+        });
+
+        // If a patient was selected from patients page, show form automatically
+        if (this.selectedPatientForBilling) {
+            const patientId = this.selectedPatientForBilling;
+            this.selectedPatientForBilling = null; // Clear selection
+            
+            // Check if patient already has billing
+            const patients = JSON.parse(localStorage.getItem('patients') || '[]');
+            const patient = patients.find(p => p.id === patientId);
+            
+            if (patient && patient.billing) {
+                this.showBillingReceipt(patientId);
+            } else {
+                this.showBillingForm(patientId);
+            }
+        }
+    }
+
+    showBillingForm(patientId) {
+        // Get patient data
+        const patients = JSON.parse(localStorage.getItem('patients') || '[]');
+        const patient = patients.find(p => p.id === patientId);
+        
+        if (!patient) {
+            this.showNotification('Patient not found', 'error');
+            return;
+        }
+
+        const modal = document.createElement('div');
+        modal.className = 'modal-overlay';
+        modal.id = 'billingFormModal';
+        modal.innerHTML = `
+            <div class="modal-content" style="max-width: 800px;">
+                <div class="modal-header">
+                    <h2><i class="fas fa-file-invoice-dollar"></i> Create Billing - ${patient.fullName} (${patientId})</h2>
+                    <button class="modal-close" id="closeBillingModal">&times;</button>
+                </div>
+                <form id="billingForm" class="modal-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="roomCharges">Room Charges (₱) *</label>
+                            <input type="number" id="roomCharges" min="0" step="0.01" value="0" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="consultationFee">Consultation Fee (₱) *</label>
+                            <input type="number" id="consultationFee" min="0" step="0.01" value="0" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="labTests">Laboratory Tests (₱) *</label>
+                            <input type="number" id="labTests" min="0" step="0.01" value="0" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="medications">Medications (₱) *</label>
+                            <input type="number" id="medications" min="0" step="0.01" value="0" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="procedures">Procedures/Surgeries (₱) *</label>
+                            <input type="number" id="procedures" min="0" step="0.01" value="0" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="imaging">Imaging/Radiology (₱) *</label>
+                            <input type="number" id="imaging" min="0" step="0.01" value="0" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="otherCharges">Other Charges (₱)</label>
+                            <input type="number" id="otherCharges" min="0" step="0.01" value="0">
+                        </div>
+                        <div class="form-group">
+                            <label for="discount">Discount (%) *</label>
+                            <input type="number" id="discount" min="0" max="100" step="0.01" value="0" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group" style="flex: 1;">
+                            <label for="notes">Notes/Remarks</label>
+                            <textarea id="notes" rows="2" placeholder="Additional notes or remarks"></textarea>
+                        </div>
+                    </div>
+
+                    <div style="padding: 15px; background: #f8f9fa; border-radius: 8px; margin-bottom: 20px;">
+                        <h4 style="margin: 0 0 10px 0; color: var(--dark-pink);">Billing Summary</h4>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                            <span>Subtotal:</span>
+                            <span id="subtotal" style="font-weight: 600;">₱0.00</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                            <span>Discount:</span>
+                            <span id="discountAmount" style="font-weight: 600; color: #28a745;">-₱0.00</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; padding-top: 10px; border-top: 2px solid var(--dark-pink);">
+                            <span style="font-size: 18px; font-weight: 700;">Total Amount:</span>
+                            <span id="totalAmount" style="font-size: 18px; font-weight: 700; color: var(--dark-pink);">₱0.00</span>
+                        </div>
+                    </div>
+
+                    <div class="modal-actions">
+                        <button type="button" class="btn btn-secondary" id="cancelBillingBtn">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Generate Billing</button>
+                    </div>
+                </form>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        // Calculate total on input change
+        const inputs = modal.querySelectorAll('input[type="number"]');
+        inputs.forEach(input => {
+            input.addEventListener('input', () => this.calculateBillingTotal());
+        });
+
+        // Event listeners
+        document.getElementById('closeBillingModal').addEventListener('click', () => modal.remove());
+        document.getElementById('cancelBillingBtn').addEventListener('click', () => modal.remove());
+        document.getElementById('billingForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.handleBillingSubmit(patientId);
+            modal.remove();
+        });
+
+        // Initial calculation
+        this.calculateBillingTotal();
+    }
+
+    calculateBillingTotal() {
+        const roomCharges = parseFloat(document.getElementById('roomCharges')?.value || 0);
+        const consultationFee = parseFloat(document.getElementById('consultationFee')?.value || 0);
+        const labTests = parseFloat(document.getElementById('labTests')?.value || 0);
+        const medications = parseFloat(document.getElementById('medications')?.value || 0);
+        const procedures = parseFloat(document.getElementById('procedures')?.value || 0);
+        const imaging = parseFloat(document.getElementById('imaging')?.value || 0);
+        const otherCharges = parseFloat(document.getElementById('otherCharges')?.value || 0);
+        const discountPercent = parseFloat(document.getElementById('discount')?.value || 0);
+
+        const subtotal = roomCharges + consultationFee + labTests + medications + procedures + imaging + otherCharges;
+        const discountAmount = subtotal * (discountPercent / 100);
+        const total = subtotal - discountAmount;
+
+        document.getElementById('subtotal').textContent = `₱${subtotal.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}`;
+        document.getElementById('discountAmount').textContent = `-₱${discountAmount.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}`;
+        document.getElementById('totalAmount').textContent = `₱${total.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}`;
+    }
+
+    handleBillingSubmit(patientId) {
+        const billingData = {
+            patientId: patientId,
+            date: new Date().toISOString(),
+            roomCharges: parseFloat(document.getElementById('roomCharges').value),
+            consultationFee: parseFloat(document.getElementById('consultationFee').value),
+            labTests: parseFloat(document.getElementById('labTests').value),
+            medications: parseFloat(document.getElementById('medications').value),
+            procedures: parseFloat(document.getElementById('procedures').value),
+            imaging: parseFloat(document.getElementById('imaging').value),
+            otherCharges: parseFloat(document.getElementById('otherCharges').value),
+            discount: parseFloat(document.getElementById('discount').value),
+            notes: document.getElementById('notes').value,
+            subtotal: 0,
+            discountAmount: 0,
+            total: 0
+        };
+
+        // Calculate totals
+        billingData.subtotal = billingData.roomCharges + billingData.consultationFee + billingData.labTests + 
+                               billingData.medications + billingData.procedures + billingData.imaging + billingData.otherCharges;
+        billingData.discountAmount = billingData.subtotal * (billingData.discount / 100);
+        billingData.total = billingData.subtotal - billingData.discountAmount;
+
+        // Save to patient record
+        let patients = JSON.parse(localStorage.getItem('patients') || '[]');
+        const patientIndex = patients.findIndex(p => p.id === patientId);
+        
+        if (patientIndex !== -1) {
+            patients[patientIndex].billing = billingData;
+            localStorage.setItem('patients', JSON.stringify(patients));
+            
+            // Update patientStorage Map
+            this.patientStorage.set(patientId, patients[patientIndex]);
+            
+            this.showNotification('Billing created successfully!', 'success');
+            this.loadPageContent('billing');
+        } else {
+            this.showNotification('Failed to save billing', 'error');
+        }
+    }
+
+    showBillingReceipt(patientId) {
+        const patients = JSON.parse(localStorage.getItem('patients') || '[]');
+        const patient = patients.find(p => p.id === patientId);
+        
+        if (!patient || !patient.billing) {
+            this.showNotification('Billing information not found', 'error');
+            return;
+        }
+
+        const billing = patient.billing;
+        const modal = document.createElement('div');
+        modal.className = 'modal-overlay';
+        modal.id = 'billingReceiptModal';
+        modal.innerHTML = `
+            <div class="modal-content" style="max-width: 700px;">
+                <div class="modal-header">
+                    <h2><i class="fas fa-receipt"></i> Billing Receipt</h2>
+                    <button class="modal-close" id="closeReceiptModal">&times;</button>
+                </div>
+                <div class="modal-body" style="padding: 30px;">
+                    <div style="text-align: center; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 2px solid var(--dark-pink);">
+                        <h1 style="margin: 0; color: var(--dark-pink);">HILAX HOSPITAL</h1>
+                        <p style="margin: 5px 0; color: #666;">Management System</p>
+                        <p style="margin: 0; font-size: 14px; color: #999;">Official Billing Statement</p>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px;">
+                        <div>
+                            <p style="margin: 0 0 5px 0; color: #666; font-size: 12px;">PATIENT INFORMATION</p>
+                            <p style="margin: 0; font-weight: 600;">${patient.fullName}</p>
+                            <p style="margin: 0; color: #666;">ID: ${patient.id}</p>
+                            <p style="margin: 0; color: #666;">Age: ${patient.age}</p>
+                        </div>
+                        <div style="text-align: right;">
+                            <p style="margin: 0 0 5px 0; color: #666; font-size: 12px;">BILLING DATE</p>
+                            <p style="margin: 0; font-weight: 600;">${new Date(billing.date).toLocaleDateString()}</p>
+                            <p style="margin: 0; color: #666;">${new Date(billing.date).toLocaleTimeString()}</p>
+                        </div>
+                    </div>
+
+                    <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+                        <thead>
+                            <tr style="background: var(--light-pink);">
+                                <th style="padding: 12px; text-align: left; border-bottom: 2px solid var(--dark-pink);">Description</th>
+                                <th style="padding: 12px; text-align: right; border-bottom: 2px solid var(--dark-pink);">Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${billing.roomCharges > 0 ? `<tr><td style="padding: 10px; border-bottom: 1px solid #f0f0f0;">Room Charges</td><td style="padding: 10px; text-align: right; border-bottom: 1px solid #f0f0f0;">₱${billing.roomCharges.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}</td></tr>` : ''}
+                            ${billing.consultationFee > 0 ? `<tr><td style="padding: 10px; border-bottom: 1px solid #f0f0f0;">Consultation Fee</td><td style="padding: 10px; text-align: right; border-bottom: 1px solid #f0f0f0;">₱${billing.consultationFee.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}</td></tr>` : ''}
+                            ${billing.labTests > 0 ? `<tr><td style="padding: 10px; border-bottom: 1px solid #f0f0f0;">Laboratory Tests</td><td style="padding: 10px; text-align: right; border-bottom: 1px solid #f0f0f0;">₱${billing.labTests.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}</td></tr>` : ''}
+                            ${billing.medications > 0 ? `<tr><td style="padding: 10px; border-bottom: 1px solid #f0f0f0;">Medications</td><td style="padding: 10px; text-align: right; border-bottom: 1px solid #f0f0f0;">₱${billing.medications.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}</td></tr>` : ''}
+                            ${billing.procedures > 0 ? `<tr><td style="padding: 10px; border-bottom: 1px solid #f0f0f0;">Procedures/Surgeries</td><td style="padding: 10px; text-align: right; border-bottom: 1px solid #f0f0f0;">₱${billing.procedures.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}</td></tr>` : ''}
+                            ${billing.imaging > 0 ? `<tr><td style="padding: 10px; border-bottom: 1px solid #f0f0f0;">Imaging/Radiology</td><td style="padding: 10px; text-align: right; border-bottom: 1px solid #f0f0f0;">₱${billing.imaging.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}</td></tr>` : ''}
+                            ${billing.otherCharges > 0 ? `<tr><td style="padding: 10px; border-bottom: 1px solid #f0f0f0;">Other Charges</td><td style="padding: 10px; text-align: right; border-bottom: 1px solid #f0f0f0;">₱${billing.otherCharges.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}</td></tr>` : ''}
+                        </tbody>
+                    </table>
+
+                    <div style="padding: 15px; background: #f8f9fa; border-radius: 8px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                            <span style="font-weight: 600;">Subtotal:</span>
+                            <span style="font-weight: 600;">₱${billing.subtotal.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}</span>
+                        </div>
+                        ${billing.discount > 0 ? `
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px; color: #28a745;">
+                            <span style="font-weight: 600;">Discount (${billing.discount}%):</span>
+                            <span style="font-weight: 600;">-₱${billing.discountAmount.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}</span>
+                        </div>
+                        ` : ''}
+                        <div style="display: flex; justify-content: space-between; padding-top: 12px; border-top: 2px solid var(--dark-pink); margin-top: 8px;">
+                            <span style="font-size: 20px; font-weight: 700;">TOTAL AMOUNT DUE:</span>
+                            <span style="font-size: 20px; font-weight: 700; color: var(--dark-pink);">₱${billing.total.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}</span>
+                        </div>
+                    </div>
+
+                    ${billing.notes ? `
+                    <div style="margin-top: 20px; padding: 15px; background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 4px;">
+                        <p style="margin: 0; font-weight: 600; color: #856404; margin-bottom: 5px;">Notes:</p>
+                        <p style="margin: 0; color: #856404;">${billing.notes}</p>
+                    </div>
+                    ` : ''}
+
+                    <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; text-align: center; color: #999; font-size: 12px;">
+                        <p style="margin: 0;">Thank you for choosing HiLax Hospital</p>
+                        <p style="margin: 5px 0 0 0;">For inquiries, please contact our billing department</p>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" id="closeReceiptBtn">Close</button>
+                    <button type="button" class="btn btn-primary" id="editBillingBtn">
+                        <i class="fas fa-edit"></i>
+                        Edit Billing
+                    </button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        document.getElementById('closeReceiptModal').addEventListener('click', () => modal.remove());
+        document.getElementById('closeReceiptBtn').addEventListener('click', () => modal.remove());
+        document.getElementById('editBillingBtn').addEventListener('click', () => {
+            modal.remove();
+            this.editBillingForm(patientId);
+        });
+    }
+
+    editBillingForm(patientId) {
+        // Get existing billing data
+        const patients = JSON.parse(localStorage.getItem('patients') || '[]');
+        const patient = patients.find(p => p.id === patientId);
+        
+        if (!patient || !patient.billing) {
+            this.showNotification('Billing information not found', 'error');
+            return;
+        }
+
+        const billing = patient.billing;
+        
+        // Show form with pre-filled data
+        const modal = document.createElement('div');
+        modal.className = 'modal-overlay';
+        modal.id = 'editBillingModal';
+        modal.innerHTML = `
+            <div class="modal-content" style="max-width: 800px;">
+                <div class="modal-header">
+                    <h2><i class="fas fa-edit"></i> Edit Billing - ${patient.fullName} (${patientId})</h2>
+                    <button class="modal-close" id="closeEditBillingModal">&times;</button>
+                </div>
+                <form id="editBillingForm" class="modal-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="editRoomCharges">Room Charges (₱) *</label>
+                            <input type="number" id="editRoomCharges" min="0" step="0.01" value="${billing.roomCharges}" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="editConsultationFee">Consultation Fee (₱) *</label>
+                            <input type="number" id="editConsultationFee" min="0" step="0.01" value="${billing.consultationFee}" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="editLabTests">Laboratory Tests (₱) *</label>
+                            <input type="number" id="editLabTests" min="0" step="0.01" value="${billing.labTests}" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="editMedications">Medications (₱) *</label>
+                            <input type="number" id="editMedications" min="0" step="0.01" value="${billing.medications}" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="editProcedures">Procedures/Surgeries (₱) *</label>
+                            <input type="number" id="editProcedures" min="0" step="0.01" value="${billing.procedures}" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="editImaging">Imaging/Radiology (₱) *</label>
+                            <input type="number" id="editImaging" min="0" step="0.01" value="${billing.imaging}" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="editOtherCharges">Other Charges (₱)</label>
+                            <input type="number" id="editOtherCharges" min="0" step="0.01" value="${billing.otherCharges}">
+                        </div>
+                        <div class="form-group">
+                            <label for="editDiscount">Discount (%) *</label>
+                            <input type="number" id="editDiscount" min="0" max="100" step="0.01" value="${billing.discount}" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group" style="flex: 1;">
+                            <label for="editNotes">Notes/Remarks</label>
+                            <textarea id="editNotes" rows="2" placeholder="Additional notes or remarks">${billing.notes || ''}</textarea>
+                        </div>
+                    </div>
+
+                    <div style="padding: 15px; background: #f8f9fa; border-radius: 8px; margin-bottom: 20px;">
+                        <h4 style="margin: 0 0 10px 0; color: var(--dark-pink);">Billing Summary</h4>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                            <span>Subtotal:</span>
+                            <span id="editSubtotal" style="font-weight: 600;">₱0.00</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                            <span>Discount:</span>
+                            <span id="editDiscountAmount" style="font-weight: 600; color: #28a745;">-₱0.00</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; padding-top: 10px; border-top: 2px solid var(--dark-pink);">
+                            <span style="font-size: 18px; font-weight: 700;">Total Amount:</span>
+                            <span id="editTotalAmount" style="font-size: 18px; font-weight: 700; color: var(--dark-pink);">₱0.00</span>
+                        </div>
+                    </div>
+
+                    <div class="modal-actions">
+                        <button type="button" class="btn btn-secondary" id="cancelEditBillingBtn">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Update Billing</button>
+                    </div>
+                </form>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        // Calculate total on input change
+        const inputs = modal.querySelectorAll('input[type="number"]');
+        inputs.forEach(input => {
+            input.addEventListener('input', () => this.calculateEditBillingTotal());
+        });
+
+        // Event listeners
+        document.getElementById('closeEditBillingModal').addEventListener('click', () => modal.remove());
+        document.getElementById('cancelEditBillingBtn').addEventListener('click', () => modal.remove());
+        document.getElementById('editBillingForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.handleEditBillingSubmit(patientId);
+            modal.remove();
+        });
+
+        // Initial calculation
+        this.calculateEditBillingTotal();
+    }
+
+    calculateEditBillingTotal() {
+        const roomCharges = parseFloat(document.getElementById('editRoomCharges')?.value || 0);
+        const consultationFee = parseFloat(document.getElementById('editConsultationFee')?.value || 0);
+        const labTests = parseFloat(document.getElementById('editLabTests')?.value || 0);
+        const medications = parseFloat(document.getElementById('editMedications')?.value || 0);
+        const procedures = parseFloat(document.getElementById('editProcedures')?.value || 0);
+        const imaging = parseFloat(document.getElementById('editImaging')?.value || 0);
+        const otherCharges = parseFloat(document.getElementById('editOtherCharges')?.value || 0);
+        const discountPercent = parseFloat(document.getElementById('editDiscount')?.value || 0);
+
+        const subtotal = roomCharges + consultationFee + labTests + medications + procedures + imaging + otherCharges;
+        const discountAmount = subtotal * (discountPercent / 100);
+        const total = subtotal - discountAmount;
+
+        document.getElementById('editSubtotal').textContent = `₱${subtotal.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}`;
+        document.getElementById('editDiscountAmount').textContent = `-₱${discountAmount.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}`;
+        document.getElementById('editTotalAmount').textContent = `₱${total.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}`;
+    }
+
+    handleEditBillingSubmit(patientId) {
+        const billingData = {
+            patientId: patientId,
+            date: new Date().toISOString(),
+            roomCharges: parseFloat(document.getElementById('editRoomCharges').value),
+            consultationFee: parseFloat(document.getElementById('editConsultationFee').value),
+            labTests: parseFloat(document.getElementById('editLabTests').value),
+            medications: parseFloat(document.getElementById('editMedications').value),
+            procedures: parseFloat(document.getElementById('editProcedures').value),
+            imaging: parseFloat(document.getElementById('editImaging').value),
+            otherCharges: parseFloat(document.getElementById('editOtherCharges').value),
+            discount: parseFloat(document.getElementById('editDiscount').value),
+            notes: document.getElementById('editNotes').value,
+            subtotal: 0,
+            discountAmount: 0,
+            total: 0
+        };
+
+        // Calculate totals
+        billingData.subtotal = billingData.roomCharges + billingData.consultationFee + billingData.labTests + 
+                               billingData.medications + billingData.procedures + billingData.imaging + billingData.otherCharges;
+        billingData.discountAmount = billingData.subtotal * (billingData.discount / 100);
+        billingData.total = billingData.subtotal - billingData.discountAmount;
+
+        // Update patient record
+        let patients = JSON.parse(localStorage.getItem('patients') || '[]');
+        const patientIndex = patients.findIndex(p => p.id === patientId);
+        
+        if (patientIndex !== -1) {
+            patients[patientIndex].billing = billingData;
+            localStorage.setItem('patients', JSON.stringify(patients));
+            
+            // Update patientStorage Map
+            this.patientStorage.set(patientId, patients[patientIndex]);
+            
+            this.showNotification('Billing updated successfully!', 'success');
+            this.showBillingReceipt(patientId);
+        } else {
+            this.showNotification('Failed to update billing', 'error');
+        }
+    }
 }
+
 
 // Initialize dashboard when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
