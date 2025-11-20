@@ -535,7 +535,8 @@ body.patient-role .patients-table th:nth-child(6) {
 }
 
 .form-group input,
-.form-group select {
+.form-group select,
+.form-group textarea {
     padding: 12px;
     border: 2px solid var(--light-pink);
     border-radius: 8px;
@@ -545,7 +546,8 @@ body.patient-role .patients-table th:nth-child(6) {
 }
 
 .form-group input:focus,
-.form-group select:focus {
+.form-group select:focus,
+.form-group textarea:focus {
     outline: none;
     border-color: var(--secondary-pink);
     box-shadow: 0 0 0 3px rgba(199, 123, 142, 0.1);

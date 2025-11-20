@@ -1409,7 +1409,7 @@ class Dashboard {
                     <div class="form-row">
                         <div class="form-group">
                             <label for="address">Address *</label>
-                            <input type="text" id="address" placeholder="Enter full address" value="${existingData?.address || ''}" required>
+                            <textarea id="address" rows="2" placeholder="Enter full address" required>${existingData?.address || ''}</textarea>
                         </div>
                     </div>
 
