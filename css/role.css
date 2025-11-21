@@ -1145,6 +1145,7 @@ body.patient-role .patients-table .actions-column {
 .modal-body {
     max-height: 60vh;
     overflow-y: auto;
+    padding: 32px;
 }
 
 @media (max-width: 768px) {
