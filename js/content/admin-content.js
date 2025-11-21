@@ -72,6 +72,7 @@ class AdminContent {
                     </div>
                 </div>
                 ${this.getAwardsManagementSection()}
+                ${new SharedContent(this.currentUser).getSocialFooter()}
             </div>
         `;
     }
@@ -651,6 +652,18 @@ class AdminContent {
                 '<span class="status-badge active">Billed</span>' : 
                 '<span class="status-badge discharged">Not Billed</span>';
             
+            const hasInsurance = hasBilling && patient.billing.insuranceProvider;
+            const insuranceStatus = hasInsurance ?
+                '<span class="status-badge completed"><i class="fas fa-shield-alt"></i> Insured</span>' :
+                '<span class="status-badge pending">No Insurance</span>';
+            
+            const insuranceInfo = hasInsurance ?
+                `<div style="font-size: 12px; color: #666;">
+                    <strong>${patient.billing.insuranceProvider}</strong><br>
+                    ${patient.billing.insuranceNumber}
+                </div>` :
+                '<span style="color: #999;">-</span>';
+            
             const actionButton = hasBilling ?
                 `<button class="btn btn-sm btn-view-receipt" data-patient-id="${patient.id}">
                     <i class="fas fa-receipt"></i>
@@ -667,6 +680,8 @@ class AdminContent {
                     <td>${patient.fullName}</td>
                     <td>${patient.age}</td>
                     <td>${billingStatus}</td>
+                    <td>${insuranceStatus}</td>
+                    <td>${insuranceInfo}</td>
                     <td>${actionButton}</td>
                 </tr>
             `;
@@ -685,15 +700,17 @@ class AdminContent {
                         <table class="patients-table">
                             <thead>
                                 <tr>
-                                    <th style="width: 15%;">Patient ID</th>
-                                    <th style="width: 35%;">Name</th>
-                                    <th style="width: 10%;">Age</th>
-                                    <th style="width: 20%;">Billing Status</th>
+                                    <th style="width: 10%;">Patient ID</th>
+                                    <th style="width: 20%;">Name</th>
+                                    <th style="width: 8%;">Age</th>
+                                    <th style="width: 12%;">Billing Status</th>
+                                    <th style="width: 12%;">Insurance Status</th>
+                                    <th style="width: 18%;">Insurance Details</th>
                                     <th style="width: 20%;">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                ${patientRows || '<tr><td colspan="5" style="text-align: center;">No patients found</td></tr>'}
+                                ${patientRows || '<tr><td colspan="7" style="text-align: center;">No patients found</td></tr>'}
                             </tbody>
                         </table>
                     </div>
@@ -844,6 +861,15 @@ class AdminContent {
 
         return `
             <div class="vital-signs-management">
+                <!-- Info Banner -->
+                <div class="info-banner" style="margin-bottom: 24px; padding: 16px 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 8px; display: flex; align-items: center; gap: 12px;">
+                    <i class="fas fa-info-circle" style="font-size: 24px;"></i>
+                    <div>
+                        <h4 style="margin: 0 0 4px 0; font-size: 16px;">Vital Signs (View Only)</h4>
+                        <p style="margin: 0; font-size: 14px; opacity: 0.9;">Monitor patient vital signs recorded by nurses. Only nurses can record vital signs.</p>
+                    </div>
+                </div>
+
                 <!-- Summary Table -->
                 <div class="card" style="margin-bottom: 24px;">
                     <div class="card-header">
@@ -853,9 +879,9 @@ class AdminContent {
                         </h3>
                     </div>
                     <div class="card-content">
-                        <div style="overflow-x: auto;">
+                        <div style="max-height: 180px; overflow-y: auto; overflow-x: auto; position: relative;">
                             <table class="patients-table" style="min-width: 900px;">
-                                <thead>
+                                <thead style="position: sticky; top: 0; z-index: 10; background: white;">
                                     <tr>
                                         <th style="width: 10%;">Patient ID</th>
                                         <th style="width: 20%;">Name</th>
@@ -867,14 +893,10 @@ class AdminContent {
                                         <th style="width: 12%;">Actions</th>
                                     </tr>
                                 </thead>
+                                <tbody>
+                                    ${summaryRows || '<tr><td colspan="8" style="text-align: center; padding: 20px; color: #999;">No vital signs recorded yet</td></tr>'}
+                                </tbody>
                             </table>
-                            <div style="max-height: 180px; overflow-y: auto;">
-                                <table class="patients-table" style="min-width: 900px;">
-                                    <tbody>
-                                        ${summaryRows || '<tr><td colspan="8" style="text-align: center; padding: 20px; color: #999;">No vital signs recorded yet</td></tr>'}
-                                    </tbody>
-                                </table>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -987,6 +1009,15 @@ class AdminContent {
 
         return `
             <div class="lab-results-management">
+                <!-- Info Banner -->
+                <div class="info-banner" style="margin-bottom: 24px; padding: 16px 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 8px; display: flex; align-items: center; gap: 12px;">
+                    <i class="fas fa-info-circle" style="font-size: 24px;"></i>
+                    <div>
+                        <h4 style="margin: 0 0 4px 0; font-size: 16px;">Laboratory Results (View Only)</h4>
+                        <p style="margin: 0; font-size: 14px; opacity: 0.9;">View lab test results processed by medical technologists. Only med-techs can input results.</p>
+                    </div>
+                </div>
+
                 <div class="card" style="margin-bottom: 24px;">
                     <div class="card-header">
                         <h3 class="card-title">
@@ -995,9 +1026,9 @@ class AdminContent {
                         </h3>
                     </div>
                     <div class="card-content">
-                        <div style="overflow-x: auto;">
+                        <div style="max-height: 180px; overflow-y: auto; overflow-x: auto; position: relative;">
                             <table class="patients-table" style="min-width: 900px;">
-                                <thead>
+                                <thead style="position: sticky; top: 0; z-index: 10; background: white;">
                                     <tr>
                                         <th style="width: 10%;">Patient ID</th>
                                         <th style="width: 20%;">Name</th>
@@ -1007,14 +1038,10 @@ class AdminContent {
                                         <th style="width: 12%;">Actions</th>
                                     </tr>
                                 </thead>
+                                <tbody>
+                                    ${summaryRows || '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #999;">No lab results yet</td></tr>'}
+                                </tbody>
                             </table>
-                            <div style="max-height: 180px; overflow-y: auto;">
-                                <table class="patients-table" style="min-width: 900px;">
-                                    <tbody>
-                                        ${summaryRows || '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #999;">No lab results yet</td></tr>'}
-                                    </tbody>
-                                </table>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -1023,7 +1050,7 @@ class AdminContent {
                     <div class="card-header">
                         <h3 class="card-title">
                             <i class="fas fa-flask"></i>
-                            Laboratory Results (View Only)
+                            Laboratory Results
                         </h3>
                     </div>
                     <div class="card-content">
@@ -1129,6 +1156,15 @@ class AdminContent {
 
         return `
             <div class="prescriptions-management">
+                <!-- Info Banner -->
+                <div class="info-banner" style="margin-bottom: 24px; padding: 16px 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 8px; display: flex; align-items: center; gap: 12px;">
+                    <i class="fas fa-info-circle" style="font-size: 24px;"></i>
+                    <div>
+                        <h4 style="margin: 0 0 4px 0; font-size: 16px;">Prescriptions (View Only)</h4>
+                        <p style="margin: 0; font-size: 14px; opacity: 0.9;">View patient prescriptions written by physicians. Only physicians can prescribe medications.</p>
+                    </div>
+                </div>
+
                 <!-- Summary Table -->
                 <div class="card" style="margin-bottom: 24px;">
                     <div class="card-header">
@@ -1138,9 +1174,9 @@ class AdminContent {
                         </h3>
                     </div>
                     <div class="card-content">
-                        <div style="overflow-x: auto;">
+                        <div style="max-height: 180px; overflow-y: auto; overflow-x: auto; position: relative;">
                             <table class="patients-table" style="min-width: 900px;">
-                                <thead>
+                                <thead style="position: sticky; top: 0; z-index: 10; background: white;">
                                     <tr>
                                         <th style="width: 10%;">Patient ID</th>
                                         <th style="width: 20%;">Name</th>
@@ -1151,14 +1187,10 @@ class AdminContent {
                                         <th style="width: 12%;">Actions</th>
                                     </tr>
                                 </thead>
+                                <tbody>
+                                    ${summaryRows || '<tr><td colspan="7" style="text-align: center; padding: 20px; color: #999;">No prescriptions yet</td></tr>'}
+                                </tbody>
                             </table>
-                            <div style="max-height: 180px; overflow-y: auto;">
-                                <table class="patients-table" style="min-width: 900px;">
-                                    <tbody>
-                                        ${summaryRows || '<tr><td colspan="7" style="text-align: center; padding: 20px; color: #999;">No prescriptions yet</td></tr>'}
-                                    </tbody>
-                                </table>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -1271,6 +1303,15 @@ class AdminContent {
 
         return `
             <div class="imaging-results-management">
+                <!-- Info Banner -->
+                <div class="info-banner" style="margin-bottom: 24px; padding: 16px 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 8px; display: flex; align-items: center; gap: 12px;">
+                    <i class="fas fa-info-circle" style="font-size: 24px;"></i>
+                    <div>
+                        <h4 style="margin: 0 0 4px 0; font-size: 16px;">Imaging Results (View Only)</h4>
+                        <p style="margin: 0; font-size: 14px; opacity: 0.9;">View imaging results processed by radiology technologists. Only rad-techs can input results.</p>
+                    </div>
+                </div>
+
                 <!-- Summary Table -->
                 <div class="card" style="margin-bottom: 24px;">
                     <div class="card-header">
@@ -1280,9 +1321,9 @@ class AdminContent {
                         </h3>
                     </div>
                     <div class="card-content">
-                        <div style="overflow-x: auto;">
+                        <div style="max-height: 180px; overflow-y: auto; overflow-x: auto; position: relative;">
                             <table class="patients-table" style="min-width: 900px;">
-                                <thead>
+                                <thead style="position: sticky; top: 0; z-index: 10; background: white;">
                                     <tr>
                                         <th style="width: 10%;">Patient ID</th>
                                         <th style="width: 20%;">Name</th>
@@ -1292,14 +1333,10 @@ class AdminContent {
                                         <th style="width: 12%;">Actions</th>
                                     </tr>
                                 </thead>
+                                <tbody>
+                                    ${summaryRows || '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #999;">No imaging results recorded yet</td></tr>'}
+                                </tbody>
                             </table>
-                            <div style="max-height: 180px; overflow-y: auto;">
-                                <table class="patients-table" style="min-width: 900px;">
-                                    <tbody>
-                                        ${summaryRows || '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #999;">No imaging results recorded yet</td></tr>'}
-                                    </tbody>
-                                </table>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -1309,7 +1346,7 @@ class AdminContent {
                     <div class="card-header">
                         <h3 class="card-title">
                             <i class="fas fa-x-ray"></i>
-                            Imaging Results (View Only)
+                            Imaging Results
                         </h3>
                     </div>
                     <div class="card-content">
@@ -1410,6 +1447,15 @@ class AdminContent {
 
         return `
             <div class="drug-dispensing-management">
+                <!-- Info Banner -->
+                <div class="info-banner" style="margin-bottom: 24px; padding: 16px 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 8px; display: flex; align-items: center; gap: 12px;">
+                    <i class="fas fa-info-circle" style="font-size: 24px;"></i>
+                    <div>
+                        <h4 style="margin: 0 0 4px 0; font-size: 16px;">Drug Dispensing (View Only)</h4>
+                        <p style="margin: 0; font-size: 14px; opacity: 0.9;">View medication dispensing records processed by pharmacists. Only pharmacists can dispense medications.</p>
+                    </div>
+                </div>
+
                 <!-- Summary Table -->
                 <div class="card" style="margin-bottom: 24px;">
                     <div class="card-header">
@@ -1419,9 +1465,9 @@ class AdminContent {
                         </h3>
                     </div>
                     <div class="card-content">
-                        <div style="overflow-x: auto;">
+                        <div style="max-height: 180px; overflow-y: auto; overflow-x: auto; position: relative;">
                             <table class="patients-table" style="min-width: 900px;">
-                                <thead>
+                                <thead style="position: sticky; top: 0; z-index: 10; background: white;">
                                     <tr>
                                         <th style="width: 10%;">Patient ID</th>
                                         <th style="width: 20%;">Name</th>
@@ -1432,14 +1478,10 @@ class AdminContent {
                                         <th style="width: 12%;">Actions</th>
                                     </tr>
                                 </thead>
+                                <tbody>
+                                    ${summaryRows || '<tr><td colspan="7" style="text-align: center; padding: 20px; color: #999;">No dispensing records yet</td></tr>'}
+                                </tbody>
                             </table>
-                            <div style="max-height: 180px; overflow-y: auto;">
-                                <table class="patients-table" style="min-width: 900px;">
-                                    <tbody>
-                                        ${summaryRows || '<tr><td colspan="7" style="text-align: center; padding: 20px; color: #999;">No dispensing records yet</td></tr>'}
-                                    </tbody>
-                                </table>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -1449,7 +1491,7 @@ class AdminContent {
                     <div class="card-header">
                         <h3 class="card-title">
                             <i class="fas fa-pills"></i>
-                            Drug Dispensing Records (View Only)
+                            Drug Dispensing Records
                         </h3>
                     </div>
                     <div class="card-content">

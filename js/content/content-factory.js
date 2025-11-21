@@ -173,12 +173,20 @@ class ContentFactory {
         return this.sharedContent.getDefaultContent('medical-records');
     }
 
-    // Progress Notes - Physician specific
+    // Progress Notes - Physician and Nurse (view only for nurse)
     getProgressNotesContent() {
         if (this.roleContent && typeof this.roleContent.getProgressNotesContent === 'function') {
             return this.roleContent.getProgressNotesContent();
         }
         return this.sharedContent.getDefaultContent('progress-notes');
+    }
+
+    // Nursing Assessment - Nurse specific
+    getNursingAssessmentContent() {
+        if (this.roleContent && typeof this.roleContent.getNursingAssessmentContent === 'function') {
+            return this.roleContent.getNursingAssessmentContent();
+        }
+        return this.sharedContent.getDefaultContent('nursing-assessment');
     }
 
     // Default content for other pages

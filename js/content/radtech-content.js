@@ -71,6 +71,7 @@ class RadTechContent {
                         </div>
                     </div>
                 </div>
+                ${sharedContent.getSocialFooter()}
             </div>
         `;
     }

@@ -7,6 +7,9 @@ class PharmacistContent {
 
     // Dashboard Content for Pharmacists
     getDashboardContent() {
+        // Get dynamic stats
+        const stats = this.getDynamicStats();
+        
         const sharedContent = new SharedContent(this.currentUser);
         return `
             <div class="dashboard-overview">
@@ -15,47 +18,92 @@ class PharmacistContent {
                     ${sharedContent.getAnnouncementsSection()}
                     <div class="dashboard-cards-wrapper">
                         <div class="cards-grid">
-                    <div class="card">
+                    <div class="card stat-card">
                         <div class="card-header">
-                            <div class="card-icon">
-                                <i class="fas fa-prescription"></i>
+                            <div class="stat-info">
+                                <div class="card-icon">
+                                    <i class="fas fa-prescription"></i>
+                                </div>
+                                <h3 class="card-title">Pending Prescriptions</h3>
                             </div>
-                            <h3 class="card-title">Pending Prescriptions</h3>
+                            <div class="stat-number">${stats.pendingPrescriptions}</div>
                         </div>
                         <div class="card-content">
                             <p>Prescriptions awaiting fulfillment</p>
-                            <div class="stat-number">23</div>
+                            <button class="btn-view-stat" data-page="prescriptions">
+                                <i class="fas fa-eye"></i> View
+                            </button>
                         </div>
                     </div>
-                    <div class="card">
+                    <div class="card stat-card">
                         <div class="card-header">
-                            <div class="card-icon">
-                                <i class="fas fa-pills"></i>
+                            <div class="stat-info">
+                                <div class="card-icon">
+                                    <i class="fas fa-pills"></i>
+                                </div>
+                                <h3 class="card-title">Dispensed Today</h3>
                             </div>
-                            <h3 class="card-title">Dispensed Today</h3>
+                            <div class="stat-number">${stats.dispensedToday}</div>
                         </div>
                         <div class="card-content">
                             <p>Medications dispensed today</p>
-                            <div class="stat-number">87</div>
+                            <button class="btn-view-stat" data-page="drug-dispensing">
+                                <i class="fas fa-eye"></i> View
+                            </button>
                         </div>
                     </div>
-                    <div class="card">
+                    <div class="card stat-card">
                         <div class="card-header">
-                            <div class="card-icon">
-                                <i class="fas fa-exclamation-triangle"></i>
+                            <div class="stat-info">
+                                <div class="card-icon">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                </div>
+                                <h3 class="card-title">Low Stock Alerts</h3>
                             </div>
-                            <h3 class="card-title">Low Stock</h3>
+                            <div class="stat-number">${stats.lowStock}</div>
                         </div>
                         <div class="card-content">
                             <p>Medications running low</p>
-                            <div class="stat-number">12</div>
+                            <button class="btn-view-stat" data-page="inventory">
+                                <i class="fas fa-eye"></i> View
+                            </button>
                         </div>
                     </div>
                 </div>
                     </div>
                 </div>
+                ${sharedContent.getSocialFooter()}
             </div>
         `;
+    }
+
+    // Get Dynamic Stats
+    getDynamicStats() {
+        // Get medications data
+        const medications = JSON.parse(localStorage.getItem('medications') || '[]');
+        const dispensingRecords = JSON.parse(localStorage.getItem('dispensingRecords') || '[]');
+        
+        // Calculate pending prescriptions (medications without dispensing records)
+        const pendingPrescriptions = medications.filter(med => {
+            return !dispensingRecords.some(dr => 
+                dr.patientId === med.patientId && 
+                dr.medicationName === med.medicationName
+            );
+        }).length;
+        
+        // Calculate dispensed today
+        const today = new Date().toLocaleDateString('en-US');
+        const dispensedToday = dispensingRecords.filter(dr => dr.dispensedDate === today).length;
+        
+        // For low stock, we'll use a placeholder since we don't have inventory data yet
+        // In a real system, this would check inventory levels
+        const lowStock = 0;
+        
+        return {
+            pendingPrescriptions,
+            dispensedToday,
+            lowStock
+        };
     }
 
     // Bento Banner
@@ -155,9 +203,9 @@ class PharmacistContent {
                         </h3>
                     </div>
                     <div class="card-content">
-                        <div style="overflow-x: auto;">
+                        <div style="max-height: 240px; overflow-y: auto; overflow-x: auto;">
                             <table class="patients-table" style="min-width: 900px;">
-                                <thead>
+                                <thead style="position: sticky; top: 0; z-index: 10; background: white;">
                                     <tr>
                                         <th style="width: 10%;">Patient ID</th>
                                         <th style="width: 20%;">Name</th>
@@ -167,14 +215,10 @@ class PharmacistContent {
                                         <th style="width: 12%;">Actions</th>
                                     </tr>
                                 </thead>
+                                <tbody>
+                                    ${summaryRows || '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #999;">No lab results yet</td></tr>'}
+                                </tbody>
                             </table>
-                            <div style="max-height: 180px; overflow-y: auto;">
-                                <table class="patients-table" style="min-width: 900px;">
-                                    <tbody>
-                                        ${summaryRows || '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #999;">No lab results yet</td></tr>'}
-                                    </tbody>
-                                </table>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -183,7 +227,7 @@ class PharmacistContent {
                     <div class="card-header">
                         <h3 class="card-title">
                             <i class="fas fa-flask"></i>
-                            Laboratory Results (View Only)
+                            Laboratory Results
                         </h3>
                     </div>
                     <div class="card-content">
@@ -297,9 +341,9 @@ class PharmacistContent {
                         </h3>
                     </div>
                     <div class="card-content">
-                        <div style="overflow-x: auto;">
+                        <div style="max-height: 240px; overflow-y: auto; overflow-x: auto;">
                             <table class="patients-table" style="min-width: 900px;">
-                                <thead>
+                                <thead style="position: sticky; top: 0; z-index: 10; background: white;">
                                     <tr>
                                         <th style="width: 10%;">Patient ID</th>
                                         <th style="width: 20%;">Name</th>
@@ -310,14 +354,10 @@ class PharmacistContent {
                                         <th style="width: 12%;">Actions</th>
                                     </tr>
                                 </thead>
+                                <tbody>
+                                    ${summaryRows || '<tr><td colspan="7" style="text-align: center; padding: 20px; color: #999;">No prescriptions yet</td></tr>'}
+                                </tbody>
                             </table>
-                            <div style="max-height: 180px; overflow-y: auto;">
-                                <table class="patients-table" style="min-width: 900px;">
-                                    <tbody>
-                                        ${summaryRows || '<tr><td colspan="7" style="text-align: center; padding: 20px; color: #999;">No prescriptions yet</td></tr>'}
-                                    </tbody>
-                                </table>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -593,9 +633,9 @@ class PharmacistContent {
                         </h3>
                     </div>
                     <div class="card-content">
-                        <div style="overflow-x: auto;">
+                        <div style="max-height: 240px; overflow-y: auto; overflow-x: auto;">
                             <table class="patients-table" style="min-width: 900px;">
-                                <thead>
+                                <thead style="position: sticky; top: 0; z-index: 10; background: white;">
                                     <tr>
                                         <th style="width: 10%;">Patient ID</th>
                                         <th style="width: 20%;">Name</th>
@@ -606,14 +646,10 @@ class PharmacistContent {
                                         <th style="width: 12%;">Actions</th>
                                     </tr>
                                 </thead>
+                                <tbody>
+                                    ${summaryRows || '<tr><td colspan="7" style="text-align: center; padding: 20px; color: #999;">No dispensing records yet</td></tr>'}
+                                </tbody>
                             </table>
-                            <div style="max-height: 180px; overflow-y: auto;">
-                                <table class="patients-table" style="min-width: 900px;">
-                                    <tbody>
-                                        ${summaryRows || '<tr><td colspan="7" style="text-align: center; padding: 20px; color: #999;">No dispensing records yet</td></tr>'}
-                                    </tbody>
-                                </table>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -939,13 +975,13 @@ class PharmacistContent {
                 <div class="card">
                     <div class="card-header">
                         <h3 class="card-title">
-                            <i class="fas fa-x-ray"></i> Imaging Results (View Only)
+                            <i class="fas fa-x-ray"></i> Imaging Results
                         </h3>
                     </div>
                     <div class="card-content">
-                        <div style="max-height: 400px; overflow-y: auto;">
+                        <div style="max-height: 240px; overflow-y: auto; overflow-x: auto;">
                             <table class="patients-table">
-                                <thead>
+                                <thead style="position: sticky; top: 0; z-index: 10; background: white;">
                                     <tr>
                                         <th>Patient ID</th>
                                         <th>Name</th>

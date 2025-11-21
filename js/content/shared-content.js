@@ -318,4 +318,54 @@ class SharedContent {
             </div>
         `;
     }
+
+    // Social Footer (for all role dashboards)
+    getSocialFooter() {
+        return `
+            <div class="social-footer" style="background: var(--dark-pink); padding: 32px 24px; border-radius: 12px; margin-top: 32px;">
+                <div style="text-align: center; margin-bottom: 24px;">
+                    <h3 style="color: white; margin-bottom: 8px; font-size: 20px; font-weight: 600;">Connect With Us</h3>
+                    <p style="color: rgba(255, 255, 255, 0.9); font-size: 14px;">Stay updated with Hilax Hospital on social media</p>
+                </div>
+                <div style="display: flex; justify-content: center; gap: 20px; flex-wrap: wrap;">
+                    <a href="https://facebook.com" target="_blank" style="color: white; font-size: 28px; transition: all 0.3s ease; opacity: 0.95;" onmouseover="this.style.opacity='1'; this.style.transform='translateY(-3px)'" onmouseout="this.style.opacity='0.95'; this.style.transform='translateY(0)'">
+                        <i class="fab fa-facebook"></i>
+                    </a>
+                    <a href="https://twitter.com" target="_blank" style="color: white; font-size: 28px; transition: all 0.3s ease; opacity: 0.95;" onmouseover="this.style.opacity='1'; this.style.transform='translateY(-3px)'" onmouseout="this.style.opacity='0.95'; this.style.transform='translateY(0)'">
+                        <i class="fab fa-twitter"></i>
+                    </a>
+                    <a href="https://instagram.com" target="_blank" style="color: white; font-size: 28px; transition: all 0.3s ease; opacity: 0.95;" onmouseover="this.style.opacity='1'; this.style.transform='translateY(-3px)'" onmouseout="this.style.opacity='0.95'; this.style.transform='translateY(0)'">
+                        <i class="fab fa-instagram"></i>
+                    </a>
+                    <a href="https://linkedin.com" target="_blank" style="color: white; font-size: 28px; transition: all 0.3s ease; opacity: 0.95;" onmouseover="this.style.opacity='1'; this.style.transform='translateY(-3px)'" onmouseout="this.style.opacity='0.95'; this.style.transform='translateY(0)'">
+                        <i class="fab fa-linkedin"></i>
+                    </a>
+                    <a href="https://youtube.com" target="_blank" style="color: white; font-size: 28px; transition: all 0.3s ease; opacity: 0.95;" onmouseover="this.style.opacity='1'; this.style.transform='translateY(-3px)'" onmouseout="this.style.opacity='0.95'; this.style.transform='translateY(0)'">
+                        <i class="fab fa-youtube"></i>
+                    </a>
+                    <a href="https://tiktok.com" target="_blank" style="color: white; font-size: 28px; transition: all 0.3s ease; opacity: 0.95;" onmouseover="this.style.opacity='1'; this.style.transform='translateY(-3px)'" onmouseout="this.style.opacity='0.95'; this.style.transform='translateY(0)'">
+                        <i class="fab fa-tiktok"></i>
+                    </a>
+                    <a href="https://github.com" target="_blank" style="color: white; font-size: 28px; transition: all 0.3s ease; opacity: 0.95;" onmouseover="this.style.opacity='1'; this.style.transform='translateY(-3px)'" onmouseout="this.style.opacity='0.95'; this.style.transform='translateY(0)'">
+                        <i class="fab fa-github"></i>
+                    </a>
+                    <a href="https://whatsapp.com" target="_blank" style="color: white; font-size: 28px; transition: all 0.3s ease; opacity: 0.95;" onmouseover="this.style.opacity='1'; this.style.transform='translateY(-3px)'" onmouseout="this.style.opacity='0.95'; this.style.transform='translateY(0)'">
+                        <i class="fab fa-whatsapp"></i>
+                    </a>
+                    <a href="https://telegram.org" target="_blank" style="color: white; font-size: 28px; transition: all 0.3s ease; opacity: 0.95;" onmouseover="this.style.opacity='1'; this.style.transform='translateY(-3px)'" onmouseout="this.style.opacity='0.95'; this.style.transform='translateY(0)'">
+                        <i class="fab fa-telegram"></i>
+                    </a>
+                    <a href="mailto:info@hilaxhospital.com" style="color: white; font-size: 28px; transition: all 0.3s ease; opacity: 0.95;" onmouseover="this.style.opacity='1'; this.style.transform='translateY(-3px)'" onmouseout="this.style.opacity='0.95'; this.style.transform='translateY(0)'">
+                        <i class="fas fa-envelope"></i>
+                    </a>
+                    <a href="tel:+1234567890" style="color: white; font-size: 28px; transition: all 0.3s ease; opacity: 0.95;" onmouseover="this.style.opacity='1'; this.style.transform='translateY(-3px)'" onmouseout="this.style.opacity='0.95'; this.style.transform='translateY(0)'">
+                        <i class="fas fa-phone"></i>
+                    </a>
+                </div>
+                <div style="text-align: center; margin-top: 24px; padding-top: 20px; border-top: 1px solid rgba(255, 255, 255, 0.2);">
+                    <p style="color: rgba(255, 255, 255, 0.85); font-size: 13px; margin: 0;">© ${new Date().getFullYear()} Hilax Hospital. All rights reserved.</p>
+                </div>
+            </div>
+        `;
+    }
 }

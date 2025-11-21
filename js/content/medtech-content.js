@@ -71,6 +71,7 @@ class MedTechContent {
                         </div>
                     </div>
                 </div>
+                ${sharedContent.getSocialFooter()}
             </div>
         `;
     }

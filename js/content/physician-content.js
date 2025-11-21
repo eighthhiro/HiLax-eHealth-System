@@ -85,6 +85,7 @@ class PhysicianContent {
                         </div>
                     </div>
                 </div>
+                ${sharedContent.getSocialFooter()}
             </div>
         `;
     }
@@ -150,17 +151,21 @@ class PhysicianContent {
             
             const doctor = patient.doctor || 'Not Assigned';
             
-            // Personal Info button - view only
-            const personalInfoBtn = `<button class="btn btn-sm btn-view-info" data-patient-id="${patient.id}">
-                <i class="fas fa-eye"></i>
-                View Info
-            </button>`;
+            // Personal Info button - view only, check if data exists
+            const personalInfoBtn = patient.personalInfo ? 
+                `<button class="btn btn-sm btn-view-info" data-patient-id="${patient.id}">
+                    <i class="fas fa-eye"></i>
+                    View Info
+                </button>` : 
+                `<span class="no-record">Not Set</span>`;
             
-            // Billing button - view only
-            const billingBtn = `<button class="btn btn-sm btn-view-billing" data-patient-id="${patient.id}">
-                <i class="fas fa-file-invoice"></i>
-                View Billing
-            </button>`;
+            // Billing button - view only, check if data exists
+            const billingBtn = patient.billing ? 
+                `<button class="btn btn-sm btn-view-billing" data-patient-id="${patient.id}">
+                    <i class="fas fa-file-invoice"></i>
+                    View Billing
+                </button>` : 
+                `<span class="no-record">Not Set</span>`;
             
             // Records column
             let recordsContent = '<span class="no-record">No file</span>';
@@ -301,9 +306,9 @@ class PhysicianContent {
                         </h3>
                     </div>
                     <div class="card-content">
-                        <div style="overflow-x: auto;">
+                        <div style="max-height: 300px; overflow-y: auto; overflow-x: auto;">
                             <table class="patients-table" style="min-width: 900px;">
-                                <thead>
+                                <thead style="position: sticky; top: 0; background: white; z-index: 10;">
                                     <tr>
                                         <th style="width: 10%;">Patient ID</th>
                                         <th style="width: 20%;">Name</th>
@@ -314,14 +319,10 @@ class PhysicianContent {
                                         <th style="width: 12%;">Actions</th>
                                     </tr>
                                 </thead>
+                                <tbody>
+                                    ${summaryRows || '<tr><td colspan="7" style="text-align: center; padding: 20px; color: #999;">No medications prescribed yet</td></tr>'}
+                                </tbody>
                             </table>
-                            <div style="max-height: 180px; overflow-y: auto;">
-                                <table class="patients-table" style="min-width: 900px;">
-                                    <tbody>
-                                        ${summaryRows || '<tr><td colspan="7" style="text-align: center; padding: 20px; color: #999;">No medications prescribed yet</td></tr>'}
-                                    </tbody>
-                                </table>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -504,6 +505,15 @@ class PhysicianContent {
 
         return `
             <div class="vital-signs-management">
+                <!-- Info Banner -->
+                <div class="info-banner" style="margin-bottom: 24px; padding: 16px 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 8px; display: flex; align-items: center; gap: 12px;">
+                    <i class="fas fa-info-circle" style="font-size: 24px;"></i>
+                    <div>
+                        <h4 style="margin: 0 0 4px 0; font-size: 16px;">Vital Signs (View Only)</h4>
+                        <p style="margin: 0; font-size: 14px; opacity: 0.9;">Monitor patient vital signs recorded by nurses. Only nurses can record vital signs.</p>
+                    </div>
+                </div>
+
                 <!-- Summary Table -->
                 <div class="card" style="margin-bottom: 24px;">
                     <div class="card-header">
@@ -513,9 +523,9 @@ class PhysicianContent {
                         </h3>
                     </div>
                     <div class="card-content">
-                        <div style="overflow-x: auto;">
+                        <div style="max-height: 300px; overflow-y: auto; overflow-x: auto;">
                             <table class="patients-table" style="min-width: 900px;">
-                                <thead>
+                                <thead style="position: sticky; top: 0; background: white; z-index: 10;">
                                     <tr>
                                         <th style="width: 10%;">Patient ID</th>
                                         <th style="width: 20%;">Name</th>
@@ -527,14 +537,10 @@ class PhysicianContent {
                                         <th style="width: 12%;">Actions</th>
                                     </tr>
                                 </thead>
+                                <tbody>
+                                    ${summaryRows || '<tr><td colspan="8" style="text-align: center; padding: 20px; color: #999;">No vital signs recorded yet</td></tr>'}
+                                </tbody>
                             </table>
-                            <div style="max-height: 180px; overflow-y: auto;">
-                                <table class="patients-table" style="min-width: 900px;">
-                                    <tbody>
-                                        ${summaryRows || '<tr><td colspan="8" style="text-align: center; padding: 20px; color: #999;">No vital signs recorded yet</td></tr>'}
-                                    </tbody>
-                                </table>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -647,6 +653,15 @@ class PhysicianContent {
 
         return `
             <div class="lab-results-management">
+                <!-- Info Banner -->
+                <div class="info-banner" style="margin-bottom: 24px; padding: 16px 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 8px; display: flex; align-items: center; gap: 12px;">
+                    <i class="fas fa-info-circle" style="font-size: 24px;"></i>
+                    <div>
+                        <h4 style="margin: 0 0 4px 0; font-size: 16px;">Laboratory Results (View Only)</h4>
+                        <p style="margin: 0; font-size: 14px; opacity: 0.9;">View lab test results processed by medical technologists. Only med-techs can input results.</p>
+                    </div>
+                </div>
+
                 <div class="card" style="margin-bottom: 24px;">
                     <div class="card-header">
                         <h3 class="card-title">
@@ -655,9 +670,9 @@ class PhysicianContent {
                         </h3>
                     </div>
                     <div class="card-content">
-                        <div style="overflow-x: auto;">
+                        <div style="max-height: 300px; overflow-y: auto; overflow-x: auto;">
                             <table class="patients-table" style="min-width: 900px;">
-                                <thead>
+                                <thead style="position: sticky; top: 0; background: white; z-index: 10;">
                                     <tr>
                                         <th style="width: 10%;">Patient ID</th>
                                         <th style="width: 20%;">Name</th>
@@ -667,14 +682,10 @@ class PhysicianContent {
                                         <th style="width: 12%;">Actions</th>
                                     </tr>
                                 </thead>
+                                <tbody>
+                                    ${summaryRows || '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #999;">No lab results yet</td></tr>'}
+                                </tbody>
                             </table>
-                            <div style="max-height: 180px; overflow-y: auto;">
-                                <table class="patients-table" style="min-width: 900px;">
-                                    <tbody>
-                                        ${summaryRows || '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #999;">No lab results yet</td></tr>'}
-                                    </tbody>
-                                </table>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -683,7 +694,7 @@ class PhysicianContent {
                     <div class="card-header">
                         <h3 class="card-title">
                             <i class="fas fa-flask"></i>
-                            Laboratory Results (View Only)
+                            Laboratory Results
                         </h3>
                     </div>
                     <div class="card-content">
@@ -797,9 +808,9 @@ class PhysicianContent {
                         </h3>
                     </div>
                     <div class="card-content">
-                        <div style="overflow-x: auto;">
+                        <div style="max-height: 300px; overflow-y: auto; overflow-x: auto;">
                             <table class="patients-table" style="min-width: 900px;">
-                                <thead>
+                                <thead style="position: sticky; top: 0; background: white; z-index: 10;">
                                     <tr>
                                         <th style="width: 10%;">Patient ID</th>
                                         <th style="width: 20%;">Name</th>
@@ -810,14 +821,10 @@ class PhysicianContent {
                                         <th style="width: 12%;">Actions</th>
                                     </tr>
                                 </thead>
+                                <tbody>
+                                    ${summaryRows || '<tr><td colspan="7" style="text-align: center; padding: 20px; color: #999;">No prescriptions yet</td></tr>'}
+                                </tbody>
                             </table>
-                            <div style="max-height: 180px; overflow-y: auto;">
-                                <table class="patients-table" style="min-width: 900px;">
-                                    <tbody>
-                                        ${summaryRows || '<tr><td colspan="7" style="text-align: center; padding: 20px; color: #999;">No prescriptions yet</td></tr>'}
-                                    </tbody>
-                                </table>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -927,9 +934,9 @@ class PhysicianContent {
                         </h3>
                     </div>
                     <div class="card-content">
-                        <div style="overflow-x: auto;">
+                        <div style="max-height: 300px; overflow-y: auto; overflow-x: auto;">
                             <table class="patients-table" style="min-width: 1000px;">
-                                <thead>
+                                <thead style="position: sticky; top: 0; background: white; z-index: 10;">
                                     <tr>
                                         <th style="width: 10%;">Patient ID</th>
                                         <th style="width: 18%;">Name</th>
@@ -940,14 +947,10 @@ class PhysicianContent {
                                         <th style="width: 12%;">Actions</th>
                                     </tr>
                                 </thead>
+                                <tbody>
+                                    ${summaryRows || '<tr><td colspan="7" style="text-align: center; padding: 20px; color: #999;">No progress notes recorded yet</td></tr>'}
+                                </tbody>
                             </table>
-                            <div style="max-height: 200px; overflow-y: auto;">
-                                <table class="patients-table" style="min-width: 1000px;">
-                                    <tbody>
-                                        ${summaryRows || '<tr><td colspan="7" style="text-align: center; padding: 20px; color: #999;">No progress notes recorded yet</td></tr>'}
-                                    </tbody>
-                                </table>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -1138,6 +1141,15 @@ class PhysicianContent {
 
         return `
             <div class="imaging-results-management">
+                <!-- Info Banner -->
+                <div class="info-banner" style="margin-bottom: 24px; padding: 16px 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 8px; display: flex; align-items: center; gap: 12px;">
+                    <i class="fas fa-info-circle" style="font-size: 24px;"></i>
+                    <div>
+                        <h4 style="margin: 0 0 4px 0; font-size: 16px;">Imaging Results (View Only)</h4>
+                        <p style="margin: 0; font-size: 14px; opacity: 0.9;">View imaging results processed by radiology technologists. Only rad-techs can input results.</p>
+                    </div>
+                </div>
+
                 <!-- Summary Table -->
                 <div class="card" style="margin-bottom: 24px;">
                     <div class="card-header">
@@ -1147,9 +1159,9 @@ class PhysicianContent {
                         </h3>
                     </div>
                     <div class="card-content">
-                        <div style="overflow-x: auto;">
+                        <div style="max-height: 300px; overflow-y: auto; overflow-x: auto;">
                             <table class="patients-table" style="min-width: 900px;">
-                                <thead>
+                                <thead style="position: sticky; top: 0; background: white; z-index: 10;">
                                     <tr>
                                         <th style="width: 10%;">Patient ID</th>
                                         <th style="width: 20%;">Name</th>
@@ -1159,14 +1171,10 @@ class PhysicianContent {
                                         <th style="width: 12%;">Actions</th>
                                     </tr>
                                 </thead>
+                                <tbody>
+                                    ${summaryRows || '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #999;">No imaging results recorded yet</td></tr>'}
+                                </tbody>
                             </table>
-                            <div style="max-height: 180px; overflow-y: auto;">
-                                <table class="patients-table" style="min-width: 900px;">
-                                    <tbody>
-                                        ${summaryRows || '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #999;">No imaging results recorded yet</td></tr>'}
-                                    </tbody>
-                                </table>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -1176,7 +1184,7 @@ class PhysicianContent {
                     <div class="card-header">
                         <h3 class="card-title">
                             <i class="fas fa-x-ray"></i>
-                            Imaging Results (View Only)
+                            Imaging Results
                         </h3>
                     </div>
                     <div class="card-content">

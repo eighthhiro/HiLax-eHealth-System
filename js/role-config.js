@@ -72,8 +72,7 @@ const ROLE_PERMISSIONS = {
             { icon: 'fas fa-user-injured', text: 'Patient List', id: 'patient-list' },
             { icon: 'fas fa-heartbeat', text: 'Vital Signs', id: 'vital-signs' },
             { icon: 'fas fa-prescription', text: 'Medications', id: 'medications' },
-            { icon: 'fas fa-clipboard-list', text: 'PRD Notes', id: 'prd-notes' },
-            { icon: 'fas fa-syringe', text: 'Drug Administration', id: 'drug-admin' },
+            { icon: 'fas fa-file-medical-alt', text: 'Progress Notes', id: 'progress-notes' },
             { icon: 'fas fa-file-medical', text: 'Nursing Assessment', id: 'nursing-assessment' }
         ]
     },
@@ -135,8 +134,7 @@ const ROLE_PERMISSIONS = {
             { icon: 'fas fa-file-medical', text: 'Medical Records', id: 'medical-records' },
             { icon: 'fas fa-prescription', text: 'Prescriptions', id: 'prescriptions' },
             { icon: 'fas fa-heartbeat', text: 'Vital Signs', id: 'vital-signs' },
-            { icon: 'fas fa-money-bill', text: 'Billing', id: 'billing' },
-            { icon: 'fas fa-clock', text: 'Appointments', id: 'appointments' }
+            { icon: 'fas fa-money-bill', text: 'Billing', id: 'billing' }
         ]
     }
 };

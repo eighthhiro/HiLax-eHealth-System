@@ -16,6 +16,11 @@
     background: var(--light-pink);
 }
 
+/* Sticky header support for summary tables */
+.patients-table thead[style*="position: sticky"] {
+    background: var(--light-pink) !important;
+}
+
 .patients-table th {
     padding: 16px 12px;
     text-align: center;

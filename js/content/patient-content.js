@@ -15,6 +15,7 @@ class PatientContent {
                     ${sharedContent.getAnnouncementsSection()}
                     ${this.getAwardsCarousel()}
                 </div>
+                ${sharedContent.getSocialFooter()}
             </div>
         `;
     }

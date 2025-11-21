@@ -173,6 +173,9 @@ class Dashboard {
             case 'progress-notes':
                 pageContent = this.contentGenerator.getProgressNotesContent();
                 break;
+            case 'nursing-assessment':
+                pageContent = this.contentGenerator.getNursingAssessmentContent();
+                break;
             default:
                 pageContent = this.contentGenerator.getDefaultContent(pageId);
         }
@@ -215,6 +218,8 @@ class Dashboard {
             this.attachQualityControlListeners();
         } else if (pageId === 'progress-notes') {
             this.attachProgressNotesListeners();
+        } else if (pageId === 'nursing-assessment') {
+            this.attachNursingAssessmentListeners();
         }
     }
 
@@ -2378,6 +2383,17 @@ class Dashboard {
                     </div>
 
                     <div class="form-row">
+                        <div class="form-group">
+                            <label for="insuranceProvider">Insurance Provider</label>
+                            <input type="text" id="insuranceProvider" placeholder="e.g., PhilHealth, HMO, Private">
+                        </div>
+                        <div class="form-group">
+                            <label for="insuranceNumber">Insurance Number</label>
+                            <input type="text" id="insuranceNumber" placeholder="Insurance policy number">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
                         <div class="form-group" style="flex: 1;">
                             <label for="notes">Notes/Remarks</label>
                             <textarea id="notes" rows="2" placeholder="Additional notes or remarks"></textarea>
@@ -2460,6 +2476,8 @@ class Dashboard {
             imaging: parseFloat(document.getElementById('imaging').value),
             otherCharges: parseFloat(document.getElementById('otherCharges').value),
             discount: parseFloat(document.getElementById('discount').value),
+            insuranceProvider: document.getElementById('insuranceProvider').value,
+            insuranceNumber: document.getElementById('insuranceNumber').value,
             notes: document.getElementById('notes').value,
             subtotal: 0,
             discountAmount: 0,
@@ -3307,6 +3325,486 @@ class Dashboard {
         });
     }
 
+    // Nursing Assessment Listeners
+    attachNursingAssessmentListeners() {
+        const patientSelect = document.getElementById('nursingAssessmentPatient');
+        const assessmentForm = document.getElementById('newNursingAssessmentForm');
+        const clearFormBtn = document.getElementById('clearNursingAssessmentForm');
+
+        if (patientSelect) {
+            patientSelect.addEventListener('change', (e) => this.handleNursingAssessmentPatientSelection(e.target.value));
+        }
+
+        if (assessmentForm) {
+            assessmentForm.addEventListener('submit', (e) => this.saveNursingAssessment(e));
+        }
+
+        if (clearFormBtn) {
+            clearFormBtn.addEventListener('click', () => this.clearNursingAssessmentForm());
+        }
+
+        // Set current date and time by default
+        const dateInput = document.getElementById('assessmentDate');
+        const timeInput = document.getElementById('assessmentTime');
+        if (dateInput && !dateInput.value) {
+            const today = new Date();
+            dateInput.value = today.toISOString().split('T')[0];
+        }
+        if (timeInput && !timeInput.value) {
+            const now = new Date();
+            timeInput.value = now.toTimeString().slice(0, 5);
+        }
+
+        // Add event listeners for "View" buttons in summary table
+        const viewButtons = document.querySelectorAll('.btn-view-nursing-assessment');
+        viewButtons.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const assessmentId = e.currentTarget.getAttribute('data-assessment-id');
+                if (assessmentId) {
+                    this.showNursingAssessmentDetailsModal(assessmentId);
+                }
+            });
+        });
+
+        // For nurses viewing progress notes (view only)
+        const progressNotesPatientSelect = document.getElementById('progressNotesPatientNurse');
+        if (progressNotesPatientSelect) {
+            progressNotesPatientSelect.addEventListener('change', (e) => this.handleProgressNotesNurseSelection(e.target.value));
+        }
+
+        const viewProgressNoteButtons = document.querySelectorAll('.btn-view-progress-note');
+        viewProgressNoteButtons.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const noteId = e.currentTarget.getAttribute('data-note-id');
+                if (noteId) {
+                    this.showProgressNoteDetailsModal(noteId);
+                }
+            });
+        });
+    }
+
+    handleNursingAssessmentPatientSelection(patientId) {
+        const selectedPatientInfo = document.getElementById('selectedPatientInfoNursingAssessment');
+        const assessmentForm = document.getElementById('nursingAssessmentForm');
+        const assessmentHistory = document.getElementById('nursingAssessmentHistory');
+
+        if (!patientId) {
+            if (selectedPatientInfo) selectedPatientInfo.style.display = 'none';
+            if (assessmentForm) assessmentForm.style.display = 'none';
+            if (assessmentHistory) assessmentHistory.style.display = 'none';
+            return;
+        }
+
+        // Get patient data
+        const patients = JSON.parse(localStorage.getItem('patients') || '[]');
+        const patient = patients.find(p => p.id === patientId);
+
+        if (patient) {
+            // Display patient info
+            this.displayPatientInfoNursingAssessment(patient);
+            if (selectedPatientInfo) selectedPatientInfo.style.display = 'block';
+            if (assessmentForm) assessmentForm.style.display = 'block';
+            if (assessmentHistory) assessmentHistory.style.display = 'block';
+
+            // Load assessment history
+            this.loadNursingAssessmentHistory(patientId);
+        }
+    }
+
+    handleProgressNotesNurseSelection(patientId) {
+        const selectedPatientInfo = document.getElementById('selectedPatientInfoProgressNotesNurse');
+        const progressNotesHistory = document.getElementById('progressNotesHistoryNurse');
+
+        if (!patientId) {
+            if (selectedPatientInfo) selectedPatientInfo.style.display = 'none';
+            if (progressNotesHistory) progressNotesHistory.style.display = 'none';
+            return;
+        }
+
+        // Get patient data
+        const patients = JSON.parse(localStorage.getItem('patients') || '[]');
+        const patient = patients.find(p => p.id === patientId);
+
+        if (patient) {
+            // Display patient info
+            this.displayPatientInfoProgressNotesNurse(patient);
+            if (selectedPatientInfo) selectedPatientInfo.style.display = 'block';
+            if (progressNotesHistory) progressNotesHistory.style.display = 'block';
+
+            // Load progress notes history
+            this.loadProgressNotesHistoryNurse(patientId);
+        }
+    }
+
+    displayPatientInfoNursingAssessment(patient) {
+        const nameEl = document.getElementById('selectedPatientNameNursingAssessment');
+        const idEl = document.getElementById('selectedPatientIdNursingAssessment');
+        const ageEl = document.getElementById('selectedPatientAgeNursingAssessment');
+        const statusEl = document.getElementById('selectedPatientStatusNursingAssessment');
+        const doctorEl = document.getElementById('selectedPatientDoctorNursingAssessment');
+
+        if (nameEl) nameEl.textContent = patient.fullName;
+        if (idEl) idEl.textContent = patient.id;
+        if (ageEl) ageEl.textContent = patient.age;
+        if (statusEl) statusEl.textContent = patient.status;
+        if (doctorEl) doctorEl.textContent = patient.doctor || 'Not Assigned';
+    }
+
+    displayPatientInfoProgressNotesNurse(patient) {
+        const nameEl = document.getElementById('selectedPatientNameProgressNotesNurse');
+        const idEl = document.getElementById('selectedPatientIdProgressNotesNurse');
+        const ageEl = document.getElementById('selectedPatientAgeProgressNotesNurse');
+        const statusEl = document.getElementById('selectedPatientStatusProgressNotesNurse');
+        const doctorEl = document.getElementById('selectedPatientDoctorProgressNotesNurse');
+
+        if (nameEl) nameEl.textContent = patient.fullName;
+        if (idEl) idEl.textContent = patient.id;
+        if (ageEl) ageEl.textContent = patient.age;
+        if (statusEl) statusEl.textContent = patient.status;
+        if (doctorEl) doctorEl.textContent = patient.doctor || 'Not Assigned';
+    }
+
+    clearNursingAssessmentForm() {
+        document.getElementById('assessmentType').value = '';
+        document.getElementById('chiefConcern').value = '';
+        document.getElementById('assessmentBP').value = '';
+        document.getElementById('assessmentHR').value = '';
+        document.getElementById('assessmentTemp').value = '';
+        document.getElementById('assessmentRR').value = '';
+        document.getElementById('generalAppearance').value = '';
+        document.getElementById('painAssessment').value = '';
+        document.getElementById('respiratoryAssessment').value = '';
+        document.getElementById('cardiovascularAssessment').value = '';
+        document.getElementById('neurologicalAssessment').value = '';
+        document.getElementById('skinIntegrity').value = '';
+        document.getElementById('nursingInterventions').value = '';
+        document.getElementById('assessmentNotes').value = '';
+        
+        // Reset date and time to current
+        const today = new Date();
+        document.getElementById('assessmentDate').value = today.toISOString().split('T')[0];
+        document.getElementById('assessmentTime').value = new Date().toTimeString().slice(0, 5);
+    }
+
+    saveNursingAssessment(e) {
+        e.preventDefault();
+
+        const patientId = document.getElementById('nursingAssessmentPatient').value;
+        if (!patientId) {
+            this.showNotification('Please select a patient first', 'error');
+            return;
+        }
+
+        // Get form values
+        const assessment = {
+            id: 'NA' + Date.now(),
+            patientId: patientId,
+            date: document.getElementById('assessmentDate').value,
+            time: document.getElementById('assessmentTime').value,
+            assessmentType: document.getElementById('assessmentType').value,
+            chiefConcern: document.getElementById('chiefConcern').value,
+            vitalSigns: {
+                bloodPressure: document.getElementById('assessmentBP').value,
+                heartRate: document.getElementById('assessmentHR').value,
+                temperature: document.getElementById('assessmentTemp').value,
+                respiratoryRate: document.getElementById('assessmentRR').value
+            },
+            generalAppearance: document.getElementById('generalAppearance').value,
+            painAssessment: document.getElementById('painAssessment').value,
+            respiratoryAssessment: document.getElementById('respiratoryAssessment').value,
+            cardiovascularAssessment: document.getElementById('cardiovascularAssessment').value,
+            neurologicalAssessment: document.getElementById('neurologicalAssessment').value,
+            skinIntegrity: document.getElementById('skinIntegrity').value,
+            nursingInterventions: document.getElementById('nursingInterventions').value,
+            additionalNotes: document.getElementById('assessmentNotes').value,
+            recordedBy: this.currentUser.fullName,
+            recordedDate: new Date().toISOString().split('T')[0]
+        };
+
+        // Get existing assessments
+        let assessments = JSON.parse(localStorage.getItem('nursingAssessments') || '[]');
+        
+        // Add new assessment at the beginning (most recent first)
+        assessments.unshift(assessment);
+        
+        // Save to localStorage
+        localStorage.setItem('nursingAssessments', JSON.stringify(assessments));
+
+        this.showNotification('Nursing assessment saved successfully!', 'success');
+        
+        // Clear form and reload history
+        this.clearNursingAssessmentForm();
+        this.loadNursingAssessmentHistory(patientId);
+    }
+
+    loadNursingAssessmentHistory(patientId) {
+        const historyTable = document.getElementById('nursingAssessmentHistoryTable');
+        if (!historyTable) return;
+
+        const allAssessments = JSON.parse(localStorage.getItem('nursingAssessments') || '[]');
+        const patientAssessments = allAssessments.filter(assessment => assessment.patientId === patientId);
+
+        if (patientAssessments.length === 0) {
+            historyTable.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">No assessments recorded yet.</p>';
+            return;
+        }
+
+        const tableHTML = `
+            <div style="overflow-x: auto;">
+                <table class="patients-table" style="min-width: 1000px;">
+                    <thead>
+                        <tr>
+                            <th style="width: 12%;">Date</th>
+                            <th style="width: 10%;">Time</th>
+                            <th style="width: 18%;">Assessment Type</th>
+                            <th style="width: 20%;">Chief Concern</th>
+                            <th style="width: 15%;">Recorded By</th>
+                            <th style="width: 15%;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${patientAssessments.map(assessment => `
+                            <tr>
+                                <td>${assessment.date}</td>
+                                <td>${assessment.time}</td>
+                                <td>${assessment.assessmentType}</td>
+                                <td>${assessment.chiefConcern}</td>
+                                <td>${assessment.recordedBy}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-view-assessment-detail" data-assessment-id="${assessment.id}">
+                                        <i class="fas fa-eye"></i> View Full
+                                    </button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        `;
+
+        historyTable.innerHTML = tableHTML;
+
+        // Attach event listeners to the new "View Full" buttons
+        const viewButtons = document.querySelectorAll('.btn-view-assessment-detail');
+        viewButtons.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const assessmentId = e.currentTarget.getAttribute('data-assessment-id');
+                if (assessmentId) {
+                    this.showNursingAssessmentDetailsModal(assessmentId);
+                }
+            });
+        });
+    }
+
+    loadProgressNotesHistoryNurse(patientId) {
+        const historyTable = document.getElementById('progressNotesHistoryTableNurse');
+        if (!historyTable) return;
+
+        const allProgressNotes = JSON.parse(localStorage.getItem('progressNotes') || '[]');
+        const patientNotes = allProgressNotes.filter(note => note.patientId === patientId);
+
+        if (patientNotes.length === 0) {
+            historyTable.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">No progress notes recorded yet.</p>';
+            return;
+        }
+
+        const tableHTML = `
+            <div style="overflow-x: auto;">
+                <table class="patients-table" style="min-width: 1000px;">
+                    <thead>
+                        <tr>
+                            <th style="width: 12%;">Date</th>
+                            <th style="width: 10%;">Time</th>
+                            <th style="width: 15%;">Note Type</th>
+                            <th style="width: 18%;">Chief Complaint</th>
+                            <th style="width: 15%;">Assessment (Brief)</th>
+                            <th style="width: 15%;">Physician</th>
+                            <th style="width: 15%;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${patientNotes.map(note => `
+                            <tr>
+                                <td>${note.date}</td>
+                                <td>${note.time}</td>
+                                <td>
+                                    <span class="badge" style="padding: 4px 8px; border-radius: 4px; font-size: 12px; background: ${
+                                        note.noteType === 'Progress Note' ? '#e3f2fd' :
+                                        note.noteType === 'Consultation' ? '#f3e5f5' :
+                                        note.noteType === 'Follow-up' ? '#e8f5e9' :
+                                        note.noteType === 'Admission Note' ? '#fff3e0' : '#f5f5f5'
+                                    }; color: ${
+                                        note.noteType === 'Progress Note' ? '#1976d2' :
+                                        note.noteType === 'Consultation' ? '#7b1fa2' :
+                                        note.noteType === 'Follow-up' ? '#388e3c' :
+                                        note.noteType === 'Admission Note' ? '#f57c00' : '#424242'
+                                    };">${note.noteType}</span>
+                                </td>
+                                <td>${note.chiefComplaint}</td>
+                                <td>${note.assessment ? note.assessment.substring(0, 50) + '...' : 'N/A'}</td>
+                                <td>${note.recordedBy}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-view-note-detail-nurse" data-note-id="${note.id}">
+                                        <i class="fas fa-eye"></i> View Full
+                                    </button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        `;
+
+        historyTable.innerHTML = tableHTML;
+
+        // Attach event listeners to the new "View Full" buttons
+        const viewButtons = document.querySelectorAll('.btn-view-note-detail-nurse');
+        viewButtons.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const noteId = e.currentTarget.getAttribute('data-note-id');
+                if (noteId) {
+                    this.showProgressNoteDetailsModal(noteId);
+                }
+            });
+        });
+    }
+
+    showNursingAssessmentDetailsModal(assessmentId) {
+        const allAssessments = JSON.parse(localStorage.getItem('nursingAssessments') || '[]');
+        const assessment = allAssessments.find(a => a.id === assessmentId);
+
+        if (!assessment) {
+            this.showNotification('Assessment not found', 'error');
+            return;
+        }
+
+        // Get patient info
+        const patients = JSON.parse(localStorage.getItem('patients') || '[]');
+        const patient = patients.find(p => p.id === assessment.patientId);
+        const patientName = patient ? patient.fullName : 'Unknown Patient';
+
+        const modal = document.createElement('div');
+        modal.className = 'modal-overlay';
+        modal.innerHTML = `
+            <div class="modal-content" style="max-width: 900px;">
+                <div class="modal-header">
+                    <h2><i class="fas fa-file-medical"></i> Nursing Assessment Details</h2>
+                    <button class="modal-close" id="closeAssessmentModalBtn">&times;</button>
+                </div>
+                <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+                    <!-- Patient & Assessment Info -->
+                    <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;">
+                            <div><strong>Patient:</strong> ${patientName} (${assessment.patientId})</div>
+                            <div><strong>Date:</strong> ${assessment.date} at ${assessment.time}</div>
+                            <div><strong>Assessment Type:</strong> ${assessment.assessmentType}</div>
+                            <div><strong>Nurse:</strong> ${assessment.recordedBy}</div>
+                        </div>
+                    </div>
+
+                    <!-- Chief Concern -->
+                    <div style="margin-bottom: 20px; padding: 15px; background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 4px;">
+                        <h4 style="margin: 0 0 8px 0; color: #856404;">
+                            <i class="fas fa-exclamation-circle"></i> Chief Concern
+                        </h4>
+                        <p style="margin: 0; color: #856404;">${assessment.chiefConcern}</p>
+                    </div>
+
+                    <!-- Vital Signs -->
+                    ${assessment.vitalSigns.bloodPressure || assessment.vitalSigns.heartRate || assessment.vitalSigns.temperature || assessment.vitalSigns.respiratoryRate ? `
+                    <div style="background: #e8f5e9; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                        <h4 style="margin: 0 0 12px 0; color: #2e7d32;">
+                            <i class="fas fa-heartbeat"></i> Vital Signs
+                        </h4>
+                        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;">
+                            ${assessment.vitalSigns.bloodPressure ? `<div><strong>BP:</strong> ${assessment.vitalSigns.bloodPressure}</div>` : ''}
+                            ${assessment.vitalSigns.heartRate ? `<div><strong>HR:</strong> ${assessment.vitalSigns.heartRate} bpm</div>` : ''}
+                            ${assessment.vitalSigns.temperature ? `<div><strong>Temp:</strong> ${assessment.vitalSigns.temperature}°C</div>` : ''}
+                            ${assessment.vitalSigns.respiratoryRate ? `<div><strong>RR:</strong> ${assessment.vitalSigns.respiratoryRate}/min</div>` : ''}
+                        </div>
+                    </div>
+                    ` : ''}
+
+                    <!-- Assessment Sections -->
+                    <div style="background: #f8f9fa; padding: 20px; border-radius: 8px;">
+                        <h3 style="color: var(--dark-pink); margin-bottom: 16px;">
+                            <i class="fas fa-clipboard-list"></i> Nursing Assessment
+                        </h3>
+
+                        <div style="margin-bottom: 16px;">
+                            <h4 style="color: #495057; margin-bottom: 8px;">General Appearance & Behavior</h4>
+                            <div style="padding: 12px; background: white; border-radius: 4px; white-space: pre-wrap;">${assessment.generalAppearance}</div>
+                        </div>
+
+                        <div style="margin-bottom: 16px;">
+                            <h4 style="color: #495057; margin-bottom: 8px;">Pain Assessment</h4>
+                            <div style="padding: 12px; background: white; border-radius: 4px; white-space: pre-wrap;">${assessment.painAssessment}</div>
+                        </div>
+
+                        ${assessment.respiratoryAssessment ? `
+                        <div style="margin-bottom: 16px;">
+                            <h4 style="color: #495057; margin-bottom: 8px;">Respiratory Assessment</h4>
+                            <div style="padding: 12px; background: white; border-radius: 4px; white-space: pre-wrap;">${assessment.respiratoryAssessment}</div>
+                        </div>
+                        ` : ''}
+
+                        ${assessment.cardiovascularAssessment ? `
+                        <div style="margin-bottom: 16px;">
+                            <h4 style="color: #495057; margin-bottom: 8px;">Cardiovascular Assessment</h4>
+                            <div style="padding: 12px; background: white; border-radius: 4px; white-space: pre-wrap;">${assessment.cardiovascularAssessment}</div>
+                        </div>
+                        ` : ''}
+
+                        ${assessment.neurologicalAssessment ? `
+                        <div style="margin-bottom: 16px;">
+                            <h4 style="color: #495057; margin-bottom: 8px;">Neurological Assessment</h4>
+                            <div style="padding: 12px; background: white; border-radius: 4px; white-space: pre-wrap;">${assessment.neurologicalAssessment}</div>
+                        </div>
+                        ` : ''}
+
+                        ${assessment.skinIntegrity ? `
+                        <div style="margin-bottom: 16px;">
+                            <h4 style="color: #495057; margin-bottom: 8px;">Skin Integrity</h4>
+                            <div style="padding: 12px; background: white; border-radius: 4px; white-space: pre-wrap;">${assessment.skinIntegrity}</div>
+                        </div>
+                        ` : ''}
+
+                        <div style="margin-bottom: ${assessment.additionalNotes ? '16px' : '0'};">
+                            <h4 style="color: #495057; margin-bottom: 8px;">Nursing Interventions & Care Plan</h4>
+                            <div style="padding: 12px; background: white; border-radius: 4px; white-space: pre-wrap;">${assessment.nursingInterventions}</div>
+                        </div>
+
+                        ${assessment.additionalNotes ? `
+                        <div>
+                            <h4 style="color: #495057; margin-bottom: 8px;">Additional Notes</h4>
+                            <div style="padding: 12px; background: white; border-radius: 4px; white-space: pre-wrap;">${assessment.additionalNotes}</div>
+                        </div>
+                        ` : ''}
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" id="closeAssessmentModalBtn2">Close</button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        // Add event listeners for close buttons
+        const closeBtn1 = modal.querySelector('#closeAssessmentModalBtn');
+        const closeBtn2 = modal.querySelector('#closeAssessmentModalBtn2');
+
+        const closeModal = () => {
+            document.body.removeChild(modal);
+        };
+
+        closeBtn1.addEventListener('click', closeModal);
+        closeBtn2.addEventListener('click', closeModal);
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) closeModal();
+        });
+    }
+
     // Vital Signs Page Listeners
     attachVitalSignsListeners() {
         const patientSelect = document.getElementById('vitalSignsPatient');
@@ -3503,38 +4001,59 @@ class Dashboard {
 
     // Medications Listeners
     attachMedicationsListeners() {
-        const patientSelect = document.getElementById('medicationsPatient');
-        const medicationsForm = document.getElementById('newMedicationForm');
-        const clearFormBtn = document.getElementById('clearMedicationsForm');
+        // Check if nurse role - different element IDs
+        if (this.currentUser.role === 'Nurse') {
+            const patientSelectNurse = document.getElementById('medicationsPatientNurse');
+            
+            if (patientSelectNurse) {
+                patientSelectNurse.addEventListener('change', (e) => this.handleMedicationsNursePatientSelection(e.target.value));
+            }
 
-        if (patientSelect) {
-            patientSelect.addEventListener('change', (e) => this.handleMedicationsPatientSelection(e.target.value));
-        }
-
-        if (medicationsForm) {
-            medicationsForm.addEventListener('submit', (e) => this.saveMedication(e));
-        }
-
-        if (clearFormBtn) {
-            clearFormBtn.addEventListener('click', () => this.clearMedicationsForm());
-        }
-
-        // Add event listeners for "View More" buttons in summary table
-        const viewMoreButtons = document.querySelectorAll('.btn-view-more-medications');
-        viewMoreButtons.forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const patientId = e.currentTarget.getAttribute('data-patient-id');
-                if (patientId) {
-                    this.showPatientMedicationsModal(patientId);
-                }
+            // Add event listeners for view buttons in summary table
+            const viewDetailButtons = document.querySelectorAll('.btn-view-medication-details');
+            viewDetailButtons.forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const medicationId = e.currentTarget.getAttribute('data-medication-id');
+                    if (medicationId) {
+                        this.showMedicationDetailsModalNurse(medicationId);
+                    }
+                });
             });
-        });
+        } else {
+            // Physician medications listeners
+            const patientSelect = document.getElementById('medicationsPatient');
+            const medicationsForm = document.getElementById('newMedicationForm');
+            const clearFormBtn = document.getElementById('clearMedicationsForm');
 
-        // Check if there's a pre-selected patient from the patient list
-        if (this.selectedPatientForMedications) {
-            patientSelect.value = this.selectedPatientForMedications;
-            this.handleMedicationsPatientSelection(this.selectedPatientForMedications);
-            this.selectedPatientForMedications = null; // Clear after use
+            if (patientSelect) {
+                patientSelect.addEventListener('change', (e) => this.handleMedicationsPatientSelection(e.target.value));
+            }
+
+            if (medicationsForm) {
+                medicationsForm.addEventListener('submit', (e) => this.saveMedication(e));
+            }
+
+            if (clearFormBtn) {
+                clearFormBtn.addEventListener('click', () => this.clearMedicationsForm());
+            }
+
+            // Add event listeners for "View More" buttons in summary table
+            const viewMoreButtons = document.querySelectorAll('.btn-view-more-medications');
+            viewMoreButtons.forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const patientId = e.currentTarget.getAttribute('data-patient-id');
+                    if (patientId) {
+                        this.showPatientMedicationsModal(patientId);
+                    }
+                });
+            });
+
+            // Check if there's a pre-selected patient from the patient list
+            if (this.selectedPatientForMedications) {
+                patientSelect.value = this.selectedPatientForMedications;
+                this.handleMedicationsPatientSelection(this.selectedPatientForMedications);
+                this.selectedPatientForMedications = null; // Clear after use
+            }
         }
     }
 
@@ -3782,6 +4301,221 @@ class Dashboard {
         };
 
         document.getElementById('closeMedicationsBtn').addEventListener('click', closeModal);
+    }
+
+    // Nurse Medications Handlers
+    handleMedicationsNursePatientSelection(patientId) {
+        const selectedPatientInfo = document.getElementById('selectedPatientInfoMedicationsNurse');
+        const medicationsTable = document.getElementById('medicationsTableNurse');
+
+        if (!patientId) {
+            if (selectedPatientInfo) selectedPatientInfo.style.display = 'none';
+            if (medicationsTable) medicationsTable.style.display = 'none';
+            return;
+        }
+
+        // Get patient data
+        const patients = JSON.parse(localStorage.getItem('patients') || '[]');
+        const patient = patients.find(p => p.id === patientId);
+
+        if (patient) {
+            // Display patient info
+            this.displayPatientInfoMedicationsNurse(patient);
+            if (selectedPatientInfo) selectedPatientInfo.style.display = 'block';
+            if (medicationsTable) medicationsTable.style.display = 'block';
+
+            // Load medications for this patient
+            this.loadPatientMedicationsNurse(patientId);
+        }
+    }
+
+    displayPatientInfoMedicationsNurse(patient) {
+        document.getElementById('selectedPatientNameMedicationsNurse').textContent = patient.fullName;
+        document.getElementById('selectedPatientIdMedicationsNurse').textContent = patient.id;
+        document.getElementById('selectedPatientAgeMedicationsNurse').textContent = patient.age;
+        document.getElementById('selectedPatientStatusMedicationsNurse').textContent = patient.status;
+        document.getElementById('selectedPatientDoctorMedicationsNurse').textContent = patient.doctor || 'Not Assigned';
+    }
+
+    loadPatientMedicationsNurse(patientId) {
+        const medicationsList = document.getElementById('medicationsListNurse');
+        if (!medicationsList) return;
+
+        const allMedications = JSON.parse(localStorage.getItem('medications') || '[]');
+        const dispensingRecords = JSON.parse(localStorage.getItem('dispensingRecords') || '[]');
+        const patientMedications = allMedications.filter(med => med.patientId === patientId);
+
+        if (patientMedications.length === 0) {
+            medicationsList.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px; color: #999;">No medications prescribed for this patient.</td></tr>';
+            return;
+        }
+
+        let rowsHTML = '';
+        patientMedications.forEach(med => {
+            // Check if medication has been dispensed
+            const dispensed = dispensingRecords.find(dr => 
+                dr.patientId === patientId && 
+                dr.medicationName === med.medicationName
+            );
+
+            const statusBadge = dispensed 
+                ? '<span class="status-badge completed">Dispensed</span>' 
+                : '<span class="status-badge pending">Not Dispensed</span>';
+
+            rowsHTML += `
+                <tr>
+                    <td><strong>${med.medicationName}</strong></td>
+                    <td>${med.dosage}</td>
+                    <td>${med.frequency}</td>
+                    <td>${med.route}</td>
+                    <td>${med.duration}</td>
+                    <td>${med.startDate}</td>
+                    <td>${statusBadge}</td>
+                    <td>
+                        <button class="btn btn-sm btn-view-medication-detail" data-medication-id="${med.id}">
+                            <i class="fas fa-eye"></i> Details
+                        </button>
+                    </td>
+                </tr>
+                ${med.notes ? `
+                <tr style="background: #f8f9fa;">
+                    <td colspan="8" style="text-align: left; padding: 12px; border-left: 3px solid var(--dark-pink);">
+                        <strong style="color: var(--dark-pink);">Instructions:</strong> ${med.notes}
+                    </td>
+                </tr>
+                ` : ''}
+            `;
+        });
+
+        medicationsList.innerHTML = rowsHTML;
+
+        // Attach click listeners to detail buttons
+        const detailButtons = document.querySelectorAll('.btn-view-medication-detail');
+        detailButtons.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const medicationId = e.currentTarget.getAttribute('data-medication-id');
+                if (medicationId) {
+                    this.showMedicationDetailsModalNurse(medicationId);
+                }
+            });
+        });
+    }
+
+    showMedicationDetailsModalNurse(medicationId) {
+        const allMedications = JSON.parse(localStorage.getItem('medications') || '[]');
+        const dispensingRecords = JSON.parse(localStorage.getItem('dispensingRecords') || '[]');
+        const patients = JSON.parse(localStorage.getItem('patients') || '[]');
+
+        const medication = allMedications.find(med => med.id === medicationId);
+        if (!medication) {
+            this.showNotification('Medication not found', 'error');
+            return;
+        }
+
+        const patient = patients.find(p => p.id === medication.patientId);
+        const dispensed = dispensingRecords.find(dr => 
+            dr.patientId === medication.patientId && 
+            dr.medicationName === medication.medicationName
+        );
+
+        const modal = document.createElement('div');
+        modal.className = 'modal-overlay';
+        modal.innerHTML = `
+            <div class="modal-content" style="max-width: 700px;">
+                <h2 style="color: var(--dark-pink); margin-bottom: 20px;">
+                    <i class="fas fa-pills"></i> Medication Details
+                </h2>
+
+                <!-- Patient Information -->
+                <div style="margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-left: 4px solid var(--dark-pink); border-radius: 4px;">
+                    <h4 style="color: var(--dark-pink); margin-bottom: 10px;">Patient Information</h4>
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;">
+                        <div><strong>Name:</strong> ${patient?.fullName || 'Unknown'}</div>
+                        <div><strong>Patient ID:</strong> ${medication.patientId}</div>
+                        <div><strong>Age:</strong> ${patient?.age || 'N/A'}</div>
+                        <div><strong>Status:</strong> ${patient?.status || 'N/A'}</div>
+                    </div>
+                </div>
+
+                <!-- Medication Information -->
+                <div style="margin-bottom: 20px; padding: 20px; background: white; border: 1px solid #e1e8ed; border-radius: 8px;">
+                    <h4 style="color: var(--dark-pink); margin-bottom: 16px;">Prescription Details</h4>
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 16px;">
+                        <div>
+                            <strong style="color: #666;">Medication Name:</strong>
+                            <div style="font-size: 16px; margin-top: 4px;">${medication.medicationName}</div>
+                        </div>
+                        <div>
+                            <strong style="color: #666;">Dosage:</strong>
+                            <div style="font-size: 16px; margin-top: 4px;">${medication.dosage}</div>
+                        </div>
+                        <div>
+                            <strong style="color: #666;">Frequency:</strong>
+                            <div style="font-size: 16px; margin-top: 4px;">${medication.frequency}</div>
+                        </div>
+                        <div>
+                            <strong style="color: #666;">Route:</strong>
+                            <div style="font-size: 16px; margin-top: 4px;">${medication.route}</div>
+                        </div>
+                        <div>
+                            <strong style="color: #666;">Duration:</strong>
+                            <div style="font-size: 16px; margin-top: 4px;">${medication.duration}</div>
+                        </div>
+                        <div>
+                            <strong style="color: #666;">Start Date:</strong>
+                            <div style="font-size: 16px; margin-top: 4px;">${medication.startDate}</div>
+                        </div>
+                        <div>
+                            <strong style="color: #666;">Prescribed By:</strong>
+                            <div style="font-size: 16px; margin-top: 4px;">${medication.prescribedBy}</div>
+                        </div>
+                        <div>
+                            <strong style="color: #666;">Prescribed Date:</strong>
+                            <div style="font-size: 16px; margin-top: 4px;">${medication.prescribedDate}</div>
+                        </div>
+                    </div>
+                    ${medication.notes ? `
+                        <div style="margin-top: 16px; padding: 12px; background: #f8f9fa; border-left: 3px solid var(--dark-pink); border-radius: 4px;">
+                            <strong style="color: var(--dark-pink);">Instructions / Notes:</strong>
+                            <div style="margin-top: 8px;">${medication.notes}</div>
+                        </div>
+                    ` : ''}
+                </div>
+
+                <!-- Dispensing Status -->
+                <div style="margin-bottom: 20px; padding: 20px; background: ${dispensed ? '#d4edda' : '#fff3cd'}; border: 1px solid ${dispensed ? '#c3e6cb' : '#ffeeba'}; border-radius: 8px;">
+                    <h4 style="color: ${dispensed ? '#155724' : '#856404'}; margin-bottom: 12px;">
+                        <i class="fas fa-${dispensed ? 'check-circle' : 'clock'}"></i> Dispensing Status
+                    </h4>
+                    ${dispensed ? `
+                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; color: #155724;">
+                            <div><strong>Status:</strong> Dispensed</div>
+                            <div><strong>Quantity:</strong> ${dispensed.quantity}</div>
+                            <div><strong>Dispensed By:</strong> ${dispensed.dispensedBy}</div>
+                            <div><strong>Date:</strong> ${dispensed.dispensedDate}</div>
+                        </div>
+                        ${dispensed.notes ? `
+                            <div style="margin-top: 12px; padding: 10px; background: white; border-radius: 4px;">
+                                <strong>Pharmacist Notes:</strong> ${dispensed.notes}
+                            </div>
+                        ` : ''}
+                    ` : `
+                        <div style="color: #856404;">
+                            <strong>Status:</strong> Not yet dispensed - waiting for pharmacist
+                        </div>
+                    `}
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" id="closeMedicationDetailModalNurse">Close</button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        const closeModal = () => modal.remove();
+        document.getElementById('closeMedicationDetailModalNurse').addEventListener('click', closeModal);
     }
 
     // Prescriptions Listeners
