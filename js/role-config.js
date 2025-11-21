@@ -50,7 +50,7 @@ const ROLE_PERMISSIONS = {
             { icon: 'fas fa-tachometer-alt', text: 'Dashboard', id: 'dashboard' },
             { icon: 'fas fa-user-injured', text: 'Patient List', id: 'patient-list' },
             { icon: 'fas fa-file-medical', text: 'Progress Notes', id: 'progress-notes' },
-            { icon: 'fas fa-prescription', text: 'Prescriptions', id: 'prescriptions' },
+            { icon: 'fas fa-pills', text: 'Medications', id: 'medications' },
             { icon: 'fas fa-flask', text: 'Lab Results', id: 'lab-results' },
             { icon: 'fas fa-x-ray', text: 'Imaging Results', id: 'imaging-results' },
             { icon: 'fas fa-heartbeat', text: 'Vital Signs', id: 'vital-signs' }
