@@ -332,6 +332,21 @@ class PharmacistContent {
 
         return `
             <div class="prescriptions-management">
+                <!-- Info Header -->
+                <div class="card" style="margin-bottom: 24px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none;">
+                    <div class="card-content" style="padding: 20px;">
+                        <div style="display: flex; align-items: center; gap: 16px;">
+                            <div style="background: rgba(255, 255, 255, 0.2); border-radius: 50%; width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                <i class="fas fa-info-circle" style="font-size: 24px; color: white;"></i>
+                            </div>
+                            <div>
+                                <h3 style="color: white; margin: 0 0 4px 0; font-size: 18px; font-weight: 600;">Prescriptions (View Only)</h3>
+                                <p style="color: rgba(255, 255, 255, 0.9); margin: 0; font-size: 14px;">View patient prescriptions prescribed by physicians. Pharmacists can view but cannot modify prescriptions.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Summary Table -->
                 <div class="card" style="margin-bottom: 24px;">
                     <div class="card-header">
