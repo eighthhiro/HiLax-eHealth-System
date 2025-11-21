@@ -441,7 +441,7 @@ class Dashboard {
 
         // Create modal
         const modal = document.createElement('div');
-        modal.className = 'modal';
+        modal.className = 'modal-overlay';
         modal.innerHTML = `
             <div class="modal-content" style="max-width: 500px;">
                 <div class="modal-header">
@@ -469,7 +469,6 @@ class Dashboard {
         `;
 
         document.body.appendChild(modal);
-        modal.style.display = 'block';
 
         // Close handlers
         const closeBtn = modal.querySelector('.close');
@@ -534,7 +533,7 @@ class Dashboard {
     showAddStaffModal() {
         // Create modal for adding new staff
         const modal = document.createElement('div');
-        modal.className = 'modal';
+        modal.className = 'modal-overlay';
         modal.innerHTML = `
             <div class="modal-content" style="max-width: 600px;">
                 <div class="modal-header">
@@ -593,7 +592,6 @@ class Dashboard {
         `;
 
         document.body.appendChild(modal);
-        modal.style.display = 'block';
 
         // Close handlers
         const closeBtn = modal.querySelector('.close');
