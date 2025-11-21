@@ -456,8 +456,10 @@ class Dashboard {
                             <label for="doctor">Assigned Doctor *</label>
                             <select id="doctor" required>
                                 <option value="">Select Doctor</option>
-                                <option value="Dr. Sta. Maria">Dr. Sta. Maria</option>
+                                <option value="Dr. Ramon Cruz">Dr. Ramon Cruz</option>
+                                <option value="Dr. Isabella Reyes">Dr. Isabella Reyes</option>
                                 <option value="Dr. Salvador">Dr. Salvador</option>
+                                <option value="Dr. Sta. Maria">Dr. Sta. Maria</option>
                             </select>
                         </div>
                         <div class="form-group">
@@ -756,6 +758,8 @@ class Dashboard {
                         <div class="form-group">
                             <label for="editDoctor">Assigned Doctor *</label>
                             <select id="editDoctor" required>
+                                <option value="Dr. Ramon Cruz" ${patientData.doctor === 'Dr. Ramon Cruz' ? 'selected' : ''}>Dr. Ramon Cruz</option>
+                                <option value="Dr. Isabella Reyes" ${patientData.doctor === 'Dr. Isabella Reyes' ? 'selected' : ''}>Dr. Isabella Reyes</option>
                                 <option value="Dr. Sta. Maria" ${patientData.doctor === 'Dr. Sta. Maria' ? 'selected' : ''}>Dr. Sta. Maria</option>
                                 <option value="Dr. Salvador" ${patientData.doctor === 'Dr. Salvador' ? 'selected' : ''}>Dr. Salvador</option>
                             </select>
