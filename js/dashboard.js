@@ -2717,6 +2717,17 @@ class Dashboard {
                     </div>
 
                     <div class="form-row">
+                        <div class="form-group">
+                            <label for="editInsuranceProvider">Insurance Provider</label>
+                            <input type="text" id="editInsuranceProvider" placeholder="e.g., PhilHealth, HMO, Private" value="${billing.insuranceProvider || ''}">
+                        </div>
+                        <div class="form-group">
+                            <label for="editInsuranceNumber">Insurance Number</label>
+                            <input type="text" id="editInsuranceNumber" placeholder="Insurance policy number" value="${billing.insuranceNumber || ''}">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
                         <div class="form-group" style="flex: 1;">
                             <label for="editNotes">Notes/Remarks</label>
                             <textarea id="editNotes" rows="2" placeholder="Additional notes or remarks">${billing.notes || ''}</textarea>
@@ -2799,6 +2810,8 @@ class Dashboard {
             imaging: parseFloat(document.getElementById('editImaging').value),
             otherCharges: parseFloat(document.getElementById('editOtherCharges').value),
             discount: parseFloat(document.getElementById('editDiscount').value),
+            insuranceProvider: document.getElementById('editInsuranceProvider').value,
+            insuranceNumber: document.getElementById('editInsuranceNumber').value,
             notes: document.getElementById('editNotes').value,
             subtotal: 0,
             discountAmount: 0,
@@ -2823,7 +2836,9 @@ class Dashboard {
             this.patientStorage.set(patientId, patients[patientIndex]);
             
             this.showNotification('Billing updated successfully!', 'success');
-            this.showBillingReceipt(patientId);
+            
+            // Reload the billing page to reflect changes immediately
+            this.loadPage('billing');
         } else {
             this.showNotification('Failed to update billing', 'error');
         }
