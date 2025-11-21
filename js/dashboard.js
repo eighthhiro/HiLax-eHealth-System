@@ -1875,7 +1875,7 @@ class Dashboard {
         document.getElementById('closeInfoBtn').addEventListener('click', () => modal.remove());
         document.getElementById('viewVitalSignsBtn').addEventListener('click', () => {
             modal.remove();
-            this.showPatientVitalSignsModal(patientId);
+            this.showPatientVitalSignsModal(patientId, true);
         });
         document.getElementById('viewMedicationsBtn').addEventListener('click', () => {
             modal.remove();
@@ -1883,15 +1883,15 @@ class Dashboard {
         });
         document.getElementById('viewLabResultsBtn').addEventListener('click', () => {
             modal.remove();
-            this.showPatientLabResultsModal(patientId);
+            this.showPatientLabResultsModal(patientId, true);
         });
         document.getElementById('viewImagingResultsBtn').addEventListener('click', () => {
             modal.remove();
-            this.showPatientImagingResultsModal(patientId);
+            this.showPatientImagingResultsModal(patientId, true);
         });
         document.getElementById('viewDrugDispensingBtn').addEventListener('click', () => {
             modal.remove();
-            this.showPatientDrugDispensingModal(patientId);
+            this.showPatientDrugDispensingModal(patientId, true);
         });
         
         // Edit button only exists for HR/Admin
@@ -1906,7 +1906,7 @@ class Dashboard {
     }
 
     // Show Patient Vital Signs Modal
-    showPatientVitalSignsModal(patientId, returnToPersonalInfo = true) {
+    showPatientVitalSignsModal(patientId, returnToPersonalInfo = false) {
         // Get patient data
         const patients = JSON.parse(localStorage.getItem('patients') || '[]');
         let patient = patients.find(p => p.id === patientId);
@@ -4972,7 +4972,7 @@ class Dashboard {
         historyTable.innerHTML = tableHTML;
     }
 
-    showPatientLabResultsModal(patientId, returnToPersonalInfo = true) {
+    showPatientLabResultsModal(patientId, returnToPersonalInfo = false) {
         const patients = JSON.parse(localStorage.getItem('patients') || '[]');
         const patient = patients.find(p => p.id === patientId);
 
@@ -5078,7 +5078,7 @@ class Dashboard {
         document.getElementById('closeLabResultsBtn').addEventListener('click', closeAndReopenPersonalInfo);
     }
 
-    showPatientImagingResultsModal(patientId, returnToPersonalInfo = true) {
+    showPatientImagingResultsModal(patientId, returnToPersonalInfo = false) {
         const patients = JSON.parse(localStorage.getItem('patients') || '[]');
         const patient = patients.find(p => p.id === patientId);
 
@@ -5961,7 +5961,7 @@ class Dashboard {
         historyTable.innerHTML = tableHTML;
     }
 
-    showPatientDrugDispensingModal(patientId, returnToPersonalInfo = true) {
+    showPatientDrugDispensingModal(patientId, returnToPersonalInfo = false) {
         const patients = JSON.parse(localStorage.getItem('patients') || '[]');
         const patient = patients.find(p => p.id === patientId);
 
