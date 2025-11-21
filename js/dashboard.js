@@ -7611,6 +7611,7 @@ class Dashboard {
                 data: {
                     patients: JSON.parse(localStorage.getItem('patients') || '[]'),
                     staff: JSON.parse(localStorage.getItem('staff') || '[]'),
+                    hierarchyStaff: JSON.parse(localStorage.getItem('hierarchyStaff') || '{}'),
                     medications: JSON.parse(localStorage.getItem('medications') || '[]'),
                     vitalSigns: JSON.parse(localStorage.getItem('vitalSigns') || '[]'),
                     labResults: JSON.parse(localStorage.getItem('labResults') || '[]'),
@@ -7671,10 +7672,15 @@ class Dashboard {
 
                 // Import each data type
                 Object.keys(importData.data).forEach(key => {
-                    const existingData = JSON.parse(localStorage.getItem(key) || '[]');
                     const importedData = importData.data[key];
 
-                    if (Array.isArray(importedData) && Array.isArray(existingData)) {
+                    if (key === 'hierarchyStaff') {
+                        // For hierarchyStaff, merge objects
+                        const existingData = JSON.parse(localStorage.getItem(key) || '{}');
+                        const merged = { ...existingData, ...importedData };
+                        localStorage.setItem(key, JSON.stringify(merged));
+                    } else if (Array.isArray(importedData)) {
+                        const existingData = JSON.parse(localStorage.getItem(key) || '[]');
                         // Merge arrays, avoiding duplicates by ID if available
                         const merged = [...existingData];
                         importedData.forEach(item => {
@@ -7691,7 +7697,7 @@ class Dashboard {
                         });
                         localStorage.setItem(key, JSON.stringify(merged));
                     } else {
-                        // For non-array data, just save it
+                        // For non-array/non-object data, just save it
                         localStorage.setItem(key, JSON.stringify(importedData));
                     }
                 });
