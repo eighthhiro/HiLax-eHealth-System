@@ -91,6 +91,36 @@
     color: #34495e;
 }
 
+.patients-table .status-badge.in-stock {
+    background: rgba(39, 174, 96, 0.15);
+    color: #27ae60;
+}
+
+.patients-table .status-badge.low-stock {
+    background: rgba(243, 156, 18, 0.15);
+    color: #f39c12;
+}
+
+.patients-table .status-badge.out-of-stock {
+    background: rgba(231, 76, 60, 0.15);
+    color: #e74c3c;
+}
+
+.patients-table .status-badge.completed {
+    background: rgba(39, 174, 96, 0.15);
+    color: #27ae60;
+}
+
+.patients-table .status-badge.pending {
+    background: rgba(243, 156, 18, 0.15);
+    color: #f39c12;
+}
+
+.patients-table .status-badge.in-progress {
+    background: rgba(52, 152, 219, 0.15);
+    color: #3498db;
+}
+
 .record-link {
     display: inline-flex;
     align-items: center;
@@ -143,3 +173,19 @@
 .billing-management .patients-table td:nth-child(5) {
     text-align: center;
 }
+
+/* Nurse Board Patient List - Optimized for 7 columns */
+body[data-role="Nurse"] .patients-management .patients-table {
+    min-width: 1000px;
+}
+
+body[data-role="Nurse"] .patients-management .patients-table th:nth-child(1) { width: 8%; }   /* Patient ID */
+body[data-role="Nurse"] .patients-management .patients-table th:nth-child(2) { width: 20%; }  /* Name */
+body[data-role="Nurse"] .patients-management .patients-table th:nth-child(3) { width: 6%; }   /* Age */
+body[data-role="Nurse"] .patients-management .patients-table th:nth-child(4) { width: 10%; }  /* Status */
+body[data-role="Nurse"] .patients-management .patients-table th:nth-child(5) { width: 15%; }  /* Doctor */
+body[data-role="Nurse"] .patients-management .patients-table th:nth-child(6) { width: 13%; }  /* Personal Info */
+body[data-role="Nurse"] .patients-management .patients-table th:nth-child(7) { width: 13%; }  /* Billing */
+body[data-role="Nurse"] .patients-management .patients-table th:nth-child(8) { width: 13%; }  /* Records */
+body[data-role="Nurse"] .patients-management .patients-table th:nth-child(9) { width: 12%; }  /* Vital Signs */
+

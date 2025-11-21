@@ -30,6 +30,9 @@ class Dashboard {
         if (this.currentUser.role === 'Patient') {
             document.body.classList.add('patient-role');
         }
+        
+        // Add data-role attribute for CSS targeting
+        document.body.setAttribute('data-role', this.currentUser.role);
     }
 
     loadUserData() {
@@ -115,6 +118,7 @@ class Dashboard {
                 pageContent = this.contentGenerator.getDashboardContent();
                 break;
             case 'all-patients':
+            case 'patient-list': // Nurse role uses 'patient-list' menu item
                 pageContent = this.contentGenerator.getAllPatientsContent();
                 break;
             case 'all-staff':
@@ -124,7 +128,50 @@ class Dashboard {
                 pageContent = this.contentGenerator.getPrescriptionsContent();
                 break;
             case 'billing':
-                pageContent = this.getBillingContent();
+                pageContent = this.contentGenerator.getBillingContent();
+                break;
+            case 'vital-signs':
+                pageContent = this.contentGenerator.getVitalSignsContent();
+                break;
+            case 'medications':
+                pageContent = this.contentGenerator.getMedicationsContent();
+                break;
+            case 'lab-results':
+                pageContent = this.contentGenerator.getLabResultsContent();
+                break;
+            case 'imaging-results':
+                pageContent = this.contentGenerator.getImagingResultsContent();
+                break;
+            case 'imaging-orders':
+                pageContent = this.contentGenerator.getImagingOrdersContent();
+                break;
+            case 'image-archive':
+                pageContent = this.contentGenerator.getImageArchiveContent();
+                break;
+            case 'impressions':
+                pageContent = this.contentGenerator.getImpressionsContent();
+                break;
+            case 'dispensing':
+            case 'drug-dispensing':
+                pageContent = this.contentGenerator.getDrugDispensingContent();
+                break;
+            case 'drug-inventory':
+                pageContent = this.contentGenerator.getDrugInventoryContent();
+                break;
+            case 'unavailable-meds':
+                pageContent = this.contentGenerator.getUnavailableMedsContent();
+                break;
+            case 'quality-control':
+                pageContent = this.contentGenerator.getQualityControlContent();
+                break;
+            case 'my-profile':
+                pageContent = this.contentGenerator.getMyProfileContent();
+                break;
+            case 'medical-records':
+                pageContent = this.contentGenerator.getMedicalRecordsContent();
+                break;
+            case 'progress-notes':
+                pageContent = this.contentGenerator.getProgressNotesContent();
                 break;
             default:
                 pageContent = this.contentGenerator.getDefaultContent(pageId);
@@ -138,7 +185,7 @@ class Dashboard {
 
     attachPageEventListeners(pageId) {
         // Attach listeners based on the page
-        if (pageId === 'all-patients') {
+        if (pageId === 'all-patients' || pageId === 'patient-list') {
             this.attachPatientPageListeners();
         } else if (pageId === 'dashboard') {
             this.attachDashboardListeners();
@@ -146,6 +193,28 @@ class Dashboard {
             this.attachStaffPageListeners();
         } else if (pageId === 'billing') {
             this.attachBillingPageListeners();
+        } else if (pageId === 'vital-signs') {
+            this.attachVitalSignsListeners();
+        } else if (pageId === 'medications') {
+            this.attachMedicationsListeners();
+        } else if (pageId === 'prescriptions') {
+            this.attachPrescriptionsListeners();
+        } else if (pageId === 'lab-results') {
+            this.attachLabResultsListeners();
+        } else if (pageId === 'imaging-results') {
+            this.attachImagingResultsListeners();
+        } else if (pageId === 'imaging-orders') {
+            this.attachImagingOrdersListeners();
+        } else if (pageId === 'dispensing' || pageId === 'drug-dispensing') {
+            this.attachDrugDispensingListeners();
+        } else if (pageId === 'drug-inventory') {
+            this.attachDrugInventoryListeners();
+        } else if (pageId === 'unavailable-meds') {
+            this.attachUnavailableMedsListeners();
+        } else if (pageId === 'quality-control') {
+            this.attachQualityControlListeners();
+        } else if (pageId === 'progress-notes') {
+            this.attachProgressNotesListeners();
         }
     }
 
@@ -170,6 +239,81 @@ class Dashboard {
         if (viewMoreBtn) {
             viewMoreBtn.addEventListener('click', () => this.showAllAnnouncementsModal());
         }
+
+        // Initialize carousel if present (for patient dashboard)
+        this.initializeCarousel();
+
+        // Awards management (for admin)
+        this.attachAwardsManagementListeners();
+
+        // Stat card view buttons
+        this.attachStatCardListeners();
+    }
+
+    attachStatCardListeners() {
+        const viewStatButtons = document.querySelectorAll('.btn-view-stat');
+        viewStatButtons.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const page = e.currentTarget.getAttribute('data-page');
+                if (page) {
+                    this.loadPage(page);
+                }
+            });
+        });
+    }
+
+    initializeCarousel() {
+        const carousel = document.querySelector('.awards-carousel');
+        if (!carousel) return;
+
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.award-slide');
+        const indicators = document.querySelectorAll('.indicator');
+        const prevBtn = document.querySelector('.carousel-btn.prev');
+        const nextBtn = document.querySelector('.carousel-btn.next');
+        const totalSlides = slides.length;
+
+        if (totalSlides === 0) return;
+
+        const showSlide = (index) => {
+            // Hide all slides
+            slides.forEach(slide => slide.classList.remove('active'));
+            indicators.forEach(indicator => indicator.classList.remove('active'));
+
+            // Show current slide
+            slides[index].classList.add('active');
+            indicators[index].classList.add('active');
+        };
+
+        const nextSlide = () => {
+            currentSlide = (currentSlide + 1) % totalSlides;
+            showSlide(currentSlide);
+        };
+
+        const prevSlide = () => {
+            currentSlide = (currentSlide - 1 + totalSlides) % totalSlides;
+            showSlide(currentSlide);
+        };
+
+        // Button event listeners
+        if (nextBtn) {
+            nextBtn.addEventListener('click', nextSlide);
+        }
+
+        if (prevBtn) {
+            prevBtn.addEventListener('click', prevSlide);
+        }
+
+        // Indicator event listeners
+        indicators.forEach((indicator, index) => {
+            indicator.addEventListener('click', () => {
+                currentSlide = index;
+                showSlide(currentSlide);
+            });
+        });
+
+        // Auto-play carousel every 5 seconds
+        setInterval(nextSlide, 5000);
     }
 
     attachPatientPageListeners() {
@@ -202,13 +346,32 @@ class Dashboard {
                 });
             });
             
-            // Billing view buttons
+            // Billing view buttons - show receipt modal instead of navigating
             const viewBillingButtons = document.querySelectorAll('.btn-view-billing');
             viewBillingButtons.forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     const patientId = e.currentTarget.getAttribute('data-patient-id');
-                    this.selectedPatientForBilling = patientId;
-                    this.loadPageContent('billing');
+                    this.showBillingReceipt(patientId);
+                });
+            });
+
+            // Vital Signs buttons (for Nurse role)
+            const vitalSignsButtons = document.querySelectorAll('.btn-vital-signs');
+            vitalSignsButtons.forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const patientId = e.currentTarget.getAttribute('data-patient-id');
+                    this.selectedPatientForVitalSigns = patientId;
+                    this.loadPage('vital-signs');
+                });
+            });
+
+            // Medications buttons (for Physician role)
+            const medicationsButtons = document.querySelectorAll('.btn-medications');
+            medicationsButtons.forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const patientId = e.currentTarget.getAttribute('data-patient-id');
+                    this.selectedPatientForMedications = patientId;
+                    this.loadPage('medications');
                 });
             });
         } else {
@@ -510,7 +673,7 @@ class Dashboard {
             viewBillingBtn.addEventListener('click', (e) => {
                 const patientId = e.currentTarget.dataset.patientId;
                 this.selectedPatientForBilling = patientId;
-                this.loadPageContent('billing');
+                this.loadPage('billing');
             });
         }
     }
@@ -1166,7 +1329,7 @@ class Dashboard {
         localStorage.setItem('announcements', JSON.stringify(announcements));
         
         this.showNotification('Announcement added successfully!', 'success');
-        this.loadPageContent('dashboard');
+        this.loadPage('dashboard');
     }
 
     editAnnouncement(e) {
@@ -1325,7 +1488,7 @@ class Dashboard {
             
             localStorage.setItem('announcements', JSON.stringify(announcements));
             this.showNotification('Announcement updated successfully!', 'success');
-            this.loadPageContent('dashboard');
+            this.loadPage('dashboard');
         }
     }
 
@@ -1350,7 +1513,7 @@ class Dashboard {
             localStorage.setItem('announcements', JSON.stringify(announcements));
             
             this.showNotification('Announcement deleted successfully!', 'success');
-            this.loadPageContent('dashboard');
+            this.loadPage('dashboard');
         });
     }
 
@@ -1364,7 +1527,7 @@ class Dashboard {
         modal.className = 'modal-overlay';
         modal.id = 'personalInfoModal';
         modal.innerHTML = `
-            <div class="modal-content" style="max-width: 700px;">
+            <div class="modal-content" style="max-width: 900px;">
                 <div class="modal-header">
                     <h2>${modalTitle}</h2>
                     <button class="modal-close" id="closePersonalInfoModal">&times;</button>
@@ -1401,8 +1564,45 @@ class Dashboard {
                             <input type="date" id="birthday" value="${existingData?.birthday || ''}" required>
                         </div>
                         <div class="form-group">
+                            <label for="gender">Gender *</label>
+                            <select id="gender" required>
+                                <option value="">Select Gender</option>
+                                <option value="Male" ${existingData?.gender === 'Male' ? 'selected' : ''}>Male</option>
+                                <option value="Female" ${existingData?.gender === 'Female' ? 'selected' : ''}>Female</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="civilStatus">Civil Status *</label>
+                            <select id="civilStatus" required>
+                                <option value="">Select Status</option>
+                                <option value="Single" ${existingData?.civilStatus === 'Single' ? 'selected' : ''}>Single</option>
+                                <option value="Married" ${existingData?.civilStatus === 'Married' ? 'selected' : ''}>Married</option>
+                                <option value="Widowed" ${existingData?.civilStatus === 'Widowed' ? 'selected' : ''}>Widowed</option>
+                                <option value="Separated" ${existingData?.civilStatus === 'Separated' ? 'selected' : ''}>Separated</option>
+                                <option value="Divorced" ${existingData?.civilStatus === 'Divorced' ? 'selected' : ''}>Divorced</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="nationality">Nationality *</label>
+                            <input type="text" id="nationality" placeholder="e.g., Filipino" value="${existingData?.nationality || 'Filipino'}" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="religion">Religion</label>
+                            <input type="text" id="religion" placeholder="e.g., Roman Catholic" value="${existingData?.religion || ''}">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
                             <label for="contactInfo">Contact Number *</label>
                             <input type="tel" id="contactInfo" placeholder="+63 912 345 6789" value="${existingData?.contactInfo || ''}" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="email">Email Address</label>
+                            <input type="email" id="email" placeholder="patient@example.com" value="${existingData?.email || ''}">
                         </div>
                     </div>
 
@@ -1413,7 +1613,7 @@ class Dashboard {
                         </div>
                     </div>
 
-                    <div class="form-row">
+                    <div class="form-row" style="grid-template-columns: repeat(3, 1fr);">
                         <div class="form-group">
                             <label for="emergencyContactPerson">Emergency Contact Person *</label>
                             <input type="text" id="emergencyContactPerson" value="${existingData?.emergencyContactPerson || ''}" required>
@@ -1421,6 +1621,10 @@ class Dashboard {
                         <div class="form-group">
                             <label for="emergencyContactNumber">Emergency Contact Number *</label>
                             <input type="tel" id="emergencyContactNumber" placeholder="+63 912 345 6789" value="${existingData?.emergencyContactNumber || ''}" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="emergencyContactRelation">Relationship *</label>
+                            <input type="text" id="emergencyContactRelation" placeholder="e.g., Mother, Father, Spouse" value="${existingData?.emergencyContactRelation || ''}" required>
                         </div>
                     </div>
 
@@ -1450,10 +1654,16 @@ class Dashboard {
             weight: document.getElementById('weight').value,
             bloodType: document.getElementById('bloodType').value,
             birthday: document.getElementById('birthday').value,
+            gender: document.getElementById('gender').value,
+            civilStatus: document.getElementById('civilStatus').value,
+            nationality: document.getElementById('nationality').value,
+            religion: document.getElementById('religion').value,
             address: document.getElementById('address').value,
             contactInfo: document.getElementById('contactInfo').value,
+            email: document.getElementById('email').value,
             emergencyContactPerson: document.getElementById('emergencyContactPerson').value,
-            emergencyContactNumber: document.getElementById('emergencyContactNumber').value
+            emergencyContactNumber: document.getElementById('emergencyContactNumber').value,
+            emergencyContactRelation: document.getElementById('emergencyContactRelation').value
         };
 
         if (isEditMode) {
@@ -1476,7 +1686,7 @@ class Dashboard {
                 localStorage.setItem('patients', JSON.stringify(patients));
                 this.editingPatientId = null; // Clear the editing patient ID
                 this.showNotification('Personal information updated successfully!', 'success');
-                this.loadPageContent('allPatients');
+                this.loadPage('all-patients');
             } else {
                 this.showNotification('Patient not found!', 'error');
             }
@@ -1519,53 +1729,109 @@ class Dashboard {
         modal.className = 'modal-overlay';
         modal.id = 'viewPersonalInfoModal';
         modal.innerHTML = `
-            <div class="modal-content" style="max-width: 700px;">
-                <div class="modal-header">
-                    <h2>Personal Information - ${patient.fullName}</h2>
-                    <button class="modal-close" id="closeViewInfoModal">&times;</button>
+            <div class="modal-content" style="max-width: 800px; display: flex; flex-direction: row; padding: 0; max-height: 90vh;">
+                <!-- Quick Actions Sidebar -->
+                <div style="width: 180px; background: linear-gradient(135deg, #e91e63 0%, #c2185b 100%); padding: 20px; display: flex; flex-direction: column; gap: 12px; border-radius: 12px 0 0 12px;">
+                    <h4 style="color: white; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin: 0 0 8px 0; opacity: 0.9;">
+                        <i class="fas fa-bolt"></i> Quick Actions
+                    </h4>
+                    <button type="button" class="btn" id="viewVitalSignsBtn" style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); width: 100%; justify-content: flex-start; font-size: 13px; padding: 10px 12px; transition: all 0.3s;">
+                        <i class="fas fa-heartbeat"></i>
+                        Vital Signs
+                    </button>
+                    <button type="button" class="btn" id="viewMedicationsBtn" style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); width: 100%; justify-content: flex-start; font-size: 13px; padding: 10px 12px; transition: all 0.3s;">
+                        <i class="fas fa-pills"></i>
+                        Medications
+                    </button>
+                    <button type="button" class="btn" id="viewLabResultsBtn" style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); width: 100%; justify-content: flex-start; font-size: 13px; padding: 10px 12px; transition: all 0.3s;">
+                        <i class="fas fa-flask"></i>
+                        Lab Results
+                    </button>
+                    <button type="button" class="btn" id="viewImagingResultsBtn" style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); width: 100%; justify-content: flex-start; font-size: 13px; padding: 10px 12px; transition: all 0.3s;">
+                        <i class="fas fa-x-ray"></i>
+                        Imaging Results
+                    </button>
+                    <button type="button" class="btn" id="viewDrugDispensingBtn" style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); width: 100%; justify-content: flex-start; font-size: 13px; padding: 10px 12px; transition: all 0.3s;">
+                        <i class="fas fa-pills"></i>
+                        Drug Dispensing
+                    </button>
                 </div>
-                <div class="modal-body" style="padding: 20px;">
-                    <div class="info-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px;">
-                        <div class="info-item">
-                            <label style="font-weight: bold; color: #666; display: block; margin-bottom: 5px;">Height</label>
-                            <p style="margin: 0; font-size: 16px;">${info.height} cm</p>
-                        </div>
-                        <div class="info-item">
-                            <label style="font-weight: bold; color: #666; display: block; margin-bottom: 5px;">Weight</label>
-                            <p style="margin: 0; font-size: 16px;">${info.weight} kg</p>
-                        </div>
-                        <div class="info-item">
-                            <label style="font-weight: bold; color: #666; display: block; margin-bottom: 5px;">Blood Type</label>
-                            <p style="margin: 0; font-size: 16px;">${info.bloodType}</p>
-                        </div>
-                        <div class="info-item">
-                            <label style="font-weight: bold; color: #666; display: block; margin-bottom: 5px;">Birthday</label>
-                            <p style="margin: 0; font-size: 16px;">${new Date(info.birthday).toLocaleDateString()}</p>
-                        </div>
-                        <div class="info-item">
-                            <label style="font-weight: bold; color: #666; display: block; margin-bottom: 5px;">Contact Number</label>
-                            <p style="margin: 0; font-size: 16px;">${info.contactInfo}</p>
-                        </div>
-                        <div class="info-item" style="grid-column: 1 / -1;">
-                            <label style="font-weight: bold; color: #666; display: block; margin-bottom: 5px;">Address</label>
-                            <p style="margin: 0; font-size: 16px;">${info.address}</p>
-                        </div>
-                        <div class="info-item">
-                            <label style="font-weight: bold; color: #666; display: block; margin-bottom: 5px;">Emergency Contact Person</label>
-                            <p style="margin: 0; font-size: 16px;">${info.emergencyContactPerson}</p>
-                        </div>
-                        <div class="info-item">
-                            <label style="font-weight: bold; color: #666; display: block; margin-bottom: 5px;">Emergency Contact Number</label>
-                            <p style="margin: 0; font-size: 16px;">${info.emergencyContactNumber}</p>
+                
+                <!-- Main Content Area -->
+                <div style="flex: 1; display: flex; flex-direction: column;">
+                    <div class="modal-header" style="border-radius: 0;">
+                        <h2>Personal Information - ${patient.fullName}</h2>
+                        <button class="modal-close" id="closeViewInfoModal">&times;</button>
+                    </div>
+                    <div class="modal-body" style="padding: 20px; overflow-y: auto; flex: 1;">
+                        <div class="info-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px;">
+                            <div class="info-item">
+                                <label style="font-weight: bold; color: #666; display: block; margin-bottom: 5px;">Height</label>
+                                <p style="margin: 0; font-size: 16px;">${info.height} cm</p>
+                            </div>
+                            <div class="info-item">
+                                <label style="font-weight: bold; color: #666; display: block; margin-bottom: 5px;">Weight</label>
+                                <p style="margin: 0; font-size: 16px;">${info.weight} kg</p>
+                            </div>
+                            <div class="info-item">
+                                <label style="font-weight: bold; color: #666; display: block; margin-bottom: 5px;">Blood Type</label>
+                                <p style="margin: 0; font-size: 16px;">${info.bloodType}</p>
+                            </div>
+                            <div class="info-item">
+                                <label style="font-weight: bold; color: #666; display: block; margin-bottom: 5px;">Birthday</label>
+                                <p style="margin: 0; font-size: 16px;">${new Date(info.birthday).toLocaleDateString()}</p>
+                            </div>
+                            <div class="info-item">
+                                <label style="font-weight: bold; color: #666; display: block; margin-bottom: 5px;">Gender</label>
+                                <p style="margin: 0; font-size: 16px;">${info.gender || 'Not specified'}</p>
+                            </div>
+                            <div class="info-item">
+                                <label style="font-weight: bold; color: #666; display: block; margin-bottom: 5px;">Civil Status</label>
+                                <p style="margin: 0; font-size: 16px;">${info.civilStatus || 'Not specified'}</p>
+                            </div>
+                            <div class="info-item">
+                                <label style="font-weight: bold; color: #666; display: block; margin-bottom: 5px;">Nationality</label>
+                                <p style="margin: 0; font-size: 16px;">${info.nationality || 'Not specified'}</p>
+                            </div>
+                            <div class="info-item">
+                                <label style="font-weight: bold; color: #666; display: block; margin-bottom: 5px;">Religion</label>
+                                <p style="margin: 0; font-size: 16px;">${info.religion || 'Not specified'}</p>
+                            </div>
+                            <div class="info-item">
+                                <label style="font-weight: bold; color: #666; display: block; margin-bottom: 5px;">Contact Number</label>
+                                <p style="margin: 0; font-size: 16px;">${info.contactInfo}</p>
+                            </div>
+                            <div class="info-item">
+                                <label style="font-weight: bold; color: #666; display: block; margin-bottom: 5px;">Email Address</label>
+                                <p style="margin: 0; font-size: 16px;">${info.email || 'Not specified'}</p>
+                            </div>
+                            <div class="info-item" style="grid-column: 1 / -1;">
+                                <label style="font-weight: bold; color: #666; display: block; margin-bottom: 5px;">Address</label>
+                                <p style="margin: 0; font-size: 16px;">${info.address}</p>
+                            </div>
+                            <div class="info-item">
+                                <label style="font-weight: bold; color: #666; display: block; margin-bottom: 5px;">Emergency Contact Person</label>
+                                <p style="margin: 0; font-size: 16px;">${info.emergencyContactPerson}</p>
+                            </div>
+                            <div class="info-item">
+                                <label style="font-weight: bold; color: #666; display: block; margin-bottom: 5px;">Emergency Contact Number</label>
+                                <p style="margin: 0; font-size: 16px;">${info.emergencyContactNumber}</p>
+                            </div>
+                            <div class="info-item">
+                                <label style="font-weight: bold; color: #666; display: block; margin-bottom: 5px;">Relationship</label>
+                                <p style="margin: 0; font-size: 16px;">${info.emergencyContactRelation || 'Not specified'}</p>
+                            </div>
                         </div>
                     </div>
-                </div>
-                <div class="modal-actions">
-                    <button type="button" class="btn btn-primary" id="editPersonalInfoBtn">
-                        <i class="fas fa-edit"></i>
-                        Edit Information
-                    </button>
-                    <button type="button" class="btn btn-secondary" id="closeInfoBtn">Close</button>
+                    <div class="modal-actions">
+                        ${this.currentUser.role === 'HR/Admin' ? `
+                        <button type="button" class="btn btn-primary" id="editPersonalInfoBtn">
+                            <i class="fas fa-edit"></i>
+                            Edit Information
+                        </button>
+                        ` : ''}
+                        <button type="button" class="btn btn-secondary" id="closeInfoBtn">Close</button>
+                    </div>
                 </div>
             </div>
         `;
@@ -1575,11 +1841,143 @@ class Dashboard {
         // Event listeners
         document.getElementById('closeViewInfoModal').addEventListener('click', () => modal.remove());
         document.getElementById('closeInfoBtn').addEventListener('click', () => modal.remove());
-        document.getElementById('editPersonalInfoBtn').addEventListener('click', () => {
-            this.editingPatientId = patientId;
+        document.getElementById('viewVitalSignsBtn').addEventListener('click', () => {
             modal.remove();
-            this.showPersonalInfoModal(info);
+            this.showPatientVitalSignsModal(patientId);
         });
+        document.getElementById('viewMedicationsBtn').addEventListener('click', () => {
+            modal.remove();
+            this.showPatientMedicationsModal(patientId, true);
+        });
+        document.getElementById('viewLabResultsBtn').addEventListener('click', () => {
+            modal.remove();
+            this.showPatientLabResultsModal(patientId);
+        });
+        document.getElementById('viewImagingResultsBtn').addEventListener('click', () => {
+            modal.remove();
+            this.showPatientImagingResultsModal(patientId);
+        });
+        document.getElementById('viewDrugDispensingBtn').addEventListener('click', () => {
+            modal.remove();
+            this.showPatientDrugDispensingModal(patientId);
+        });
+        
+        // Edit button only exists for HR/Admin
+        const editBtn = document.getElementById('editPersonalInfoBtn');
+        if (editBtn) {
+            editBtn.addEventListener('click', () => {
+                this.editingPatientId = patientId;
+                modal.remove();
+                this.showPersonalInfoModal(info);
+            });
+        }
+    }
+
+    // Show Patient Vital Signs Modal
+    showPatientVitalSignsModal(patientId, returnToPersonalInfo = true) {
+        // Get patient data
+        const patients = JSON.parse(localStorage.getItem('patients') || '[]');
+        let patient = patients.find(p => p.id === patientId);
+
+        // Fallback to sample data
+        if (!patient) {
+            const fallbackPatients = [
+                { id: 'P001', fullName: 'Miranda, Hebrew T.', age: 19, status: 'Active', doctor: 'Dr. Sta. Maria' },
+                { id: 'P002', fullName: 'Sta.Maria, Rizza M.', age: 20, status: 'Admitted', doctor: 'Dr. Sta. Maria' },
+                { id: 'P003', fullName: 'Puquiz, Daniel T.', age: 21, status: 'Active', doctor: 'Dr. Salvador' }
+            ];
+            patient = fallbackPatients.find(p => p.id === patientId);
+        }
+
+        if (!patient) {
+            this.showNotification('Patient not found', 'error');
+            return;
+        }
+
+        // Get vital signs for this patient
+        const allVitalSigns = JSON.parse(localStorage.getItem('vitalSigns') || '[]');
+        const patientVitalSigns = allVitalSigns.filter(vs => vs.patientId === patientId);
+
+        const modal = document.createElement('div');
+        modal.className = 'modal-overlay';
+        modal.innerHTML = `
+            <div class="modal-content" style="max-width: 1000px;">
+                <h2 style="color: var(--dark-pink); margin-bottom: 20px;">
+                    <i class="fas fa-heartbeat"></i> Vital Signs History - ${patient.fullName}
+                </h2>
+
+                <div style="margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-left: 4px solid var(--dark-pink); border-radius: 4px;">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
+                        <div><strong>Patient ID:</strong> ${patient.id}</div>
+                        <div><strong>Age:</strong> ${patient.age}</div>
+                        <div><strong>Physician:</strong> ${patient.doctor || 'Not Assigned'}</div>
+                        <div><strong>Status:</strong> ${patient.status}</div>
+                    </div>
+                </div>
+
+                ${patientVitalSigns.length > 0 ? `
+                <div style="overflow-x: auto;">
+                    <table class="patients-table" style="min-width: 900px;">
+                        <thead>
+                            <tr>
+                                <th style="width: 12%;">Date</th>
+                                <th style="width: 10%;">Time</th>
+                                <th style="width: 12%;">BP (mmHg)</th>
+                                <th style="width: 11%;">HR (bpm)</th>
+                                <th style="width: 11%;">Temp (°C)</th>
+                                <th style="width: 8%;">RR</th>
+                                <th style="width: 11%;">SpO2 (%)</th>
+                                <th style="width: 9%;">Pain</th>
+                                <th style="width: 16%;">Recorded By</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${patientVitalSigns.map(vs => `
+                                <tr>
+                                    <td>${vs.recordedDate}</td>
+                                    <td>${vs.recordedTime}</td>
+                                    <td><strong>${vs.bloodPressure}</strong></td>
+                                    <td>${vs.heartRate}</td>
+                                    <td>${vs.temperature}</td>
+                                    <td>${vs.respiratoryRate}</td>
+                                    <td>${vs.oxygenSaturation}%</td>
+                                    <td>${vs.painLevel !== null ? vs.painLevel + '/10' : '-'}</td>
+                                    <td>${vs.recordedBy}</td>
+                                </tr>
+                                ${vs.notes ? `
+                                <tr style="background: #f8f9fa;">
+                                    <td colspan="9" style="text-align: left; padding: 12px; border-left: 3px solid var(--dark-pink);">
+                                        <strong style="color: var(--dark-pink);">Notes:</strong> ${vs.notes}
+                                    </td>
+                                </tr>
+                                ` : ''}
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+                ` : `
+                <div style="text-align: center; padding: 40px; color: #999;">
+                    <i class="fas fa-heartbeat" style="font-size: 48px; margin-bottom: 16px; opacity: 0.3;"></i>
+                    <p style="font-size: 16px;">No vital signs recorded yet for this patient.</p>
+                </div>
+                `}
+
+                <div class="modal-actions" style="margin-top: 24px;">
+                    <button type="button" class="btn btn-secondary" id="closeVitalSignsBtn">Close</button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        const closeAndReopenPersonalInfo = () => {
+            modal.remove();
+            if (returnToPersonalInfo) {
+                this.viewPersonalInfo(patientId);
+            }
+        };
+
+        document.getElementById('closeVitalSignsBtn').addEventListener('click', closeAndReopenPersonalInfo);
     }
 
     // View All Announcements Modal
@@ -1784,7 +2182,7 @@ class Dashboard {
         this.showNotification(`${displayName} added successfully to ${department} department!`, 'success');
 
         // Reload the staff page
-        this.loadPageContent('all-staff');
+        this.loadPage('all-staff');
     }
 
     saveStaffToStorage(staffData) {
@@ -2086,7 +2484,7 @@ class Dashboard {
             this.patientStorage.set(patientId, patients[patientIndex]);
             
             this.showNotification('Billing created successfully!', 'success');
-            this.loadPageContent('billing');
+            this.loadPage('billing');
         } else {
             this.showNotification('Failed to save billing', 'error');
         }
@@ -2181,10 +2579,12 @@ class Dashboard {
                 </div>
                 <div class="modal-actions">
                     <button type="button" class="btn btn-secondary" id="closeReceiptBtn">Close</button>
+                    ${this.currentUser.role === 'HR/Admin' ? `
                     <button type="button" class="btn btn-primary" id="editBillingBtn">
                         <i class="fas fa-edit"></i>
                         Edit Billing
                     </button>
+                    ` : ''}
                 </div>
             </div>
         `;
@@ -2193,10 +2593,15 @@ class Dashboard {
 
         document.getElementById('closeReceiptModal').addEventListener('click', () => modal.remove());
         document.getElementById('closeReceiptBtn').addEventListener('click', () => modal.remove());
-        document.getElementById('editBillingBtn').addEventListener('click', () => {
-            modal.remove();
-            this.editBillingForm(patientId);
-        });
+        
+        // Edit button only exists for HR/Admin
+        const editBtn = document.getElementById('editBillingBtn');
+        if (editBtn) {
+            editBtn.addEventListener('click', () => {
+                modal.remove();
+                this.editBillingForm(patientId);
+            });
+        }
     }
 
     editBillingForm(patientId) {
@@ -2377,6 +2782,3756 @@ class Dashboard {
         } else {
             this.showNotification('Failed to update billing', 'error');
         }
+    }
+
+    // Awards Management Methods
+    attachAwardsManagementListeners() {
+        const addAwardBtn = document.getElementById('addAwardBtn');
+        const editAwardBtns = document.querySelectorAll('.btn-edit-award');
+        const deleteAwardBtns = document.querySelectorAll('.btn-delete-award');
+
+        if (addAwardBtn) {
+            addAwardBtn.addEventListener('click', () => this.showAddAwardModal());
+        }
+
+        editAwardBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const awardId = parseInt(e.currentTarget.getAttribute('data-award-id'));
+                this.showEditAwardModal(awardId);
+            });
+        });
+
+        deleteAwardBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const awardId = parseInt(e.currentTarget.getAttribute('data-award-id'));
+                this.deleteAward(awardId);
+            });
+        });
+    }
+
+    showAddAwardModal() {
+        const modal = document.createElement('div');
+        modal.className = 'modal-overlay';
+        modal.id = 'addAwardModal';
+        modal.innerHTML = `
+            <div class="modal-content" style="max-width: 600px;">
+                <div class="modal-header">
+                    <h2><i class="fas fa-trophy"></i> Add Hospital Award</h2>
+                    <button class="modal-close" id="closeAwardModal">&times;</button>
+                </div>
+                <form id="addAwardForm" class="modal-form">
+                    <div class="form-group">
+                        <label for="awardTitle">Award Title *</label>
+                        <input type="text" id="awardTitle" required placeholder="e.g., Excellence in Healthcare Award">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="awardDescription">Description *</label>
+                        <textarea id="awardDescription" rows="3" required placeholder="Brief description of the award"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="awardImage">Image URL *</label>
+                        <input type="text" id="awardImage" required placeholder="e.g., ./images/award1.png">
+                        <small style="color: var(--text-light); font-size: 12px; margin-top: 5px; display: block;">
+                            Enter the path to the award image (1024x1024px recommended)
+                        </small>
+                    </div>
+
+                    <div class="modal-actions">
+                        <button type="button" class="btn btn-secondary" id="cancelAwardBtn">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Add Award</button>
+                    </div>
+                </form>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        document.getElementById('closeAwardModal').addEventListener('click', () => modal.remove());
+        document.getElementById('cancelAwardBtn').addEventListener('click', () => modal.remove());
+        document.getElementById('addAwardForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.handleAddAward();
+            modal.remove();
+        });
+    }
+
+    handleAddAward() {
+        const title = document.getElementById('awardTitle').value;
+        const description = document.getElementById('awardDescription').value;
+        const image = document.getElementById('awardImage').value;
+
+        let awards = JSON.parse(localStorage.getItem('hospitalAwards') || '[]');
+        const newId = awards.length > 0 ? Math.max(...awards.map(a => a.id)) + 1 : 1;
+
+        const newAward = {
+            id: newId,
+            title: title,
+            description: description,
+            image: image
+        };
+
+        awards.push(newAward);
+        localStorage.setItem('hospitalAwards', JSON.stringify(awards));
+
+        this.showNotification('Award added successfully!', 'success');
+        this.loadPage('dashboard');
+    }
+
+    showEditAwardModal(awardId) {
+        const awards = JSON.parse(localStorage.getItem('hospitalAwards') || '[]');
+        const award = awards.find(a => a.id === awardId);
+
+        if (!award) {
+            this.showNotification('Award not found', 'error');
+            return;
+        }
+
+        const modal = document.createElement('div');
+        modal.className = 'modal-overlay';
+        modal.id = 'editAwardModal';
+        modal.innerHTML = `
+            <div class="modal-content" style="max-width: 600px;">
+                <div class="modal-header">
+                    <h2><i class="fas fa-edit"></i> Edit Hospital Award</h2>
+                    <button class="modal-close" id="closeEditAwardModal">&times;</button>
+                </div>
+                <form id="editAwardForm" class="modal-form">
+                    <div class="form-group">
+                        <label for="editAwardTitle">Award Title *</label>
+                        <input type="text" id="editAwardTitle" required value="${award.title}">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="editAwardDescription">Description *</label>
+                        <textarea id="editAwardDescription" rows="3" required>${award.description}</textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="editAwardImage">Image URL *</label>
+                        <input type="text" id="editAwardImage" required value="${award.image}">
+                        <small style="color: var(--text-light); font-size: 12px; margin-top: 5px; display: block;">
+                            Enter the path to the award image (1024x1024px recommended)
+                        </small>
+                    </div>
+
+                    <div class="modal-actions">
+                        <button type="button" class="btn btn-secondary" id="cancelEditAwardBtn">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Update Award</button>
+                    </div>
+                </form>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        document.getElementById('closeEditAwardModal').addEventListener('click', () => modal.remove());
+        document.getElementById('cancelEditAwardBtn').addEventListener('click', () => modal.remove());
+        document.getElementById('editAwardForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.handleEditAward(awardId);
+            modal.remove();
+        });
+    }
+
+    handleEditAward(awardId) {
+        const title = document.getElementById('editAwardTitle').value;
+        const description = document.getElementById('editAwardDescription').value;
+        const image = document.getElementById('editAwardImage').value;
+
+        let awards = JSON.parse(localStorage.getItem('hospitalAwards') || '[]');
+        const awardIndex = awards.findIndex(a => a.id === awardId);
+
+        if (awardIndex !== -1) {
+            awards[awardIndex] = {
+                id: awardId,
+                title: title,
+                description: description,
+                image: image
+            };
+            localStorage.setItem('hospitalAwards', JSON.stringify(awards));
+
+            this.showNotification('Award updated successfully!', 'success');
+            this.loadPage('dashboard');
+        } else {
+            this.showNotification('Failed to update award', 'error');
+        }
+    }
+
+    deleteAward(awardId) {
+        if (!confirm('Are you sure you want to delete this award?')) {
+            return;
+        }
+
+        let awards = JSON.parse(localStorage.getItem('hospitalAwards') || '[]');
+        awards = awards.filter(a => a.id !== awardId);
+        localStorage.setItem('hospitalAwards', JSON.stringify(awards));
+
+        this.showNotification('Award deleted successfully!', 'success');
+        this.loadPage('dashboard');
+    }
+
+    // Progress Notes Listeners
+    attachProgressNotesListeners() {
+        const patientSelect = document.getElementById('progressNotesPatient');
+        const progressNotesForm = document.getElementById('newProgressNoteForm');
+        const clearFormBtn = document.getElementById('clearProgressNoteForm');
+
+        if (patientSelect) {
+            patientSelect.addEventListener('change', (e) => this.handleProgressNotesPatientSelection(e.target.value));
+        }
+
+        if (progressNotesForm) {
+            progressNotesForm.addEventListener('submit', (e) => this.saveProgressNote(e));
+        }
+
+        if (clearFormBtn) {
+            clearFormBtn.addEventListener('click', () => this.clearProgressNoteForm());
+        }
+
+        // Set current date and time by default
+        const dateInput = document.getElementById('progressNoteDate');
+        const timeInput = document.getElementById('progressNoteTime');
+        if (dateInput && !dateInput.value) {
+            const today = new Date();
+            dateInput.value = today.toISOString().split('T')[0];
+        }
+        if (timeInput && !timeInput.value) {
+            const now = new Date();
+            timeInput.value = now.toTimeString().slice(0, 5);
+        }
+
+        // Add event listeners for "View" buttons in summary table
+        const viewButtons = document.querySelectorAll('.btn-view-progress-note');
+        viewButtons.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const noteId = e.currentTarget.getAttribute('data-note-id');
+                if (noteId) {
+                    this.showProgressNoteDetailsModal(noteId);
+                }
+            });
+        });
+    }
+
+    handleProgressNotesPatientSelection(patientId) {
+        const selectedPatientInfo = document.getElementById('selectedPatientInfoProgressNotes');
+        const progressNotesForm = document.getElementById('progressNotesForm');
+        const progressNotesHistory = document.getElementById('progressNotesHistory');
+
+        if (!patientId) {
+            if (selectedPatientInfo) selectedPatientInfo.style.display = 'none';
+            if (progressNotesForm) progressNotesForm.style.display = 'none';
+            if (progressNotesHistory) progressNotesHistory.style.display = 'none';
+            return;
+        }
+
+        // Get patient data
+        const patients = JSON.parse(localStorage.getItem('patients') || '[]');
+        const patient = patients.find(p => p.id === patientId);
+
+        if (patient) {
+            // Display patient info
+            this.displayPatientInfoProgressNotes(patient);
+            if (selectedPatientInfo) selectedPatientInfo.style.display = 'block';
+            if (progressNotesForm) progressNotesForm.style.display = 'block';
+            if (progressNotesHistory) progressNotesHistory.style.display = 'block';
+
+            // Load progress notes history
+            this.loadProgressNotesHistory(patientId);
+        }
+    }
+
+    displayPatientInfoProgressNotes(patient) {
+        const nameEl = document.getElementById('selectedPatientNameProgressNotes');
+        const idEl = document.getElementById('selectedPatientIdProgressNotes');
+        const ageEl = document.getElementById('selectedPatientAgeProgressNotes');
+        const statusEl = document.getElementById('selectedPatientStatusProgressNotes');
+        const doctorEl = document.getElementById('selectedPatientDoctorProgressNotes');
+
+        if (nameEl) nameEl.textContent = patient.fullName;
+        if (idEl) idEl.textContent = patient.id;
+        if (ageEl) ageEl.textContent = patient.age;
+        if (statusEl) statusEl.textContent = patient.status;
+        if (doctorEl) doctorEl.textContent = patient.doctor || 'Not Assigned';
+    }
+
+    clearProgressNoteForm() {
+        document.getElementById('progressNoteType').value = '';
+        document.getElementById('chiefComplaint').value = '';
+        document.getElementById('subjective').value = '';
+        document.getElementById('objective').value = '';
+        document.getElementById('assessment').value = '';
+        document.getElementById('plan').value = '';
+        document.getElementById('additionalNotes').value = '';
+        
+        // Reset date and time to current
+        const today = new Date();
+        document.getElementById('progressNoteDate').value = today.toISOString().split('T')[0];
+        document.getElementById('progressNoteTime').value = new Date().toTimeString().slice(0, 5);
+    }
+
+    saveProgressNote(e) {
+        e.preventDefault();
+
+        const patientId = document.getElementById('progressNotesPatient').value;
+        if (!patientId) {
+            this.showNotification('Please select a patient first', 'error');
+            return;
+        }
+
+        // Get form values
+        const progressNote = {
+            id: 'PN' + Date.now(),
+            patientId: patientId,
+            date: document.getElementById('progressNoteDate').value,
+            time: document.getElementById('progressNoteTime').value,
+            noteType: document.getElementById('progressNoteType').value,
+            chiefComplaint: document.getElementById('chiefComplaint').value,
+            subjective: document.getElementById('subjective').value,
+            objective: document.getElementById('objective').value,
+            assessment: document.getElementById('assessment').value,
+            plan: document.getElementById('plan').value,
+            additionalNotes: document.getElementById('additionalNotes').value,
+            recordedBy: this.currentUser.fullName,
+            recordedDate: new Date().toISOString().split('T')[0]
+        };
+
+        // Get existing progress notes
+        let progressNotes = JSON.parse(localStorage.getItem('progressNotes') || '[]');
+        
+        // Add new note at the beginning (most recent first)
+        progressNotes.unshift(progressNote);
+        
+        // Save to localStorage
+        localStorage.setItem('progressNotes', JSON.stringify(progressNotes));
+
+        this.showNotification('Progress note saved successfully!', 'success');
+        
+        // Clear form and reload history
+        this.clearProgressNoteForm();
+        this.loadProgressNotesHistory(patientId);
+    }
+
+    loadProgressNotesHistory(patientId) {
+        const historyTable = document.getElementById('progressNotesHistoryTable');
+        if (!historyTable) return;
+
+        const allProgressNotes = JSON.parse(localStorage.getItem('progressNotes') || '[]');
+        const patientNotes = allProgressNotes.filter(note => note.patientId === patientId);
+
+        if (patientNotes.length === 0) {
+            historyTable.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">No progress notes recorded yet.</p>';
+            return;
+        }
+
+        const tableHTML = `
+            <div style="overflow-x: auto;">
+                <table class="patients-table" style="min-width: 1000px;">
+                    <thead>
+                        <tr>
+                            <th style="width: 12%;">Date</th>
+                            <th style="width: 10%;">Time</th>
+                            <th style="width: 15%;">Note Type</th>
+                            <th style="width: 18%;">Chief Complaint</th>
+                            <th style="width: 15%;">Assessment (Brief)</th>
+                            <th style="width: 15%;">Recorded By</th>
+                            <th style="width: 15%;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${patientNotes.map(note => `
+                            <tr>
+                                <td>${note.date}</td>
+                                <td>${note.time}</td>
+                                <td>
+                                    <span class="badge" style="padding: 4px 8px; border-radius: 4px; font-size: 12px; background: ${
+                                        note.noteType === 'Progress Note' ? '#e3f2fd' :
+                                        note.noteType === 'Consultation' ? '#f3e5f5' :
+                                        note.noteType === 'Follow-up' ? '#e8f5e9' :
+                                        note.noteType === 'Admission Note' ? '#fff3e0' : '#f5f5f5'
+                                    }; color: ${
+                                        note.noteType === 'Progress Note' ? '#1976d2' :
+                                        note.noteType === 'Consultation' ? '#7b1fa2' :
+                                        note.noteType === 'Follow-up' ? '#388e3c' :
+                                        note.noteType === 'Admission Note' ? '#f57c00' : '#424242'
+                                    };">${note.noteType}</span>
+                                </td>
+                                <td>${note.chiefComplaint}</td>
+                                <td>${note.assessment ? note.assessment.substring(0, 50) + '...' : 'N/A'}</td>
+                                <td>${note.recordedBy}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-view-note-detail" data-note-id="${note.id}">
+                                        <i class="fas fa-eye"></i> View Full
+                                    </button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        `;
+
+        historyTable.innerHTML = tableHTML;
+
+        // Attach event listeners to the new "View Full" buttons
+        const viewButtons = document.querySelectorAll('.btn-view-note-detail');
+        viewButtons.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const noteId = e.currentTarget.getAttribute('data-note-id');
+                if (noteId) {
+                    this.showProgressNoteDetailsModal(noteId);
+                }
+            });
+        });
+    }
+
+    showProgressNoteDetailsModal(noteId) {
+        const allProgressNotes = JSON.parse(localStorage.getItem('progressNotes') || '[]');
+        const note = allProgressNotes.find(n => n.id === noteId);
+
+        if (!note) {
+            this.showNotification('Progress note not found', 'error');
+            return;
+        }
+
+        // Get patient info
+        const patients = JSON.parse(localStorage.getItem('patients') || '[]');
+        const patient = patients.find(p => p.id === note.patientId);
+        const patientName = patient ? patient.fullName : 'Unknown Patient';
+
+        const modal = document.createElement('div');
+        modal.className = 'modal-overlay';
+        modal.innerHTML = `
+            <div class="modal-content" style="max-width: 900px;">
+                <div class="modal-header">
+                    <h2><i class="fas fa-file-medical"></i> Progress Note Details</h2>
+                    <button class="modal-close" id="closeProgressNoteModalBtn">&times;</button>
+                </div>
+                <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+                    <!-- Patient & Note Info -->
+                    <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;">
+                            <div><strong>Patient:</strong> ${patientName} (${note.patientId})</div>
+                            <div><strong>Date:</strong> ${note.date} at ${note.time}</div>
+                            <div>
+                                <strong>Note Type:</strong> 
+                                <span class="badge" style="padding: 4px 8px; border-radius: 4px; font-size: 12px; background: ${
+                                    note.noteType === 'Progress Note' ? '#e3f2fd' :
+                                    note.noteType === 'Consultation' ? '#f3e5f5' :
+                                    note.noteType === 'Follow-up' ? '#e8f5e9' :
+                                    note.noteType === 'Admission Note' ? '#fff3e0' : '#f5f5f5'
+                                }; color: ${
+                                    note.noteType === 'Progress Note' ? '#1976d2' :
+                                    note.noteType === 'Consultation' ? '#7b1fa2' :
+                                    note.noteType === 'Follow-up' ? '#388e3c' :
+                                    note.noteType === 'Admission Note' ? '#f57c00' : '#424242'
+                                };">${note.noteType}</span>
+                            </div>
+                            <div><strong>Recorded By:</strong> ${note.recordedBy}</div>
+                        </div>
+                    </div>
+
+                    <!-- Chief Complaint -->
+                    <div style="margin-bottom: 20px; padding: 15px; background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 4px;">
+                        <h4 style="margin: 0 0 8px 0; color: #856404;">
+                            <i class="fas fa-exclamation-circle"></i> Chief Complaint
+                        </h4>
+                        <p style="margin: 0; color: #856404;">${note.chiefComplaint}</p>
+                    </div>
+
+                    <!-- SOAP Format -->
+                    <div style="background: #f8f9fa; padding: 20px; border-radius: 8px;">
+                        <h3 style="color: var(--dark-pink); margin-bottom: 16px;">
+                            <i class="fas fa-notes-medical"></i> Clinical Documentation
+                        </h3>
+
+                        <div style="margin-bottom: 16px;">
+                            <h4 style="color: #495057; margin-bottom: 8px;">
+                                <i class="fas fa-comment-medical"></i> Subjective
+                            </h4>
+                            <div style="padding: 12px; background: white; border-radius: 4px; white-space: pre-wrap; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">${note.subjective}</div>
+                        </div>
+
+                        <div style="margin-bottom: 16px;">
+                            <h4 style="color: #495057; margin-bottom: 8px;">
+                                <i class="fas fa-stethoscope"></i> Objective
+                            </h4>
+                            <div style="padding: 12px; background: white; border-radius: 4px; white-space: pre-wrap; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">${note.objective}</div>
+                        </div>
+
+                        <div style="margin-bottom: 16px;">
+                            <h4 style="color: #495057; margin-bottom: 8px;">
+                                <i class="fas fa-diagnoses"></i> Assessment
+                            </h4>
+                            <div style="padding: 12px; background: white; border-radius: 4px; white-space: pre-wrap; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">${note.assessment}</div>
+                        </div>
+
+                        <div style="margin-bottom: ${note.additionalNotes ? '16px' : '0'};">
+                            <h4 style="color: #495057; margin-bottom: 8px;">
+                                <i class="fas fa-clipboard-list"></i> Plan
+                            </h4>
+                            <div style="padding: 12px; background: white; border-radius: 4px; white-space: pre-wrap; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">${note.plan}</div>
+                        </div>
+
+                        ${note.additionalNotes ? `
+                        <div>
+                            <h4 style="color: #495057; margin-bottom: 8px;">
+                                <i class="fas fa-info-circle"></i> Additional Notes
+                            </h4>
+                            <div style="padding: 12px; background: white; border-radius: 4px; white-space: pre-wrap; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">${note.additionalNotes}</div>
+                        </div>
+                        ` : ''}
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" id="closeProgressNoteModalBtn2">Close</button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        // Add event listeners for close buttons
+        const closeBtn1 = modal.querySelector('#closeProgressNoteModalBtn');
+        const closeBtn2 = modal.querySelector('#closeProgressNoteModalBtn2');
+
+        const closeModal = () => {
+            document.body.removeChild(modal);
+        };
+
+        closeBtn1.addEventListener('click', closeModal);
+        closeBtn2.addEventListener('click', closeModal);
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) closeModal();
+        });
+    }
+
+    // Vital Signs Page Listeners
+    attachVitalSignsListeners() {
+        const patientSelect = document.getElementById('vitalSignsPatient');
+        const vitalSignsForm = document.getElementById('vitalSignsForm');
+        const clearFormBtn = document.getElementById('clearVitalSignsForm');
+
+        if (patientSelect) {
+            patientSelect.addEventListener('change', (e) => this.handlePatientSelection(e.target.value));
+        }
+
+        if (vitalSignsForm) {
+            vitalSignsForm.addEventListener('submit', (e) => this.saveVitalSigns(e));
+        }
+
+        if (clearFormBtn) {
+            clearFormBtn.addEventListener('click', () => this.clearVitalSignsForm());
+        }
+
+        // Add event listeners for "View More" buttons in summary table
+        const viewMoreButtons = document.querySelectorAll('.btn-view-more-vitals');
+        viewMoreButtons.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const patientId = e.currentTarget.getAttribute('data-patient-id');
+                if (patientId) {
+                    // Pass false to prevent reopening personal info modal (we're in vital signs tab)
+                    this.showPatientVitalSignsModal(patientId, false);
+                }
+            });
+        });
+
+        // Check if there's a pre-selected patient from the patient list
+        if (this.selectedPatientForVitalSigns) {
+            patientSelect.value = this.selectedPatientForVitalSigns;
+            this.handlePatientSelection(this.selectedPatientForVitalSigns);
+            this.selectedPatientForVitalSigns = null; // Clear after use
+        }
+    }
+
+    handlePatientSelection(patientId) {
+        const selectedPatientInfo = document.getElementById('selectedPatientInfo');
+        const vitalSignsForm = document.getElementById('vitalSignsForm');
+        const vitalSignsHistory = document.getElementById('vitalSignsHistory');
+
+        if (!patientId) {
+            selectedPatientInfo.style.display = 'none';
+            if (vitalSignsForm) vitalSignsForm.style.display = 'none';
+            vitalSignsHistory.style.display = 'none';
+            return;
+        }
+
+        // Get patient data
+        const patients = JSON.parse(localStorage.getItem('patients') || '[]');
+        const patient = patients.find(p => p.id === patientId);
+
+        if (!patient) {
+            // Try fallback data
+            const fallbackPatients = [
+                { id: 'P001', fullName: 'Miranda, Hebrew T.', age: 19, status: 'Active', doctor: 'Dr. Sta. Maria' },
+                { id: 'P002', fullName: 'Sta.Maria, Rizza M.', age: 20, status: 'Admitted', doctor: 'Dr. Sta. Maria' },
+                { id: 'P003', fullName: 'Puquiz, Daniel T.', age: 21, status: 'Active', doctor: 'Dr. Salvador' }
+            ];
+            const fallbackPatient = fallbackPatients.find(p => p.id === patientId);
+            if (fallbackPatient) {
+                this.displayPatientInfo(fallbackPatient);
+            }
+        } else {
+            this.displayPatientInfo(patient);
+        }
+
+        // Show patient info and history (form only for nurses)
+        selectedPatientInfo.style.display = 'block';
+        if (vitalSignsForm && this.currentUser.role === 'Nurse') {
+            vitalSignsForm.style.display = 'block';
+        }
+        vitalSignsHistory.style.display = 'block';
+
+        // Load vital signs history
+        this.loadVitalSignsHistory(patientId);
+    }
+
+    displayPatientInfo(patient) {
+        document.getElementById('displayPatientId').textContent = patient.id;
+        document.getElementById('displayPatientName').textContent = patient.fullName;
+        document.getElementById('displayPatientAge').textContent = patient.age;
+        document.getElementById('displayPatientDoctor').textContent = patient.doctor || 'Not Assigned';
+    }
+
+    clearVitalSignsForm() {
+        document.getElementById('systolic').value = '';
+        document.getElementById('diastolic').value = '';
+        document.getElementById('heartRate').value = '';
+        document.getElementById('temperature').value = '';
+        document.getElementById('respiratoryRate').value = '';
+        document.getElementById('oxygenSaturation').value = '';
+        document.getElementById('weight').value = '';
+        document.getElementById('height').value = '';
+        document.getElementById('painLevel').value = '';
+        document.getElementById('vitalNotes').value = '';
+    }
+
+    saveVitalSigns(e) {
+        e.preventDefault();
+
+        const patientId = document.getElementById('vitalSignsPatient').value;
+        if (!patientId) {
+            this.showNotification('Please select a patient', 'error');
+            return;
+        }
+
+        const vitalSignsData = {
+            id: Date.now().toString(),
+            patientId: patientId,
+            bloodPressure: `${document.getElementById('systolic').value}/${document.getElementById('diastolic').value}`,
+            systolic: parseInt(document.getElementById('systolic').value),
+            diastolic: parseInt(document.getElementById('diastolic').value),
+            heartRate: parseInt(document.getElementById('heartRate').value),
+            temperature: parseFloat(document.getElementById('temperature').value),
+            respiratoryRate: parseInt(document.getElementById('respiratoryRate').value),
+            oxygenSaturation: parseFloat(document.getElementById('oxygenSaturation').value),
+            weight: document.getElementById('weight').value ? parseFloat(document.getElementById('weight').value) : null,
+            height: document.getElementById('height').value ? parseFloat(document.getElementById('height').value) : null,
+            painLevel: document.getElementById('painLevel').value ? parseInt(document.getElementById('painLevel').value) : null,
+            notes: document.getElementById('vitalNotes').value,
+            recordedBy: this.currentUser.name,
+            recordedAt: new Date().toISOString(),
+            recordedDate: new Date().toLocaleDateString(),
+            recordedTime: new Date().toLocaleTimeString()
+        };
+
+        // Get existing vital signs from localStorage
+        let allVitalSigns = JSON.parse(localStorage.getItem('vitalSigns') || '[]');
+        allVitalSigns.unshift(vitalSignsData); // Add to beginning of array
+        localStorage.setItem('vitalSigns', JSON.stringify(allVitalSigns));
+
+        this.showNotification('Vital signs saved successfully!', 'success');
+        this.clearVitalSignsForm();
+        this.loadVitalSignsHistory(patientId);
+    }
+
+    loadVitalSignsHistory(patientId) {
+        const historyTable = document.getElementById('vitalSignsHistoryTable');
+        const allVitalSigns = JSON.parse(localStorage.getItem('vitalSigns') || '[]');
+        const patientVitalSigns = allVitalSigns.filter(vs => vs.patientId === patientId);
+
+        if (patientVitalSigns.length === 0) {
+            historyTable.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">No vital signs recorded yet.</p>';
+            return;
+        }
+
+        const tableHTML = `
+            <div style="overflow-x: auto;">
+                <table class="patients-table" style="min-width: 900px;">
+                    <thead>
+                        <tr>
+                            <th style="width: 12%;">Date</th>
+                            <th style="width: 10%;">Time</th>
+                            <th style="width: 12%;">BP (mmHg)</th>
+                            <th style="width: 11%;">HR (bpm)</th>
+                            <th style="width: 11%;">Temp (°C)</th>
+                            <th style="width: 8%;">RR</th>
+                            <th style="width: 11%;">SpO2 (%)</th>
+                            <th style="width: 9%;">Pain</th>
+                            <th style="width: 16%;">Recorded By</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${patientVitalSigns.map(vs => `
+                            <tr>
+                                <td>${vs.recordedDate}</td>
+                                <td>${vs.recordedTime}</td>
+                                <td><strong>${vs.bloodPressure}</strong></td>
+                                <td>${vs.heartRate}</td>
+                                <td>${vs.temperature}</td>
+                                <td>${vs.respiratoryRate}</td>
+                                <td>${vs.oxygenSaturation}%</td>
+                                <td>${vs.painLevel !== null ? vs.painLevel + '/10' : '-'}</td>
+                                <td>${vs.recordedBy}</td>
+                            </tr>
+                            ${vs.notes ? `
+                            <tr style="background: #f8f9fa;">
+                                <td colspan="9" style="text-align: left; padding: 12px; border-left: 3px solid var(--dark-pink);">
+                                    <strong style="color: var(--dark-pink);">Notes:</strong> ${vs.notes}
+                                </td>
+                            </tr>
+                            ` : ''}
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        `;
+
+        historyTable.innerHTML = tableHTML;
+    }
+
+    // Medications Listeners
+    attachMedicationsListeners() {
+        const patientSelect = document.getElementById('medicationsPatient');
+        const medicationsForm = document.getElementById('newMedicationForm');
+        const clearFormBtn = document.getElementById('clearMedicationsForm');
+
+        if (patientSelect) {
+            patientSelect.addEventListener('change', (e) => this.handleMedicationsPatientSelection(e.target.value));
+        }
+
+        if (medicationsForm) {
+            medicationsForm.addEventListener('submit', (e) => this.saveMedication(e));
+        }
+
+        if (clearFormBtn) {
+            clearFormBtn.addEventListener('click', () => this.clearMedicationsForm());
+        }
+
+        // Add event listeners for "View More" buttons in summary table
+        const viewMoreButtons = document.querySelectorAll('.btn-view-more-medications');
+        viewMoreButtons.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const patientId = e.currentTarget.getAttribute('data-patient-id');
+                if (patientId) {
+                    this.showPatientMedicationsModal(patientId);
+                }
+            });
+        });
+
+        // Check if there's a pre-selected patient from the patient list
+        if (this.selectedPatientForMedications) {
+            patientSelect.value = this.selectedPatientForMedications;
+            this.handleMedicationsPatientSelection(this.selectedPatientForMedications);
+            this.selectedPatientForMedications = null; // Clear after use
+        }
+    }
+
+    handleMedicationsPatientSelection(patientId) {
+        const selectedPatientInfo = document.getElementById('selectedPatientInfoMedications');
+        const medicationsForm = document.getElementById('medicationsForm');
+        const medicationsHistory = document.getElementById('medicationsHistory');
+
+        if (!patientId) {
+            selectedPatientInfo.style.display = 'none';
+            if (medicationsForm) medicationsForm.style.display = 'none';
+            medicationsHistory.style.display = 'none';
+            return;
+        }
+
+        // Get patient data
+        const patients = JSON.parse(localStorage.getItem('patients') || '[]');
+        const patient = patients.find(p => p.id === patientId);
+
+        if (patient) {
+            // Display patient info
+            this.displayPatientInfoMedications(patient);
+            selectedPatientInfo.style.display = 'block';
+            if (medicationsForm) medicationsForm.style.display = 'block';
+            medicationsHistory.style.display = 'block';
+
+            // Load medications history
+            this.loadMedicationsHistory(patientId);
+        }
+    }
+
+    displayPatientInfoMedications(patient) {
+        document.getElementById('selectedPatientNameMedications').textContent = patient.fullName;
+        document.getElementById('selectedPatientIdMedications').textContent = patient.id;
+        document.getElementById('selectedPatientAgeMedications').textContent = patient.age;
+        document.getElementById('selectedPatientStatusMedications').textContent = patient.status;
+        document.getElementById('selectedPatientDoctorMedications').textContent = patient.doctor || 'Not Assigned';
+    }
+
+    clearMedicationsForm() {
+        document.getElementById('medicationName').value = '';
+        document.getElementById('dosage').value = '';
+        document.getElementById('frequency').value = '';
+        document.getElementById('route').value = '';
+        document.getElementById('duration').value = '';
+        document.getElementById('startDate').value = '';
+        document.getElementById('medicationNotes').value = '';
+    }
+
+    saveMedication(e) {
+        e.preventDefault();
+
+        const patientId = document.getElementById('medicationsPatient').value;
+        if (!patientId) {
+            this.showNotification('Please select a patient first', 'error');
+            return;
+        }
+
+        // Get form values
+        const medication = {
+            id: 'MED' + Date.now(),
+            patientId: patientId,
+            medicationName: document.getElementById('medicationName').value,
+            dosage: document.getElementById('dosage').value,
+            frequency: document.getElementById('frequency').value,
+            route: document.getElementById('route').value,
+            duration: document.getElementById('duration').value || 'Not specified',
+            startDate: document.getElementById('startDate').value,
+            notes: document.getElementById('medicationNotes').value,
+            prescribedBy: 'Dr. Sta. Maria',
+            prescribedDate: new Date().toLocaleDateString('en-US'),
+            prescribedTime: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+        };
+
+        // Get existing medications
+        let medications = JSON.parse(localStorage.getItem('medications') || '[]');
+        
+        // Add new medication at the beginning (most recent first)
+        medications.unshift(medication);
+        
+        // Save to localStorage
+        localStorage.setItem('medications', JSON.stringify(medications));
+
+        this.showNotification('Medication prescribed successfully!', 'success');
+        
+        // Clear form and reload history
+        this.clearMedicationsForm();
+        this.loadMedicationsHistory(patientId);
+    }
+
+    loadMedicationsHistory(patientId) {
+        const historyTable = document.getElementById('medicationsHistoryTable');
+        if (!historyTable) return;
+
+        const allMedications = JSON.parse(localStorage.getItem('medications') || '[]');
+        const patientMedications = allMedications.filter(med => med.patientId === patientId);
+
+        if (patientMedications.length === 0) {
+            historyTable.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">No medications prescribed yet.</p>';
+            return;
+        }
+
+        const tableHTML = `
+            <div style="overflow-x: auto;">
+                <table class="patients-table" style="min-width: 1000px;">
+                    <thead>
+                        <tr>
+                            <th style="width: 15%;">Medication</th>
+                            <th style="width: 10%;">Dosage</th>
+                            <th style="width: 12%;">Frequency</th>
+                            <th style="width: 10%;">Route</th>
+                            <th style="width: 10%;">Duration</th>
+                            <th style="width: 10%;">Start Date</th>
+                            <th style="width: 10%;">Date Prescribed</th>
+                            <th style="width: 13%;">Prescribed By</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${patientMedications.map(med => `
+                            <tr>
+                                <td><strong>${med.medicationName}</strong></td>
+                                <td>${med.dosage}</td>
+                                <td>${med.frequency}</td>
+                                <td>${med.route}</td>
+                                <td>${med.duration}</td>
+                                <td>${med.startDate}</td>
+                                <td>${med.prescribedDate}</td>
+                                <td>${med.prescribedBy}</td>
+                            </tr>
+                            ${med.notes ? `
+                            <tr style="background: #f8f9fa;">
+                                <td colspan="8" style="text-align: left; padding: 12px; border-left: 3px solid var(--dark-pink);">
+                                    <strong style="color: var(--dark-pink);">Notes:</strong> ${med.notes}
+                                </td>
+                            </tr>
+                            ` : ''}
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        `;
+
+        historyTable.innerHTML = tableHTML;
+    }
+
+    showPatientMedicationsModal(patientId, returnToPersonalInfo = false) {
+        // Get patient data
+        const patients = JSON.parse(localStorage.getItem('patients') || '[]');
+        let patient = patients.find(p => p.id === patientId);
+
+        // Fallback to sample data
+        if (!patient) {
+            const fallbackPatients = [
+                { id: 'P001', fullName: 'Miranda, Hebrew T.', age: 19, status: 'Active', doctor: 'Dr. Sta. Maria' },
+                { id: 'P002', fullName: 'Sta.Maria, Rizza M.', age: 20, status: 'Admitted', doctor: 'Dr. Sta. Maria' },
+                { id: 'P003', fullName: 'Puquiz, Daniel T.', age: 21, status: 'Active', doctor: 'Dr. Salvador' }
+            ];
+            patient = fallbackPatients.find(p => p.id === patientId);
+        }
+
+        if (!patient) {
+            this.showNotification('Patient not found', 'error');
+            return;
+        }
+
+        // Get medications for this patient
+        const allMedications = JSON.parse(localStorage.getItem('medications') || '[]');
+        const patientMedications = allMedications.filter(med => med.patientId === patientId);
+
+        const modal = document.createElement('div');
+        modal.className = 'modal-overlay';
+        modal.innerHTML = `
+            <div class="modal-content" style="max-width: 1000px;">
+                <h2 style="color: var(--dark-pink); margin-bottom: 20px;">
+                    <i class="fas fa-pills"></i> Medication History - ${patient.fullName}
+                </h2>
+
+                <div style="margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-left: 4px solid var(--dark-pink); border-radius: 4px;">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
+                        <div><strong>Patient ID:</strong> ${patient.id}</div>
+                        <div><strong>Age:</strong> ${patient.age}</div>
+                        <div><strong>Physician:</strong> ${patient.doctor || 'Not Assigned'}</div>
+                        <div><strong>Status:</strong> ${patient.status}</div>
+                    </div>
+                </div>
+
+                ${patientMedications.length > 0 ? `
+                <div style="overflow-x: auto;">
+                    <table class="patients-table" style="min-width: 900px;">
+                        <thead>
+                            <tr>
+                                <th style="width: 15%;">Medication</th>
+                                <th style="width: 10%;">Dosage</th>
+                                <th style="width: 12%;">Frequency</th>
+                                <th style="width: 10%;">Route</th>
+                                <th style="width: 10%;">Duration</th>
+                                <th style="width: 10%;">Start Date</th>
+                                <th style="width: 10%;">Prescribed</th>
+                                <th style="width: 13%;">Prescribed By</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${patientMedications.map(med => `
+                                <tr>
+                                    <td><strong>${med.medicationName}</strong></td>
+                                    <td>${med.dosage}</td>
+                                    <td>${med.frequency}</td>
+                                    <td>${med.route}</td>
+                                    <td>${med.duration}</td>
+                                    <td>${med.startDate}</td>
+                                    <td>${med.prescribedDate}</td>
+                                    <td>${med.prescribedBy}</td>
+                                </tr>
+                                ${med.notes ? `
+                                <tr style="background: #f8f9fa;">
+                                    <td colspan="8" style="text-align: left; padding: 12px; border-left: 3px solid var(--dark-pink);">
+                                        <strong style="color: var(--dark-pink);">Notes:</strong> ${med.notes}
+                                    </td>
+                                </tr>
+                                ` : ''}
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+                ` : `
+                <div style="text-align: center; padding: 40px; color: #999;">
+                    <i class="fas fa-pills" style="font-size: 48px; margin-bottom: 16px; opacity: 0.3;"></i>
+                    <p style="font-size: 16px;">No medications prescribed yet for this patient.</p>
+                </div>
+                `}
+
+                <div class="modal-actions" style="margin-top: 24px;">
+                    <button type="button" class="btn btn-secondary" id="closeMedicationsBtn">Close</button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        const closeModal = () => {
+            modal.remove();
+            if (returnToPersonalInfo) {
+                this.viewPersonalInfo(patientId);
+            }
+        };
+
+        document.getElementById('closeMedicationsBtn').addEventListener('click', closeModal);
+    }
+
+    // Prescriptions Listeners
+    attachPrescriptionsListeners() {
+        const patientSelect = document.getElementById('prescriptionsPatient');
+
+        if (patientSelect) {
+            patientSelect.addEventListener('change', (e) => this.handlePrescriptionsPatientSelection(e.target.value));
+        }
+
+        // Add event listeners for "View More" buttons in summary table
+        const viewMoreButtons = document.querySelectorAll('.btn-view-more-prescriptions');
+        viewMoreButtons.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const patientId = e.currentTarget.getAttribute('data-patient-id');
+                if (patientId) {
+                    this.showPatientPrescriptionsModal(patientId);
+                }
+            });
+        });
+    }
+
+    handlePrescriptionsPatientSelection(patientId) {
+        const selectedPatientInfo = document.getElementById('selectedPatientInfoPrescriptions');
+        const prescriptionsHistory = document.getElementById('prescriptionsHistory');
+
+        if (!patientId) {
+            if (selectedPatientInfo) selectedPatientInfo.style.display = 'none';
+            if (prescriptionsHistory) prescriptionsHistory.style.display = 'none';
+            return;
+        }
+
+        // Get patient data
+        const patients = JSON.parse(localStorage.getItem('patients') || '[]');
+        const patient = patients.find(p => p.id === patientId);
+
+        if (patient) {
+            // Display patient info
+            this.displayPatientInfoPrescriptions(patient);
+            if (selectedPatientInfo) selectedPatientInfo.style.display = 'block';
+            if (prescriptionsHistory) prescriptionsHistory.style.display = 'block';
+
+            // Load prescriptions history
+            this.loadPrescriptionsHistory(patientId);
+        }
+    }
+
+    displayPatientInfoPrescriptions(patient) {
+        const nameEl = document.getElementById('selectedPatientNamePrescriptions');
+        const idEl = document.getElementById('selectedPatientIdPrescriptions');
+        const ageEl = document.getElementById('selectedPatientAgePrescriptions');
+        const statusEl = document.getElementById('selectedPatientStatusPrescriptions');
+        const doctorEl = document.getElementById('selectedPatientDoctorPrescriptions');
+
+        if (nameEl) nameEl.textContent = patient.fullName;
+        if (idEl) idEl.textContent = patient.id;
+        if (ageEl) ageEl.textContent = patient.age;
+        if (statusEl) statusEl.textContent = patient.status;
+        if (doctorEl) doctorEl.textContent = patient.doctor || 'Not Assigned';
+    }
+
+    loadPrescriptionsHistory(patientId) {
+        const historyTable = document.getElementById('prescriptionsHistoryTable');
+        if (!historyTable) return;
+
+        const allPrescriptions = JSON.parse(localStorage.getItem('medications') || '[]');
+        const patientPrescriptions = allPrescriptions.filter(med => med.patientId === patientId);
+
+        if (patientPrescriptions.length === 0) {
+            historyTable.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">No prescriptions yet.</p>';
+            return;
+        }
+
+        const tableHTML = `
+            <div style="overflow-x: auto;">
+                <table class="patients-table" style="min-width: 1000px;">
+                    <thead>
+                        <tr>
+                            <th style="width: 15%;">Medication</th>
+                            <th style="width: 10%;">Dosage</th>
+                            <th style="width: 12%;">Frequency</th>
+                            <th style="width: 10%;">Route</th>
+                            <th style="width: 10%;">Duration</th>
+                            <th style="width: 10%;">Start Date</th>
+                            <th style="width: 10%;">Date Prescribed</th>
+                            <th style="width: 13%;">Prescribed By</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${patientPrescriptions.map(med => `
+                            <tr>
+                                <td><strong>${med.medicationName}</strong></td>
+                                <td>${med.dosage}</td>
+                                <td>${med.frequency}</td>
+                                <td>${med.route}</td>
+                                <td>${med.duration}</td>
+                                <td>${med.startDate}</td>
+                                <td>${med.prescribedDate}</td>
+                                <td>${med.prescribedBy}</td>
+                            </tr>
+                            ${med.notes ? `
+                            <tr style="background: #f8f9fa;">
+                                <td colspan="8" style="text-align: left; padding: 12px; border-left: 3px solid var(--dark-pink);">
+                                    <strong style="color: var(--dark-pink);">Notes:</strong> ${med.notes}
+                                </td>
+                            </tr>
+                            ` : ''}
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        `;
+
+        historyTable.innerHTML = tableHTML;
+    }
+
+    showPatientPrescriptionsModal(patientId) {
+        // Get patient data
+        const patients = JSON.parse(localStorage.getItem('patients') || '[]');
+        let patient = patients.find(p => p.id === patientId);
+
+        // Fallback to sample data
+        if (!patient) {
+            const fallbackPatients = [
+                { id: 'P001', fullName: 'Miranda, Hebrew T.', age: 19, status: 'Active', doctor: 'Dr. Sta. Maria' },
+                { id: 'P002', fullName: 'Sta.Maria, Rizza M.', age: 20, status: 'Admitted', doctor: 'Dr. Sta. Maria' },
+                { id: 'P003', fullName: 'Puquiz, Daniel T.', age: 21, status: 'Active', doctor: 'Dr. Salvador' }
+            ];
+            patient = fallbackPatients.find(p => p.id === patientId);
+        }
+
+        if (!patient) {
+            this.showNotification('Patient not found', 'error');
+            return;
+        }
+
+        // Get prescriptions for this patient
+        const allPrescriptions = JSON.parse(localStorage.getItem('medications') || '[]');
+        const patientPrescriptions = allPrescriptions.filter(med => med.patientId === patientId);
+
+        const modal = document.createElement('div');
+        modal.className = 'modal-overlay';
+        modal.innerHTML = `
+            <div class="modal-content" style="max-width: 1000px;">
+                <div class="modal-header">
+                    <h2>Prescriptions - ${patient.fullName}</h2>
+                    <button class="modal-close" id="closePrescriptionsModalBtn">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <!-- Patient Info -->
+                    <div style="margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-left: 4px solid var(--dark-pink); border-radius: 4px;">
+                        <h4 style="margin-bottom: 10px; color: var(--dark-pink);">
+                            <i class="fas fa-user-injured"></i> Patient Information
+                        </h4>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
+                            <div><strong>Patient ID:</strong> ${patient.id}</div>
+                            <div><strong>Name:</strong> ${patient.fullName}</div>
+                            <div><strong>Age:</strong> ${patient.age}</div>
+                            <div><strong>Doctor:</strong> ${patient.doctor || 'Not Assigned'}</div>
+                        </div>
+                    </div>
+
+                    ${patientPrescriptions.length > 0 ? `
+                    <div style="overflow-x: auto;">
+                        <table class="patients-table" style="min-width: 1000px;">
+                            <thead>
+                                <tr>
+                                    <th style="width: 15%;">Medication</th>
+                                    <th style="width: 10%;">Dosage</th>
+                                    <th style="width: 12%;">Frequency</th>
+                                    <th style="width: 10%;">Route</th>
+                                    <th style="width: 10%;">Duration</th>
+                                    <th style="width: 10%;">Start Date</th>
+                                    <th style="width: 10%;">Date Prescribed</th>
+                                    <th style="width: 13%;">Prescribed By</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${patientPrescriptions.map(med => `
+                                    <tr>
+                                        <td><strong>${med.medicationName}</strong></td>
+                                        <td>${med.dosage}</td>
+                                        <td>${med.frequency}</td>
+                                        <td>${med.route}</td>
+                                        <td>${med.duration}</td>
+                                        <td>${med.startDate}</td>
+                                        <td>${med.prescribedDate}</td>
+                                        <td>${med.prescribedBy}</td>
+                                    </tr>
+                                    ${med.notes ? `
+                                    <tr style="background: #f8f9fa;">
+                                        <td colspan="8" style="text-align: left; padding: 12px; border-left: 3px solid var(--dark-pink);">
+                                            <strong style="color: var(--dark-pink);">Notes:</strong> ${med.notes}
+                                        </td>
+                                    </tr>
+                                    ` : ''}
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                    ` : `
+                    <div style="text-align: center; padding: 40px; color: #999;">
+                        <i class="fas fa-prescription" style="font-size: 48px; margin-bottom: 16px; opacity: 0.3;"></i>
+                        <p style="font-size: 16px;">No prescriptions yet for this patient.</p>
+                    </div>
+                    `}
+
+                    <div class="modal-actions" style="margin-top: 24px;">
+                        <button type="button" class="btn btn-secondary" id="closePrescriptionsBtn">Close</button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        const closeModal = () => modal.remove();
+        document.getElementById('closePrescriptionsModalBtn').addEventListener('click', closeModal);
+        document.getElementById('closePrescriptionsBtn').addEventListener('click', closeModal);
+    }
+
+    // Lab Results Listeners
+    attachLabResultsListeners() {
+        const patientSelect = document.getElementById('labResultsPatient');
+        const labResultsForm = document.getElementById('newLabResultForm');
+        const clearFormBtn = document.getElementById('clearLabResultsForm');
+        const resultFileInput = document.getElementById('resultFile');
+        const resultFileName = document.getElementById('resultFileName');
+
+        if (patientSelect) {
+            patientSelect.addEventListener('change', (e) => this.handleLabResultsPatientSelection(e.target.value));
+        }
+
+        if (labResultsForm) {
+            labResultsForm.addEventListener('submit', async (e) => await this.saveLabResult(e));
+        }
+
+        if (clearFormBtn) {
+            clearFormBtn.addEventListener('click', () => this.clearLabResultsForm());
+        }
+
+        // File upload display handler
+        if (resultFileInput && resultFileName) {
+            resultFileInput.addEventListener('change', (e) => {
+                if (e.target.files.length > 0) {
+                    resultFileName.textContent = e.target.files[0].name;
+                    resultFileName.style.color = '#333';
+                } else {
+                    resultFileName.textContent = 'No file chosen';
+                    resultFileName.style.color = '#666';
+                }
+            });
+        }
+
+        const viewMoreButtons = document.querySelectorAll('.btn-view-more-labs');
+        viewMoreButtons.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const patientId = e.currentTarget.getAttribute('data-patient-id');
+                if (patientId) {
+                    this.showPatientLabResultsModal(patientId);
+                }
+            });
+        });
+
+        if (this.selectedPatientForLabResults) {
+            patientSelect.value = this.selectedPatientForLabResults;
+            this.handleLabResultsPatientSelection(this.selectedPatientForLabResults);
+            this.selectedPatientForLabResults = null;
+        }
+    }
+
+    handleLabResultsPatientSelection(patientId) {
+        const selectedPatientInfo = document.getElementById('selectedPatientInfoLabs');
+        const labResultsForm = document.getElementById('labResultsForm');
+        const labResultsHistory = document.getElementById('labResultsHistory');
+
+        if (!patientId) {
+            if (selectedPatientInfo) selectedPatientInfo.style.display = 'none';
+            if (labResultsForm) labResultsForm.style.display = 'none';
+            if (labResultsHistory) labResultsHistory.style.display = 'none';
+            return;
+        }
+
+        const patients = JSON.parse(localStorage.getItem('patients') || '[]');
+        const patient = patients.find(p => p.id === patientId);
+
+        if (patient) {
+            this.displayPatientInfoLabs(patient);
+            if (selectedPatientInfo) selectedPatientInfo.style.display = 'block';
+            if (labResultsForm) labResultsForm.style.display = 'block';
+            if (labResultsHistory) labResultsHistory.style.display = 'block';
+            this.loadLabResultsHistory(patientId);
+        }
+    }
+
+    displayPatientInfoLabs(patient) {
+        const nameEl = document.getElementById('selectedPatientNameLabs');
+        const idEl = document.getElementById('selectedPatientIdLabs');
+        const ageEl = document.getElementById('selectedPatientAgeLabs');
+        const statusEl = document.getElementById('selectedPatientStatusLabs');
+        const doctorEl = document.getElementById('selectedPatientDoctorLabs');
+
+        if (nameEl) nameEl.textContent = patient.fullName;
+        if (idEl) idEl.textContent = patient.id;
+        if (ageEl) ageEl.textContent = patient.age;
+        if (statusEl) statusEl.textContent = patient.status;
+        if (doctorEl) doctorEl.textContent = patient.doctor || 'Not Assigned';
+    }
+
+    clearLabResultsForm() {
+        document.getElementById('testType').value = '';
+        document.getElementById('testDate').value = '';
+        document.getElementById('labStatus').value = 'Completed';
+        document.getElementById('labResultDetails').value = '';
+        document.getElementById('resultFile').value = '';
+        
+        // Reset file name display
+        const resultFileName = document.getElementById('resultFileName');
+        if (resultFileName) {
+            resultFileName.textContent = 'No file chosen';
+            resultFileName.style.color = '#666';
+        }
+    }
+
+    async saveLabResult(e) {
+        e.preventDefault();
+
+        const patientId = document.getElementById('labResultsPatient').value;
+        if (!patientId) {
+            this.showNotification('Please select a patient first', 'error');
+            return;
+        }
+
+        const labResult = {
+            id: 'LAB' + Date.now(),
+            patientId: patientId,
+            testType: document.getElementById('testType').value,
+            testDate: document.getElementById('testDate').value,
+            status: document.getElementById('labStatus').value,
+            resultDetails: document.getElementById('labResultDetails').value,
+            performedBy: this.currentUser.name,
+            recordedDate: new Date().toLocaleDateString('en-US'),
+            recordedTime: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+        };
+
+        // Handle file upload to IndexedDB
+        const fileInput = document.getElementById('resultFile');
+        const file = fileInput?.files[0];
+        
+        if (file) {
+            try {
+                const fileData = await fileStorage.saveFile('labResults', labResult.id, file);
+                labResult.fileData = fileData;
+            } catch (error) {
+                console.error('Error saving file:', error);
+                this.showNotification('Lab result saved but file upload failed', 'warning');
+            }
+        }
+
+        let labResults = JSON.parse(localStorage.getItem('labResults') || '[]');
+        labResults.unshift(labResult);
+        localStorage.setItem('labResults', JSON.stringify(labResults));
+
+        this.showNotification('Lab result saved successfully!', 'success');
+        this.clearLabResultsForm();
+        this.loadLabResultsHistory(patientId);
+    }
+
+    loadLabResultsHistory(patientId) {
+        const historyTable = document.getElementById('labResultsHistoryTable');
+        if (!historyTable) return;
+
+        const allLabResults = JSON.parse(localStorage.getItem('labResults') || '[]');
+        const patientLabResults = allLabResults.filter(lab => lab.patientId === patientId);
+
+        if (patientLabResults.length === 0) {
+            historyTable.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">No lab results yet.</p>';
+            return;
+        }
+
+        const tableHTML = `
+            <div style="overflow-x: auto;">
+                <table class="patients-table" style="min-width: 1000px;">
+                    <thead>
+                        <tr>
+                            <th style="width: 18%;">Test Type</th>
+                            <th style="width: 12%;">Test Date</th>
+                            <th style="width: 10%;">Status</th>
+                            <th style="width: 15%;">Performed By</th>
+                            <th style="width: 12%;">Recorded Date</th>
+                            <th style="width: 10%;">File</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${patientLabResults.map(lab => `
+                            <tr>
+                                <td><strong>${lab.testType}</strong></td>
+                                <td>${lab.testDate}</td>
+                                <td><span class="status-badge ${lab.status.toLowerCase().replace(' ', '-')}">${lab.status}</span></td>
+                                <td>${lab.performedBy}</td>
+                                <td>${lab.recordedDate}</td>
+                                <td>
+                                    ${lab.fileData ? `
+                                        <button class="btn btn-sm" style="padding: 5px 10px; font-size: 12px; background: var(--info-blue); color: white; margin-right: 4px;" 
+                                                onclick="fileStorage.viewFile('labResults', '${lab.id}')">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <button class="btn btn-sm" style="padding: 5px 10px; font-size: 12px; background: var(--dark-pink); color: white;" 
+                                                onclick="fileStorage.downloadFile('labResults', '${lab.id}')">
+                                            <i class="fas fa-download"></i>
+                                        </button>
+                                    ` : '<span style="color: #999; font-size: 12px;">-</span>'}
+                                </td>
+                            </tr>
+                            <tr style="background: #f8f9fa;">
+                                <td colspan="6" style="text-align: left; padding: 12px; border-left: 3px solid var(--dark-pink);">
+                                    <strong style="color: var(--dark-pink);">Results:</strong> ${lab.resultDetails}
+                                    ${lab.fileData ? `<br><small style="color: #666;"><i class="fas fa-paperclip"></i> ${lab.fileData.fileName} (${(lab.fileData.fileSize / 1024).toFixed(1)} KB)</small>` : ''}
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        `;
+
+        historyTable.innerHTML = tableHTML;
+    }
+
+    showPatientLabResultsModal(patientId, returnToPersonalInfo = true) {
+        const patients = JSON.parse(localStorage.getItem('patients') || '[]');
+        const patient = patients.find(p => p.id === patientId);
+
+        if (!patient) {
+            this.showNotification('Patient not found', 'error');
+            return;
+        }
+
+        const allLabResults = JSON.parse(localStorage.getItem('labResults') || '[]');
+        const patientLabResults = allLabResults.filter(lab => lab.patientId === patientId);
+
+        const modal = document.createElement('div');
+        modal.className = 'modal-overlay';
+        modal.innerHTML = `
+            <div class="modal-content" style="max-width: 1000px;">
+                <div class="modal-header">
+                    <h2>Lab Results - ${patient.fullName}</h2>
+                    <button class="modal-close" id="closeLabResultsModalBtn">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div style="margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-left: 4px solid var(--dark-pink); border-radius: 4px;">
+                        <h4 style="margin-bottom: 10px; color: var(--dark-pink);">
+                            <i class="fas fa-user-injured"></i> Patient Information
+                        </h4>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
+                            <div><strong>Patient ID:</strong> ${patient.id}</div>
+                            <div><strong>Name:</strong> ${patient.fullName}</div>
+                            <div><strong>Age:</strong> ${patient.age}</div>
+                            <div><strong>Doctor:</strong> ${patient.doctor || 'Not Assigned'}</div>
+                        </div>
+                    </div>
+
+                    ${patientLabResults.length > 0 ? `
+                    <div style="overflow-x: auto;">
+                        <table class="patients-table" style="min-width: 1000px;">
+                            <thead>
+                                <tr>
+                                    <th style="width: 18%;">Test Type</th>
+                                    <th style="width: 12%;">Test Date</th>
+                                    <th style="width: 10%;">Status</th>
+                                    <th style="width: 15%;">Performed By</th>
+                                    <th style="width: 12%;">Recorded Date</th>
+                                    <th style="width: 10%;">File</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${patientLabResults.map(lab => `
+                                    <tr>
+                                        <td><strong>${lab.testType}</strong></td>
+                                        <td>${lab.testDate}</td>
+                                        <td><span class="status-badge ${lab.status.toLowerCase().replace(' ', '-')}">${lab.status}</span></td>
+                                        <td>${lab.performedBy}</td>
+                                        <td>${lab.recordedDate}</td>
+                                        <td>
+                                            ${lab.fileData ? `
+                                                <button class="btn btn-sm" style="padding: 5px 10px; font-size: 12px; background: var(--info-blue); color: white; margin-right: 4px;" 
+                                                        onclick="fileStorage.viewFile('labResults', '${lab.id}')">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+                                                <button class="btn btn-sm" style="padding: 5px 10px; font-size: 12px; background: var(--dark-pink); color: white;" 
+                                                        onclick="fileStorage.downloadFile('labResults', '${lab.id}')">
+                                                    <i class="fas fa-download"></i>
+                                                </button>
+                                            ` : '<span style="color: #999; font-size: 12px;">-</span>'}
+                                        </td>
+                                    </tr>
+                                    <tr style="background: #f8f9fa;">
+                                        <td colspan="6" style="text-align: left; padding: 12px; border-left: 3px solid var(--dark-pink);">
+                                            <strong style="color: var(--dark-pink);">Results:</strong> ${lab.resultDetails}
+                                            ${lab.fileData ? `<br><small style="color: #666; margin-top: 6px; display: inline-block;">
+                                                <i class="fas fa-paperclip"></i> ${lab.fileData.fileName} 
+                                                <span style="color: #999;">(${(lab.fileData.fileSize / 1024).toFixed(1)} KB)</span>
+                                            </small>` : ''}
+                                        </td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                    ` : `
+                    <div style="text-align: center; padding: 40px; color: #999;">
+                        <i class="fas fa-flask" style="font-size: 48px; margin-bottom: 16px; opacity: 0.3;"></i>
+                        <p style="font-size: 16px;">No lab results yet for this patient.</p>
+                    </div>
+                    `}
+
+                    <div class="modal-actions" style="margin-top: 24px;">
+                        <button type="button" class="btn btn-secondary" id="closeLabResultsBtn">Close</button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        const closeAndReopenPersonalInfo = () => {
+            modal.remove();
+            if (returnToPersonalInfo) {
+                this.viewPersonalInfo(patientId);
+            }
+        };
+        document.getElementById('closeLabResultsModalBtn').addEventListener('click', closeAndReopenPersonalInfo);
+        document.getElementById('closeLabResultsBtn').addEventListener('click', closeAndReopenPersonalInfo);
+    }
+
+    showPatientImagingResultsModal(patientId, returnToPersonalInfo = true) {
+        const patients = JSON.parse(localStorage.getItem('patients') || '[]');
+        const patient = patients.find(p => p.id === patientId);
+
+        if (!patient) {
+            this.showNotification('Patient not found', 'error');
+            return;
+        }
+
+        const allImagingResults = JSON.parse(localStorage.getItem('imagingResults') || '[]');
+        const patientImagingResults = allImagingResults.filter(img => img.patientId === patientId);
+
+        const modal = document.createElement('div');
+        modal.className = 'modal-overlay';
+        modal.innerHTML = `
+            <div class="modal-content" style="max-width: 1000px;">
+                <div class="modal-header">
+                    <h2>Imaging Results - ${patient.fullName}</h2>
+                    <button class="modal-close" id="closeImagingResultsModalBtn">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div style="margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-left: 4px solid var(--dark-pink); border-radius: 4px;">
+                        <h4 style="margin-bottom: 10px; color: var(--dark-pink);">
+                            <i class="fas fa-user-injured"></i> Patient Information
+                        </h4>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
+                            <div><strong>Patient ID:</strong> ${patient.id}</div>
+                            <div><strong>Name:</strong> ${patient.fullName}</div>
+                            <div><strong>Age:</strong> ${patient.age}</div>
+                            <div><strong>Doctor:</strong> ${patient.doctor || 'Not Assigned'}</div>
+                        </div>
+                    </div>
+
+                    ${patientImagingResults.length > 0 ? `
+                    <div style="overflow-x: auto;">
+                        <table class="patients-table" style="min-width: 1000px;">
+                            <thead>
+                                <tr>
+                                    <th style="width: 15%;">Modality</th>
+                                    <th style="width: 12%;">Date</th>
+                                    <th style="width: 10%;">Status</th>
+                                    <th style="width: 15%;">Performed By</th>
+                                    <th style="width: 12%;">Recorded Date</th>
+                                    <th style="width: 10%;">File</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${patientImagingResults.map(img => `
+                                    <tr>
+                                        <td><strong>${img.imagingModality}</strong></td>
+                                        <td>${img.imagingDate}</td>
+                                        <td><span class="status-badge ${img.status.toLowerCase().replace(' ', '-')}">${img.status}</span></td>
+                                        <td>${img.performedBy}</td>
+                                        <td>${img.recordedDate}</td>
+                                        <td>
+                                            ${img.fileData ? `
+                                                <button class="btn btn-sm" style="padding: 5px 10px; font-size: 12px; background: var(--info-blue); color: white; margin-right: 4px;" 
+                                                        onclick="fileStorage.viewFile('imagingResults', '${img.id}')">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+                                                <button class="btn btn-sm" style="padding: 5px 10px; font-size: 12px; background: var(--dark-pink); color: white;" 
+                                                        onclick="fileStorage.downloadFile('imagingResults', '${img.id}')">
+                                                    <i class="fas fa-download"></i>
+                                                </button>
+                                            ` : '<span style="color: #999; font-size: 12px;">-</span>'}
+                                        </td>
+                                    </tr>
+                                    <tr style="background: #f8f9fa;">
+                                        <td colspan="6" style="text-align: left; padding: 12px; border-left: 3px solid var(--dark-pink);">
+                                            <strong style="color: var(--dark-pink);">Findings:</strong> ${img.imagingFindings}
+                                            ${img.fileData ? `<br><small style="color: #666; margin-top: 6px; display: inline-block;">
+                                                <i class="fas fa-paperclip"></i> ${img.fileData.fileName} 
+                                                <span style="color: #999;">(${(img.fileData.fileSize / 1024).toFixed(1)} KB)</span>
+                                            </small>` : ''}
+                                        </td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                    ` : `
+                    <div style="text-align: center; padding: 40px; color: #999;">
+                        <i class="fas fa-x-ray" style="font-size: 48px; margin-bottom: 16px; opacity: 0.3;"></i>
+                        <p style="font-size: 16px;">No imaging results yet for this patient.</p>
+                    </div>
+                    `}
+
+                    <div class="modal-actions" style="margin-top: 24px;">
+                        <button type="button" class="btn btn-secondary" id="closeImagingResultsBtn">Close</button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        const closeAndReopenPersonalInfo = () => {
+            modal.remove();
+            if (returnToPersonalInfo) {
+                this.viewPersonalInfo(patientId);
+            }
+        };
+        document.getElementById('closeImagingResultsModalBtn').addEventListener('click', closeAndReopenPersonalInfo);
+        document.getElementById('closeImagingResultsBtn').addEventListener('click', closeAndReopenPersonalInfo);
+    }
+
+    // Imaging Results Listeners
+    attachImagingResultsListeners() {
+        // Admin patient selector
+        const patientSelectAdmin = document.getElementById('imagingResultsPatientAdmin');
+        if (patientSelectAdmin) {
+            patientSelectAdmin.addEventListener('change', (e) => this.loadImagingHistoryAdmin(e.target.value));
+        }
+
+        // Physician patient selector
+        const patientSelectPhysician = document.getElementById('imagingResultsPatientPhysician');
+        if (patientSelectPhysician) {
+            patientSelectPhysician.addEventListener('change', (e) => this.loadImagingHistoryPhysician(e.target.value));
+        }
+
+        const viewMoreButtons = document.querySelectorAll('.btn-view-more-imaging');
+        viewMoreButtons.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const patientId = e.currentTarget.getAttribute('data-patient-id');
+                if (patientId) {
+                    this.showPatientImagingResultsModal(patientId);
+                }
+            });
+        });
+    }
+
+    loadImagingHistoryAdmin(patientId) {
+        const historyDiv = document.getElementById('imagingResultsHistoryAdmin');
+        const historyTable = document.getElementById('imagingResultsHistoryTableAdmin');
+        const patientInfoDiv = document.getElementById('selectedPatientInfoImagingAdmin');
+        
+        if (!historyDiv || !historyTable) return;
+
+        if (!patientId) {
+            if (historyDiv) historyDiv.style.display = 'none';
+            if (patientInfoDiv) patientInfoDiv.style.display = 'none';
+            return;
+        }
+
+        const patients = JSON.parse(localStorage.getItem('patients') || '[]');
+        const patient = patients.find(p => p.id === patientId);
+        
+        if (patient && patientInfoDiv) {
+            document.getElementById('selectedPatientNameImagingAdmin').textContent = patient.fullName;
+            document.getElementById('selectedPatientIdImagingAdmin').textContent = patient.id;
+            document.getElementById('selectedPatientAgeImagingAdmin').textContent = patient.age;
+            document.getElementById('selectedPatientStatusImagingAdmin').textContent = patient.status;
+            document.getElementById('selectedPatientDoctorImagingAdmin').textContent = patient.doctor || 'Not Assigned';
+            patientInfoDiv.style.display = 'block';
+        }
+
+        const allImagingResults = JSON.parse(localStorage.getItem('imagingResults') || '[]');
+        const patientImagingResults = allImagingResults.filter(img => img.patientId === patientId);
+
+        if (patientImagingResults.length === 0) {
+            historyTable.innerHTML = '<p style="text-align: center; color: #999; padding: 40px;">No imaging results for this patient.</p>';
+            historyDiv.style.display = 'block';
+            return;
+        }
+
+        const tableHTML = `
+            <div style="overflow-x: auto;">
+                <table class="patients-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 12%;">Date</th>
+                            <th style="width: 18%;">Modality</th>
+                            <th style="width: 15%;">Status</th>
+                            <th style="width: 20%;">Performed By</th>
+                            <th style="width: 15%;">Recorded Date</th>
+                            <th style="width: 20%;">File</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${patientImagingResults.map(img => `
+                            <tr>
+                                <td style="padding: 12px;">${img.imagingDate}</td>
+                                <td style="padding: 12px;"><strong>${img.imagingModality}</strong></td>
+                                <td style="padding: 12px;"><span class="status-badge ${img.status.toLowerCase().replace(' ', '-')}">${img.status}</span></td>
+                                <td style="padding: 12px;">${img.performedBy}</td>
+                                <td style="padding: 12px;">${img.recordedDate}</td>
+                                <td style="padding: 12px;">
+                                    ${img.fileData ? `
+                                        <button class="btn btn-sm" style="padding: 5px 10px; font-size: 12px; background: var(--info-blue); color: white; margin-right: 4px;" 
+                                                onclick="fileStorage.viewFile('imagingResults', '${img.id}')">
+                                            <i class="fas fa-eye"></i> View
+                                        </button>
+                                        <button class="btn btn-sm" style="padding: 5px 10px; font-size: 12px;" 
+                                                onclick="fileStorage.downloadFile('imagingResults', '${img.id}')">
+                                            <i class="fas fa-download"></i>
+                                        </button>
+                                    ` : '<span style="color: #999; font-size: 12px;">No file</span>'}
+                                </td>
+                            </tr>
+                            <tr style="background: #f8f9fa;">
+                                <td colspan="6" style="text-align: left; padding: 12px; border-left: 3px solid var(--dark-pink);">
+                                    <strong style="color: var(--dark-pink);">Findings:</strong> ${img.imagingFindings}
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        `;
+
+        historyTable.innerHTML = tableHTML;
+        historyDiv.style.display = 'block';
+    }
+
+    loadImagingHistoryPhysician(patientId) {
+        const historyDiv = document.getElementById('imagingResultsHistoryPhysician');
+        const historyTable = document.getElementById('imagingResultsHistoryTablePhysician');
+        const patientInfoDiv = document.getElementById('selectedPatientInfoImagingPhysician');
+        
+        if (!historyDiv || !historyTable) return;
+
+        if (!patientId) {
+            if (historyDiv) historyDiv.style.display = 'none';
+            if (patientInfoDiv) patientInfoDiv.style.display = 'none';
+            return;
+        }
+
+        const patients = JSON.parse(localStorage.getItem('patients') || '[]');
+        const patient = patients.find(p => p.id === patientId);
+        
+        if (patient && patientInfoDiv) {
+            document.getElementById('selectedPatientNameImagingPhysician').textContent = patient.fullName;
+            document.getElementById('selectedPatientIdImagingPhysician').textContent = patient.id;
+            document.getElementById('selectedPatientAgeImagingPhysician').textContent = patient.age;
+            document.getElementById('selectedPatientStatusImagingPhysician').textContent = patient.status;
+            document.getElementById('selectedPatientDoctorImagingPhysician').textContent = patient.doctor || 'Not Assigned';
+            patientInfoDiv.style.display = 'block';
+        }
+
+        const allImagingResults = JSON.parse(localStorage.getItem('imagingResults') || '[]');
+        const patientImagingResults = allImagingResults.filter(img => img.patientId === patientId);
+
+        if (patientImagingResults.length === 0) {
+            historyTable.innerHTML = '<p style="text-align: center; color: #999; padding: 40px;">No imaging results for this patient.</p>';
+            historyDiv.style.display = 'block';
+            return;
+        }
+
+        const tableHTML = `
+            <div style="overflow-x: auto;">
+                <table class="patients-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 12%;">Date</th>
+                            <th style="width: 18%;">Modality</th>
+                            <th style="width: 15%;">Status</th>
+                            <th style="width: 20%;">Performed By</th>
+                            <th style="width: 15%;">Recorded Date</th>
+                            <th style="width: 20%;">File</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${patientImagingResults.map(img => `
+                            <tr>
+                                <td style="padding: 12px;">${img.imagingDate}</td>
+                                <td style="padding: 12px;"><strong>${img.imagingModality}</strong></td>
+                                <td style="padding: 12px;"><span class="status-badge ${img.status.toLowerCase().replace(' ', '-')}">${img.status}</span></td>
+                                <td style="padding: 12px;">${img.performedBy}</td>
+                                <td style="padding: 12px;">${img.recordedDate}</td>
+                                <td style="padding: 12px;">
+                                    ${img.fileData ? `
+                                        <button class="btn btn-sm" style="padding: 5px 10px; font-size: 12px; background: var(--info-blue); color: white; margin-right: 4px;" 
+                                                onclick="fileStorage.viewFile('imagingResults', '${img.id}')">
+                                            <i class="fas fa-eye"></i> View
+                                        </button>
+                                        <button class="btn btn-sm" style="padding: 5px 10px; font-size: 12px;" 
+                                                onclick="fileStorage.downloadFile('imagingResults', '${img.id}')">
+                                            <i class="fas fa-download"></i>
+                                        </button>
+                                    ` : '<span style="color: #999; font-size: 12px;">No file</span>'}
+                                </td>
+                            </tr>
+                            <tr style="background: #f8f9fa;">
+                                <td colspan="6" style="text-align: left; padding: 12px; border-left: 3px solid var(--dark-pink);">
+                                    <strong style="color: var(--dark-pink);">Findings:</strong> ${img.imagingFindings}
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        `;
+
+        historyTable.innerHTML = tableHTML;
+        historyDiv.style.display = 'block';
+    }
+
+    handleImagingResultsPatientSelection(patientId) {
+        const selectedPatientInfo = document.getElementById('selectedPatientInfoImaging');
+        const imagingResultsForm = document.getElementById('imagingResultsForm');
+        const imagingResultsHistory = document.getElementById('imagingResultsHistory');
+
+        if (!patientId) {
+            if (selectedPatientInfo) selectedPatientInfo.style.display = 'none';
+            if (imagingResultsForm) imagingResultsForm.style.display = 'none';
+            if (imagingResultsHistory) imagingResultsHistory.style.display = 'none';
+            return;
+        }
+
+        const patients = JSON.parse(localStorage.getItem('patients') || '[]');
+        const patient = patients.find(p => p.id === patientId);
+
+        if (patient) {
+            this.displayPatientInfoImaging(patient);
+            if (selectedPatientInfo) selectedPatientInfo.style.display = 'block';
+            if (imagingResultsForm) imagingResultsForm.style.display = 'block';
+            if (imagingResultsHistory) imagingResultsHistory.style.display = 'block';
+            this.loadImagingResultsHistory(patientId);
+        }
+    }
+
+    displayPatientInfoImaging(patient) {
+        const nameEl = document.getElementById('selectedPatientNameImaging');
+        const idEl = document.getElementById('selectedPatientIdImaging');
+        const ageEl = document.getElementById('selectedPatientAgeImaging');
+        const statusEl = document.getElementById('selectedPatientStatusImaging');
+        const doctorEl = document.getElementById('selectedPatientDoctorImaging');
+
+        if (nameEl) nameEl.textContent = patient.fullName;
+        if (idEl) idEl.textContent = patient.id;
+        if (ageEl) ageEl.textContent = patient.age;
+        if (statusEl) statusEl.textContent = patient.status;
+        if (doctorEl) doctorEl.textContent = patient.doctor || 'Not Assigned';
+    }
+
+    clearImagingResultsForm() {
+        document.getElementById('imagingType').value = '';
+        document.getElementById('bodyPart').value = '';
+        document.getElementById('imagingDate').value = '';
+        document.getElementById('imagingStatus').value = 'Completed';
+        document.getElementById('imagingFindings').value = '';
+        document.getElementById('radiologistName').value = '';
+        document.getElementById('imagingFile').value = '';
+    }
+
+    saveImagingResult(e) {
+        e.preventDefault();
+
+        const patientId = document.getElementById('imagingResultsPatient').value;
+        if (!patientId) {
+            this.showNotification('Please select a patient first', 'error');
+            return;
+        }
+
+        const imagingResult = {
+            id: 'IMG' + Date.now(),
+            patientId: patientId,
+            imagingType: document.getElementById('imagingType').value,
+            bodyPart: document.getElementById('bodyPart').value,
+            imagingDate: document.getElementById('imagingDate').value,
+            status: document.getElementById('imagingStatus').value,
+            findings: document.getElementById('imagingFindings').value,
+            radiologist: document.getElementById('radiologistName').value || 'Not specified',
+            performedBy: this.currentUser.name,
+            recordedDate: new Date().toLocaleDateString('en-US'),
+            recordedTime: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+        };
+
+        let imagingResults = JSON.parse(localStorage.getItem('imagingResults') || '[]');
+        imagingResults.unshift(imagingResult);
+        localStorage.setItem('imagingResults', JSON.stringify(imagingResults));
+
+        this.showNotification('Imaging result saved successfully!', 'success');
+        this.clearImagingResultsForm();
+        this.loadImagingResultsHistory(patientId);
+    }
+
+    loadImagingResultsHistory(patientId) {
+        const historyTable = document.getElementById('imagingResultsHistoryTable');
+        if (!historyTable) return;
+
+        const allImagingResults = JSON.parse(localStorage.getItem('imagingResults') || '[]');
+        const patientImagingResults = allImagingResults.filter(img => img.patientId === patientId);
+
+        if (patientImagingResults.length === 0) {
+            historyTable.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">No imaging results yet.</p>';
+            return;
+        }
+
+        const tableHTML = `
+            <div style="overflow-x: auto;">
+                <table class="patients-table" style="min-width: 1000px;">
+                    <thead>
+                        <tr>
+                            <th style="width: 15%;">Imaging Type</th>
+                            <th style="width: 12%;">Body Part</th>
+                            <th style="width: 12%;">Date</th>
+                            <th style="width: 10%;">Status</th>
+                            <th style="width: 15%;">Radiologist</th>
+                            <th style="width: 12%;">Recorded Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${patientImagingResults.map(img => `
+                            <tr>
+                                <td><strong>${img.imagingType}</strong></td>
+                                <td>${img.bodyPart}</td>
+                                <td>${img.imagingDate}</td>
+                                <td><span class="status-badge ${img.status.toLowerCase().replace(' ', '-')}">${img.status}</span></td>
+                                <td>${img.radiologist}</td>
+                                <td>${img.recordedDate}</td>
+                            </tr>
+                            <tr style="background: #f8f9fa;">
+                                <td colspan="6" style="text-align: left; padding: 12px; border-left: 3px solid var(--dark-pink);">
+                                    <strong style="color: var(--dark-pink);">Findings:</strong> ${img.findings}
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        `;
+
+        historyTable.innerHTML = tableHTML;
+    }
+
+    // Imaging Orders Listeners (RadTech)
+    attachImagingOrdersListeners() {
+        const patientSelect = document.getElementById('imagingPatient');
+        const imagingForm = document.getElementById('newImagingForm');
+        const clearFormBtn = document.getElementById('clearImagingForm');
+        const imagingFileInput = document.getElementById('imagingFile');
+        const imagingFileName = document.getElementById('imagingFileName');
+
+        if (patientSelect) {
+            patientSelect.addEventListener('change', (e) => this.handleImagingOrdersPatientSelection(e.target.value));
+        }
+
+        if (imagingForm) {
+            imagingForm.addEventListener('submit', async (e) => await this.saveImagingOrder(e));
+        }
+
+        if (clearFormBtn) {
+            clearFormBtn.addEventListener('click', () => this.clearImagingOrdersForm());
+        }
+
+        // File upload display handler
+        if (imagingFileInput && imagingFileName) {
+            imagingFileInput.addEventListener('change', (e) => {
+                if (e.target.files.length > 0) {
+                    imagingFileName.textContent = e.target.files[0].name;
+                    imagingFileName.style.color = '#333';
+                } else {
+                    imagingFileName.textContent = 'No file chosen';
+                    imagingFileName.style.color = '#666';
+                }
+            });
+        }
+
+        // View More buttons in summary table
+        const viewMoreButtons = document.querySelectorAll('.btn-view-more-imaging');
+        viewMoreButtons.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const patientId = e.currentTarget.getAttribute('data-patient-id');
+                if (patientId) {
+                    this.showPatientImagingResultsModal(patientId);
+                }
+            });
+        });
+
+        if (this.selectedPatientForImaging) {
+            patientSelect.value = this.selectedPatientForImaging;
+            this.handleImagingOrdersPatientSelection(this.selectedPatientForImaging);
+            this.selectedPatientForImaging = null;
+        }
+    }
+
+    handleImagingOrdersPatientSelection(patientId) {
+        const selectedPatientInfo = document.getElementById('selectedPatientInfoImaging');
+        const imagingForm = document.getElementById('newImagingForm');
+        const imagingHistoryCard = document.getElementById('imagingHistoryCard');
+
+        if (!patientId) {
+            if (selectedPatientInfo) selectedPatientInfo.style.display = 'none';
+            if (imagingForm) imagingForm.style.display = 'none';
+            if (imagingHistoryCard) imagingHistoryCard.style.display = 'none';
+            return;
+        }
+
+        const patients = JSON.parse(localStorage.getItem('patients') || '[]');
+        const patient = patients.find(p => p.id === patientId);
+
+        if (patient) {
+            // Display patient info
+            const nameEl = document.getElementById('selectedPatientNameImaging');
+            const idEl = document.getElementById('selectedPatientIdImaging');
+            const ageEl = document.getElementById('selectedPatientAgeImaging');
+            const doctorEl = document.getElementById('selectedPatientDoctorImaging');
+
+            if (nameEl) nameEl.textContent = patient.fullName;
+            if (idEl) idEl.textContent = patient.id;
+            if (ageEl) ageEl.textContent = patient.age;
+            if (doctorEl) doctorEl.textContent = patient.doctor || 'Not Assigned';
+
+            // Show elements
+            if (selectedPatientInfo) selectedPatientInfo.style.display = 'block';
+            if (imagingForm) imagingForm.style.display = 'block';
+            if (imagingHistoryCard) imagingHistoryCard.style.display = 'block';
+            
+            this.loadImagingOrdersHistory(patientId);
+        }
+    }
+
+    clearImagingOrdersForm() {
+        document.getElementById('imagingModality').value = '';
+        document.getElementById('imagingDate').value = '';
+        document.getElementById('imagingStatus').value = 'Completed';
+        document.getElementById('imagingFindings').value = '';
+        document.getElementById('imagingFile').value = '';
+        document.getElementById('imagingFileName').textContent = 'No file chosen';
+        document.getElementById('imagingFileName').style.color = '#666';
+    }
+
+    async saveImagingOrder(e) {
+        e.preventDefault();
+
+        const patientId = document.getElementById('imagingPatient').value;
+        if (!patientId) {
+            this.showNotification('Please select a patient first', 'error');
+            return;
+        }
+
+        const imagingResult = {
+            id: 'IMG' + Date.now(),
+            patientId: patientId,
+            imagingModality: document.getElementById('imagingModality').value,
+            imagingDate: document.getElementById('imagingDate').value,
+            status: document.getElementById('imagingStatus').value,
+            imagingFindings: document.getElementById('imagingFindings').value,
+            performedBy: this.currentUser.name,
+            recordedDate: new Date().toLocaleDateString('en-US'),
+            recordedTime: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+        };
+
+        // Handle file upload to IndexedDB
+        const fileInput = document.getElementById('imagingFile');
+        const file = fileInput?.files[0];
+        
+        if (file) {
+            try {
+                const fileData = await fileStorage.saveFile('imagingResults', imagingResult.id, file);
+                imagingResult.fileData = fileData;
+            } catch (error) {
+                console.error('Error saving file:', error);
+                this.showNotification('Imaging result saved but file upload failed', 'warning');
+            }
+        }
+
+        let imagingResults = JSON.parse(localStorage.getItem('imagingResults') || '[]');
+        imagingResults.unshift(imagingResult);
+        localStorage.setItem('imagingResults', JSON.stringify(imagingResults));
+
+        this.showNotification('Imaging result saved successfully!', 'success');
+        this.clearImagingOrdersForm();
+        this.loadImagingOrdersHistory(patientId);
+    }
+
+    loadImagingOrdersHistory(patientId) {
+        const historyTable = document.getElementById('imagingHistoryTable');
+        if (!historyTable) return;
+
+        const allImagingResults = JSON.parse(localStorage.getItem('imagingResults') || '[]');
+        const patientImagingResults = allImagingResults.filter(img => img.patientId === patientId);
+
+        if (patientImagingResults.length === 0) {
+            historyTable.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">No imaging results yet.</p>';
+            return;
+        }
+
+        const tableHTML = `
+            <div style="overflow-x: auto;">
+                <table class="patients-table" style="min-width: 1000px;">
+                    <thead>
+                        <tr>
+                            <th style="width: 18%;">Modality</th>
+                            <th style="width: 12%;">Date</th>
+                            <th style="width: 10%;">Status</th>
+                            <th style="width: 15%;">Performed By</th>
+                            <th style="width: 12%;">Recorded Date</th>
+                            <th style="width: 10%;">File</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${patientImagingResults.map(img => `
+                            <tr>
+                                <td><strong>${img.imagingModality}</strong></td>
+                                <td>${img.imagingDate}</td>
+                                <td><span class="status-badge ${img.status.toLowerCase().replace(' ', '-')}">${img.status}</span></td>
+                                <td>${img.performedBy}</td>
+                                <td>${img.recordedDate}</td>
+                                <td>
+                                    ${img.fileData ? `
+                                        <button class="btn btn-sm" style="padding: 5px 10px; font-size: 12px; background: var(--info-blue); color: white; margin-right: 4px;" 
+                                                onclick="fileStorage.viewFile('imagingResults', '${img.id}')">
+                                            <i class="fas fa-eye"></i> View
+                                        </button>
+                                        <button class="btn btn-sm" style="padding: 5px 10px; font-size: 12px; background: var(--dark-pink); color: white;" 
+                                                onclick="fileStorage.downloadFile('imagingResults', '${img.id}')">
+                                            <i class="fas fa-download"></i>
+                                        </button>
+                                    ` : '<span style="color: #999; font-size: 12px;">No file</span>'}
+                                </td>
+                            </tr>
+                            <tr style="background: #f8f9fa;">
+                                <td colspan="6" style="text-align: left; padding: 12px; border-left: 3px solid var(--dark-pink);">
+                                    <strong style="color: var(--dark-pink);">Findings:</strong> ${img.imagingFindings}
+                                    ${img.fileData ? `<br><small style="color: #666;"><i class="fas fa-paperclip"></i> ${img.fileData.fileName} (${(img.fileData.fileSize / 1024).toFixed(1)} KB)</small>` : ''}
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        `;
+
+        historyTable.innerHTML = tableHTML;
+    }
+
+    // Drug Dispensing Listeners
+    attachDrugDispensingListeners() {
+        const patientSelect = document.getElementById('drugDispensingPatient');
+        const drugDispensingForm = document.getElementById('newDrugDispensingForm');
+        const clearFormBtn = document.getElementById('clearDrugDispensingForm');
+
+        // Admin view selector
+        const patientSelectAdmin = document.getElementById('drugDispensingPatientAdmin');
+
+        if (patientSelect) {
+            patientSelect.addEventListener('change', (e) => this.handleDrugDispensingPatientSelection(e.target.value));
+        }
+
+        if (patientSelectAdmin) {
+            patientSelectAdmin.addEventListener('change', (e) => this.loadDrugDispensingHistoryAdmin(e.target.value));
+        }
+
+        if (drugDispensingForm) {
+            drugDispensingForm.addEventListener('submit', (e) => this.saveDrugDispensing(e));
+        }
+
+        if (clearFormBtn) {
+            clearFormBtn.addEventListener('click', () => this.clearDrugDispensingForm());
+        }
+
+        const viewMoreButtons = document.querySelectorAll('.btn-view-more-dispensing');
+        viewMoreButtons.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const patientId = e.currentTarget.getAttribute('data-patient-id');
+                if (patientId) {
+                    this.showPatientDrugDispensingModal(patientId, false);
+                }
+            });
+        });
+
+        if (this.selectedPatientForDrugDispensing) {
+            patientSelect.value = this.selectedPatientForDrugDispensing;
+            this.handleDrugDispensingPatientSelection(this.selectedPatientForDrugDispensing);
+            this.selectedPatientForDrugDispensing = null;
+        }
+    }
+
+    handleDrugDispensingPatientSelection(patientId) {
+        const selectedPatientInfo = document.getElementById('selectedPatientInfoDispensing');
+        const drugDispensingForm = document.getElementById('drugDispensingForm');
+        const drugDispensingHistory = document.getElementById('drugDispensingHistory');
+
+        if (!patientId) {
+            if (selectedPatientInfo) selectedPatientInfo.style.display = 'none';
+            if (drugDispensingForm) drugDispensingForm.style.display = 'none';
+            if (drugDispensingHistory) drugDispensingHistory.style.display = 'none';
+            return;
+        }
+
+        const patients = JSON.parse(localStorage.getItem('patients') || '[]');
+        const patient = patients.find(p => p.id === patientId);
+
+        if (patient) {
+            this.displayPatientInfoDispensing(patient);
+            if (selectedPatientInfo) selectedPatientInfo.style.display = 'block';
+            if (drugDispensingForm) drugDispensingForm.style.display = 'block';
+            if (drugDispensingHistory) drugDispensingHistory.style.display = 'block';
+            this.loadDrugDispensingHistory(patientId);
+        }
+    }
+
+    displayPatientInfoDispensing(patient) {
+        const nameEl = document.getElementById('selectedPatientNameDispensing');
+        const idEl = document.getElementById('selectedPatientIdDispensing');
+        const ageEl = document.getElementById('selectedPatientAgeDispensing');
+        const statusEl = document.getElementById('selectedPatientStatusDispensing');
+        const doctorEl = document.getElementById('selectedPatientDoctorDispensing');
+
+        if (nameEl) nameEl.textContent = patient.fullName;
+        if (idEl) idEl.textContent = patient.id;
+        if (ageEl) ageEl.textContent = patient.age;
+        if (statusEl) statusEl.textContent = patient.status;
+        if (doctorEl) doctorEl.textContent = patient.doctor || 'Not Assigned';
+    }
+
+    clearDrugDispensingForm() {
+        document.getElementById('drugName').value = '';
+        document.getElementById('drugQuantity').value = '';
+        document.getElementById('batchNumber').value = '';
+        document.getElementById('lotNumber').value = '';
+        document.getElementById('expiryDate').value = '';
+        document.getElementById('dispensingDate').value = '';
+        document.getElementById('drugDispensingNotes').value = '';
+    }
+
+    saveDrugDispensing(e) {
+        e.preventDefault();
+
+        const patientId = document.getElementById('drugDispensingPatient').value;
+        if (!patientId) {
+            this.showNotification('Please select a patient first', 'error');
+            return;
+        }
+
+        const drugDispensing = {
+            id: 'DISP' + Date.now(),
+            patientId: patientId,
+            drugName: document.getElementById('drugName').value,
+            quantity: document.getElementById('drugQuantity').value,
+            batchNumber: document.getElementById('batchNumber').value || 'Not specified',
+            lotNumber: document.getElementById('lotNumber').value || 'Not specified',
+            expiryDate: document.getElementById('expiryDate').value || 'Not specified',
+            dispensedDate: document.getElementById('dispensingDate').value,
+            notes: document.getElementById('drugDispensingNotes').value,
+            dispensedBy: this.currentUser.name,
+            recordedDate: new Date().toLocaleDateString('en-US'),
+            recordedTime: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+        };
+
+        let drugDispensings = JSON.parse(localStorage.getItem('drugDispensing') || '[]');
+        drugDispensings.unshift(drugDispensing);
+        localStorage.setItem('drugDispensing', JSON.stringify(drugDispensings));
+
+        this.showNotification('Drug dispensing recorded successfully!', 'success');
+        this.clearDrugDispensingForm();
+        this.loadDrugDispensingHistory(patientId);
+    }
+
+    loadDrugDispensingHistory(patientId) {
+        const historyTable = document.getElementById('drugDispensingHistoryTable');
+        if (!historyTable) return;
+
+        const allDrugDispensings = JSON.parse(localStorage.getItem('drugDispensing') || '[]');
+        const patientDrugDispensings = allDrugDispensings.filter(disp => disp.patientId === patientId);
+
+        if (patientDrugDispensings.length === 0) {
+            historyTable.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">No dispensing records yet.</p>';
+            return;
+        }
+
+        const tableHTML = `
+            <div style="overflow-x: auto;">
+                <table class="patients-table" style="min-width: 1000px;">
+                    <thead>
+                        <tr>
+                            <th style="width: 18%;">Drug Name</th>
+                            <th style="width: 10%;">Quantity</th>
+                            <th style="width: 12%;">Batch Number</th>
+                            <th style="width: 12%;">Lot Number</th>
+                            <th style="width: 12%;">Expiry Date</th>
+                            <th style="width: 12%;">Date Dispensed</th>
+                            <th style="width: 14%;">Dispensed By</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${patientDrugDispensings.map(disp => `
+                            <tr>
+                                <td><strong>${disp.drugName}</strong></td>
+                                <td>${disp.quantity}</td>
+                                <td>${disp.batchNumber}</td>
+                                <td>${disp.lotNumber}</td>
+                                <td>${disp.expiryDate}</td>
+                                <td>${disp.dispensedDate}</td>
+                                <td>${disp.dispensedBy}</td>
+                            </tr>
+                            ${disp.notes ? `
+                            <tr style="background: #f8f9fa;">
+                                <td colspan="7" style="text-align: left; padding: 12px; border-left: 3px solid var(--dark-pink);">
+                                    <strong style="color: var(--dark-pink);">Notes:</strong> ${disp.notes}
+                                </td>
+                            </tr>
+                            ` : ''}
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        `;
+
+        historyTable.innerHTML = tableHTML;
+    }
+
+    loadDrugDispensingHistoryAdmin(patientId) {
+        const historyDiv = document.getElementById('drugDispensingHistoryAdmin');
+        const historyTable = document.getElementById('drugDispensingHistoryTableAdmin');
+        const patientInfoDiv = document.getElementById('selectedPatientInfoDispensingAdmin');
+
+        if (!patientId) {
+            if (historyDiv) historyDiv.style.display = 'none';
+            if (patientInfoDiv) patientInfoDiv.style.display = 'none';
+            return;
+        }
+
+        const patients = JSON.parse(localStorage.getItem('patients') || '[]');
+        const patient = patients.find(p => p.id === patientId);
+
+        if (!patient) return;
+
+        // Show patient info
+        if (patientInfoDiv) {
+            patientInfoDiv.style.display = 'block';
+            document.getElementById('selectedPatientNameDispensingAdmin').textContent = patient.fullName;
+            document.getElementById('selectedPatientIdDispensingAdmin').textContent = patient.id;
+            document.getElementById('selectedPatientAgeDispensingAdmin').textContent = patient.age;
+            document.getElementById('selectedPatientStatusDispensingAdmin').textContent = patient.status;
+            document.getElementById('selectedPatientDoctorDispensingAdmin').textContent = patient.doctor || 'Not Assigned';
+        }
+
+        // Show history
+        if (historyDiv) historyDiv.style.display = 'block';
+        if (!historyTable) return;
+
+        const allDrugDispensings = JSON.parse(localStorage.getItem('drugDispensing') || '[]');
+        const patientDrugDispensings = allDrugDispensings.filter(disp => disp.patientId === patientId);
+
+        if (patientDrugDispensings.length === 0) {
+            historyTable.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">No dispensing records yet.</p>';
+            return;
+        }
+
+        const tableHTML = `
+            <div style="overflow-x: auto;">
+                <table class="patients-table" style="min-width: 1000px;">
+                    <thead>
+                        <tr>
+                            <th style="width: 18%; padding: 12px;">Drug Name</th>
+                            <th style="width: 10%; padding: 12px;">Quantity</th>
+                            <th style="width: 12%; padding: 12px;">Batch Number</th>
+                            <th style="width: 12%; padding: 12px;">Lot Number</th>
+                            <th style="width: 12%; padding: 12px;">Expiry Date</th>
+                            <th style="width: 12%; padding: 12px;">Date Dispensed</th>
+                            <th style="width: 14%; padding: 12px;">Dispensed By</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${patientDrugDispensings.map(disp => `
+                            <tr>
+                                <td style="padding: 12px;"><strong>${disp.drugName}</strong></td>
+                                <td style="padding: 12px;">${disp.quantity}</td>
+                                <td style="padding: 12px;">${disp.batchNumber}</td>
+                                <td style="padding: 12px;">${disp.lotNumber}</td>
+                                <td style="padding: 12px;">${disp.expiryDate}</td>
+                                <td style="padding: 12px;">${disp.dispensedDate}</td>
+                                <td style="padding: 12px;">${disp.dispensedBy}</td>
+                            </tr>
+                            ${disp.notes ? `
+                            <tr style="background: #f8f9fa;">
+                                <td colspan="7" style="text-align: left; padding: 12px; border-left: 3px solid var(--dark-pink);">
+                                    <strong style="color: var(--dark-pink);">Notes:</strong> ${disp.notes}
+                                </td>
+                            </tr>
+                            ` : ''}
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        `;
+
+        historyTable.innerHTML = tableHTML;
+    }
+
+    showPatientDrugDispensingModal(patientId, returnToPersonalInfo = true) {
+        const patients = JSON.parse(localStorage.getItem('patients') || '[]');
+        const patient = patients.find(p => p.id === patientId);
+
+        if (!patient) {
+            this.showNotification('Patient not found', 'error');
+            return;
+        }
+
+        const allDrugDispensings = JSON.parse(localStorage.getItem('drugDispensing') || '[]');
+        const patientDrugDispensings = allDrugDispensings.filter(disp => disp.patientId === patientId);
+
+        const modal = document.createElement('div');
+        modal.className = 'modal-overlay';
+        modal.innerHTML = `
+            <div class="modal-content" style="max-width: 1000px;">
+                <div class="modal-header">
+                    <h2>Drug Dispensing - ${patient.fullName}</h2>
+                    <button class="modal-close" id="closeDrugDispensingModalBtn">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div style="margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-left: 4px solid var(--dark-pink); border-radius: 4px;">
+                        <h4 style="margin-bottom: 10px; color: var(--dark-pink);">
+                            <i class="fas fa-user-injured"></i> Patient Information
+                        </h4>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
+                            <div><strong>Patient ID:</strong> ${patient.id}</div>
+                            <div><strong>Name:</strong> ${patient.fullName}</div>
+                            <div><strong>Age:</strong> ${patient.age}</div>
+                            <div><strong>Doctor:</strong> ${patient.doctor || 'Not Assigned'}</div>
+                        </div>
+                    </div>
+
+                    ${patientDrugDispensings.length > 0 ? `
+                    <div style="overflow-x: auto;">
+                        <table class="patients-table" style="min-width: 1000px;">
+                            <thead>
+                                <tr>
+                                    <th style="width: 18%;">Drug Name</th>
+                                    <th style="width: 10%;">Quantity</th>
+                                    <th style="width: 12%;">Batch Number</th>
+                                    <th style="width: 12%;">Lot Number</th>
+                                    <th style="width: 12%;">Expiry Date</th>
+                                    <th style="width: 12%;">Date Dispensed</th>
+                                    <th style="width: 14%;">Dispensed By</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${patientDrugDispensings.map(disp => `
+                                    <tr>
+                                        <td><strong>${disp.drugName}</strong></td>
+                                        <td>${disp.quantity}</td>
+                                        <td>${disp.batchNumber}</td>
+                                        <td>${disp.lotNumber}</td>
+                                        <td>${disp.expiryDate}</td>
+                                        <td>${disp.dispensedDate}</td>
+                                        <td>${disp.dispensedBy}</td>
+                                    </tr>
+                                    ${disp.notes ? `
+                                    <tr style="background: #f8f9fa;">
+                                        <td colspan="7" style="text-align: left; padding: 12px; border-left: 3px solid var(--dark-pink);">
+                                            <strong style="color: var(--dark-pink);">Notes:</strong> ${disp.notes}
+                                        </td>
+                                    </tr>
+                                    ` : ''}
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                    ` : `
+                    <div style="text-align: center; padding: 40px; color: #999;">
+                        <i class="fas fa-pills" style="font-size: 48px; margin-bottom: 16px; opacity: 0.3;"></i>
+                        <p style="font-size: 16px;">No dispensing records yet for this patient.</p>
+                    </div>
+                    `}
+
+                    <div class="modal-actions" style="margin-top: 24px;">
+                        <button type="button" class="btn btn-secondary" id="closeDrugDispensingBtn">Close</button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        const closeAndReopenPersonalInfo = () => {
+            modal.remove();
+            if (returnToPersonalInfo) {
+                this.viewPersonalInfo(patientId);
+            }
+        };
+        document.getElementById('closeDrugDispensingModalBtn').addEventListener('click', closeAndReopenPersonalInfo);
+        document.getElementById('closeDrugDispensingBtn').addEventListener('click', closeAndReopenPersonalInfo);
+    }
+
+    // Drug Inventory Listeners and Functions
+    attachDrugInventoryListeners() {
+        const addNewDrugBtn = document.getElementById('addNewDrugBtn');
+        const clearFiltersBtn = document.getElementById('clearFiltersBtn');
+        const filterDrugName = document.getElementById('filterDrugName');
+        const filterCategory = document.getElementById('filterCategory');
+        const filterStatus = document.getElementById('filterStatus');
+
+        if (addNewDrugBtn) {
+            addNewDrugBtn.addEventListener('click', () => this.showAddDrugModal());
+        }
+
+        if (clearFiltersBtn) {
+            clearFiltersBtn.addEventListener('click', () => this.clearDrugFilters());
+        }
+
+        if (filterDrugName) {
+            filterDrugName.addEventListener('input', () => this.filterDrugInventory());
+        }
+
+        if (filterCategory) {
+            filterCategory.addEventListener('change', () => this.filterDrugInventory());
+        }
+
+        if (filterStatus) {
+            filterStatus.addEventListener('change', () => this.filterDrugInventory());
+        }
+
+        const editButtons = document.querySelectorAll('.btn-edit-drug');
+        editButtons.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const drugId = e.currentTarget.getAttribute('data-drug-id');
+                if (drugId) {
+                    this.showEditDrugModal(drugId);
+                }
+            });
+        });
+
+        const deleteButtons = document.querySelectorAll('.btn-delete-drug');
+        deleteButtons.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const drugId = e.currentTarget.getAttribute('data-drug-id');
+                if (drugId) {
+                    this.deleteDrug(drugId);
+                }
+            });
+        });
+    }
+
+    clearDrugFilters() {
+        document.getElementById('filterDrugName').value = '';
+        document.getElementById('filterCategory').value = '';
+        document.getElementById('filterStatus').value = '';
+        this.filterDrugInventory();
+    }
+
+    filterDrugInventory() {
+        const searchText = document.getElementById('filterDrugName').value.toLowerCase();
+        const category = document.getElementById('filterCategory').value;
+        const status = document.getElementById('filterStatus').value;
+
+        const allDrugs = JSON.parse(localStorage.getItem('drugInventory') || '[]');
+        
+        const filteredDrugs = allDrugs.filter(drug => {
+            const matchesName = !searchText || 
+                drug.drugName.toLowerCase().includes(searchText) || 
+                (drug.genericName && drug.genericName.toLowerCase().includes(searchText));
+            const matchesCategory = !category || drug.category === category;
+            
+            let matchesStatus = true;
+            if (status) {
+                const stockStatus = drug.stockQuantity === 0 ? 'out-of-stock' : 
+                                  drug.stockQuantity <= drug.reorderLevel ? 'low-stock' : 'in-stock';
+                matchesStatus = stockStatus === status;
+            }
+            
+            return matchesName && matchesCategory && matchesStatus;
+        });
+
+        this.renderDrugInventoryTable(filteredDrugs);
+    }
+
+    renderDrugInventoryTable(drugs) {
+        const tbody = document.querySelector('#drugInventoryTable tbody');
+        if (!tbody) return;
+
+        if (drugs.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 20px; color: #999;">No drugs found matching filters.</td></tr>';
+            return;
+        }
+
+        let inventoryRows = '';
+        drugs.forEach(drug => {
+            const stockStatus = drug.stockQuantity === 0 ? 'out-of-stock' : 
+                              drug.stockQuantity <= drug.reorderLevel ? 'low-stock' : 'in-stock';
+            const statusText = drug.stockQuantity === 0 ? 'Out of Stock' : 
+                              drug.stockQuantity <= drug.reorderLevel ? 'Low Stock' : 'In Stock';
+            
+            inventoryRows += `
+                <tr>
+                    <td style="padding: 12px;"><strong>${drug.drugName}</strong></td>
+                    <td style="padding: 12px;">${drug.genericName || '-'}</td>
+                    <td style="padding: 12px;">${drug.category || 'General'}</td>
+                    <td style="padding: 12px;">${drug.dosageForm || '-'}</td>
+                    <td style="padding: 12px;">${drug.strength || '-'}</td>
+                    <td style="padding: 12px; text-align: center;">${drug.stockQuantity}</td>
+                    <td style="padding: 12px; text-align: center;">${drug.reorderLevel}</td>
+                    <td style="padding: 12px;"><span class="status-badge ${stockStatus}">${statusText}</span></td>
+                    <td style="padding: 12px;">
+                        <button class="btn btn-sm btn-edit-drug" data-drug-id="${drug.id}" style="padding: 5px 10px; font-size: 12px; margin-right: 4px;">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-sm btn-delete-drug" data-drug-id="${drug.id}" style="padding: 5px 10px; font-size: 12px; background: #dc3545; color: white;">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+            if (drug.batchNumber || drug.expiryDate || drug.supplier) {
+                inventoryRows += `
+                    <tr style="background: #f8f9fa;">
+                        <td colspan="9" style="text-align: left; padding: 8px 12px; font-size: 13px; border-left: 3px solid var(--dark-pink);">
+                            ${drug.batchNumber ? `<strong>Batch:</strong> ${drug.batchNumber} &nbsp;&nbsp;` : ''}
+                            ${drug.expiryDate ? `<strong>Expiry:</strong> ${drug.expiryDate} &nbsp;&nbsp;` : ''}
+                            ${drug.supplier ? `<strong>Supplier:</strong> ${drug.supplier} &nbsp;&nbsp;` : ''}
+                            ${drug.location ? `<strong>Location:</strong> ${drug.location}` : ''}
+                        </td>
+                    </tr>
+                `;
+            }
+        });
+
+        tbody.innerHTML = inventoryRows;
+        this.attachDrugInventoryListeners();
+    }
+
+    showAddDrugModal() {
+        const modal = document.createElement('div');
+        modal.className = 'modal-overlay';
+        modal.innerHTML = `
+            <div class="modal-content" style="max-width: 800px;">
+                <div class="modal-header">
+                    <h2><i class="fas fa-plus-circle"></i> Add New Drug to Inventory</h2>
+                    <button class="modal-close" id="closeAddDrugModal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <form id="addDrugForm">
+                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px;">
+                            <div class="form-group">
+                                <label for="drugName">Drug Name (Brand) <span style="color: red;">*</span></label>
+                                <input type="text" id="drugName" class="form-control" required placeholder="e.g., Biogesic">
+                            </div>
+                            <div class="form-group">
+                                <label for="genericName">Generic Name</label>
+                                <input type="text" id="genericName" class="form-control" placeholder="e.g., Paracetamol">
+                            </div>
+                            <div class="form-group">
+                                <label for="category">Category <span style="color: red;">*</span></label>
+                                <select id="category" class="form-control" required>
+                                    <option value="">-- Select Category --</option>
+                                    <option value="Antibiotic">Antibiotic</option>
+                                    <option value="Analgesic">Analgesic</option>
+                                    <option value="Antipyretic">Antipyretic</option>
+                                    <option value="Antihypertensive">Antihypertensive</option>
+                                    <option value="Antidiabetic">Antidiabetic</option>
+                                    <option value="Antihistamine">Antihistamine</option>
+                                    <option value="Vitamin">Vitamin</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="dosageForm">Dosage Form</label>
+                                <select id="dosageForm" class="form-control">
+                                    <option value="">-- Select Form --</option>
+                                    <option value="Tablet">Tablet</option>
+                                    <option value="Capsule">Capsule</option>
+                                    <option value="Syrup">Syrup</option>
+                                    <option value="Suspension">Suspension</option>
+                                    <option value="Injection">Injection</option>
+                                    <option value="Cream">Cream</option>
+                                    <option value="Ointment">Ointment</option>
+                                    <option value="Drops">Drops</option>
+                                    <option value="Inhaler">Inhaler</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="strength">Strength/Dosage</label>
+                                <input type="text" id="strength" class="form-control" placeholder="e.g., 500mg">
+                            </div>
+                            <div class="form-group">
+                                <label for="stockQuantity">Stock Quantity <span style="color: red;">*</span></label>
+                                <input type="number" id="stockQuantity" class="form-control" required min="0" placeholder="0">
+                            </div>
+                            <div class="form-group">
+                                <label for="reorderLevel">Reorder Level <span style="color: red;">*</span></label>
+                                <input type="number" id="reorderLevel" class="form-control" required min="0" placeholder="10">
+                            </div>
+                            <div class="form-group">
+                                <label for="unitPrice">Unit Price</label>
+                                <input type="number" id="unitPrice" class="form-control" step="0.01" min="0" placeholder="0.00">
+                            </div>
+                            <div class="form-group">
+                                <label for="batchNumber">Batch Number</label>
+                                <input type="text" id="batchNumber" class="form-control" placeholder="e.g., BATCH2025001">
+                            </div>
+                            <div class="form-group">
+                                <label for="expiryDate">Expiry Date</label>
+                                <input type="date" id="expiryDate" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label for="supplier">Supplier</label>
+                                <input type="text" id="supplier" class="form-control" placeholder="e.g., Pharma Inc.">
+                            </div>
+                            <div class="form-group">
+                                <label for="location">Storage Location</label>
+                                <input type="text" id="location" class="form-control" placeholder="e.g., Shelf A-12">
+                            </div>
+                        </div>
+                        <div class="form-group" style="margin-top: 20px;">
+                            <label for="notes">Notes</label>
+                            <textarea id="notes" class="form-control" rows="3" placeholder="Additional information..."></textarea>
+                        </div>
+                        <div class="modal-actions" style="margin-top: 24px;">
+                            <button type="button" class="btn btn-secondary" id="cancelAddDrug">Cancel</button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Add Drug
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        document.getElementById('closeAddDrugModal').addEventListener('click', () => modal.remove());
+        document.getElementById('cancelAddDrug').addEventListener('click', () => modal.remove());
+        document.getElementById('addDrugForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.saveDrug(modal);
+        });
+    }
+
+    showEditDrugModal(drugId) {
+        const allDrugs = JSON.parse(localStorage.getItem('drugInventory') || '[]');
+        const drug = allDrugs.find(d => d.id === drugId);
+
+        if (!drug) {
+            this.showNotification('Drug not found', 'error');
+            return;
+        }
+
+        const modal = document.createElement('div');
+        modal.className = 'modal-overlay';
+        modal.innerHTML = `
+            <div class="modal-content" style="max-width: 800px;">
+                <div class="modal-header">
+                    <h2><i class="fas fa-edit"></i> Edit Drug Information</h2>
+                    <button class="modal-close" id="closeEditDrugModal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <form id="editDrugForm">
+                        <input type="hidden" id="editDrugId" value="${drug.id}">
+                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px;">
+                            <div class="form-group">
+                                <label for="editDrugName">Drug Name (Brand) <span style="color: red;">*</span></label>
+                                <input type="text" id="editDrugName" class="form-control" required value="${drug.drugName}">
+                            </div>
+                            <div class="form-group">
+                                <label for="editGenericName">Generic Name</label>
+                                <input type="text" id="editGenericName" class="form-control" value="${drug.genericName || ''}">
+                            </div>
+                            <div class="form-group">
+                                <label for="editCategory">Category <span style="color: red;">*</span></label>
+                                <select id="editCategory" class="form-control" required>
+                                    <option value="">-- Select Category --</option>
+                                    <option value="Antibiotic" ${drug.category === 'Antibiotic' ? 'selected' : ''}>Antibiotic</option>
+                                    <option value="Analgesic" ${drug.category === 'Analgesic' ? 'selected' : ''}>Analgesic</option>
+                                    <option value="Antipyretic" ${drug.category === 'Antipyretic' ? 'selected' : ''}>Antipyretic</option>
+                                    <option value="Antihypertensive" ${drug.category === 'Antihypertensive' ? 'selected' : ''}>Antihypertensive</option>
+                                    <option value="Antidiabetic" ${drug.category === 'Antidiabetic' ? 'selected' : ''}>Antidiabetic</option>
+                                    <option value="Antihistamine" ${drug.category === 'Antihistamine' ? 'selected' : ''}>Antihistamine</option>
+                                    <option value="Vitamin" ${drug.category === 'Vitamin' ? 'selected' : ''}>Vitamin</option>
+                                    <option value="Other" ${drug.category === 'Other' ? 'selected' : ''}>Other</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="editDosageForm">Dosage Form</label>
+                                <select id="editDosageForm" class="form-control">
+                                    <option value="">-- Select Form --</option>
+                                    <option value="Tablet" ${drug.dosageForm === 'Tablet' ? 'selected' : ''}>Tablet</option>
+                                    <option value="Capsule" ${drug.dosageForm === 'Capsule' ? 'selected' : ''}>Capsule</option>
+                                    <option value="Syrup" ${drug.dosageForm === 'Syrup' ? 'selected' : ''}>Syrup</option>
+                                    <option value="Suspension" ${drug.dosageForm === 'Suspension' ? 'selected' : ''}>Suspension</option>
+                                    <option value="Injection" ${drug.dosageForm === 'Injection' ? 'selected' : ''}>Injection</option>
+                                    <option value="Cream" ${drug.dosageForm === 'Cream' ? 'selected' : ''}>Cream</option>
+                                    <option value="Ointment" ${drug.dosageForm === 'Ointment' ? 'selected' : ''}>Ointment</option>
+                                    <option value="Drops" ${drug.dosageForm === 'Drops' ? 'selected' : ''}>Drops</option>
+                                    <option value="Inhaler" ${drug.dosageForm === 'Inhaler' ? 'selected' : ''}>Inhaler</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="editStrength">Strength/Dosage</label>
+                                <input type="text" id="editStrength" class="form-control" value="${drug.strength || ''}">
+                            </div>
+                            <div class="form-group">
+                                <label for="editStockQuantity">Stock Quantity <span style="color: red;">*</span></label>
+                                <input type="number" id="editStockQuantity" class="form-control" required min="0" value="${drug.stockQuantity}">
+                            </div>
+                            <div class="form-group">
+                                <label for="editReorderLevel">Reorder Level <span style="color: red;">*</span></label>
+                                <input type="number" id="editReorderLevel" class="form-control" required min="0" value="${drug.reorderLevel}">
+                            </div>
+                            <div class="form-group">
+                                <label for="editUnitPrice">Unit Price</label>
+                                <input type="number" id="editUnitPrice" class="form-control" step="0.01" min="0" value="${drug.unitPrice || 0}">
+                            </div>
+                            <div class="form-group">
+                                <label for="editBatchNumber">Batch Number</label>
+                                <input type="text" id="editBatchNumber" class="form-control" value="${drug.batchNumber || ''}">
+                            </div>
+                            <div class="form-group">
+                                <label for="editExpiryDate">Expiry Date</label>
+                                <input type="date" id="editExpiryDate" class="form-control" value="${drug.expiryDate || ''}">
+                            </div>
+                            <div class="form-group">
+                                <label for="editSupplier">Supplier</label>
+                                <input type="text" id="editSupplier" class="form-control" value="${drug.supplier || ''}">
+                            </div>
+                            <div class="form-group">
+                                <label for="editLocation">Storage Location</label>
+                                <input type="text" id="editLocation" class="form-control" value="${drug.location || ''}">
+                            </div>
+                        </div>
+                        <div class="form-group" style="margin-top: 20px;">
+                            <label for="editNotes">Notes</label>
+                            <textarea id="editNotes" class="form-control" rows="3">${drug.notes || ''}</textarea>
+                        </div>
+                        <div class="modal-actions" style="margin-top: 24px;">
+                            <button type="button" class="btn btn-secondary" id="cancelEditDrug">Cancel</button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Update Drug
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        document.getElementById('closeEditDrugModal').addEventListener('click', () => modal.remove());
+        document.getElementById('cancelEditDrug').addEventListener('click', () => modal.remove());
+        document.getElementById('editDrugForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.updateDrug(modal);
+        });
+    }
+
+    saveDrug(modal) {
+        const drug = {
+            id: 'DRUG' + Date.now(),
+            drugName: document.getElementById('drugName').value,
+            genericName: document.getElementById('genericName').value,
+            category: document.getElementById('category').value,
+            dosageForm: document.getElementById('dosageForm').value,
+            strength: document.getElementById('strength').value,
+            stockQuantity: parseInt(document.getElementById('stockQuantity').value),
+            reorderLevel: parseInt(document.getElementById('reorderLevel').value),
+            unitPrice: parseFloat(document.getElementById('unitPrice').value) || 0,
+            batchNumber: document.getElementById('batchNumber').value,
+            expiryDate: document.getElementById('expiryDate').value,
+            supplier: document.getElementById('supplier').value,
+            location: document.getElementById('location').value,
+            notes: document.getElementById('notes').value,
+            addedBy: this.currentUser.name,
+            addedDate: new Date().toLocaleDateString('en-US'),
+            lastUpdated: new Date().toLocaleDateString('en-US')
+        };
+
+        let drugInventory = JSON.parse(localStorage.getItem('drugInventory') || '[]');
+        drugInventory.unshift(drug);
+        localStorage.setItem('drugInventory', JSON.stringify(drugInventory));
+
+        this.showNotification('Drug added to inventory successfully!', 'success');
+        modal.remove();
+        this.loadPage('drug-inventory');
+    }
+
+    updateDrug(modal) {
+        const drugId = document.getElementById('editDrugId').value;
+        let drugInventory = JSON.parse(localStorage.getItem('drugInventory') || '[]');
+        const drugIndex = drugInventory.findIndex(d => d.id === drugId);
+
+        if (drugIndex === -1) {
+            this.showNotification('Drug not found', 'error');
+            return;
+        }
+
+        drugInventory[drugIndex] = {
+            ...drugInventory[drugIndex],
+            drugName: document.getElementById('editDrugName').value,
+            genericName: document.getElementById('editGenericName').value,
+            category: document.getElementById('editCategory').value,
+            dosageForm: document.getElementById('editDosageForm').value,
+            strength: document.getElementById('editStrength').value,
+            stockQuantity: parseInt(document.getElementById('editStockQuantity').value),
+            reorderLevel: parseInt(document.getElementById('editReorderLevel').value),
+            unitPrice: parseFloat(document.getElementById('editUnitPrice').value) || 0,
+            batchNumber: document.getElementById('editBatchNumber').value,
+            expiryDate: document.getElementById('editExpiryDate').value,
+            supplier: document.getElementById('editSupplier').value,
+            location: document.getElementById('editLocation').value,
+            notes: document.getElementById('editNotes').value,
+            lastUpdated: new Date().toLocaleDateString('en-US'),
+            updatedBy: this.currentUser.name
+        };
+
+        localStorage.setItem('drugInventory', JSON.stringify(drugInventory));
+        this.showNotification('Drug updated successfully!', 'success');
+        modal.remove();
+        this.loadPage('drug-inventory');
+    }
+
+    deleteDrug(drugId) {
+        if (!confirm('Are you sure you want to delete this drug from inventory? This action cannot be undone.')) {
+            return;
+        }
+
+        let drugInventory = JSON.parse(localStorage.getItem('drugInventory') || '[]');
+        drugInventory = drugInventory.filter(d => d.id !== drugId);
+        localStorage.setItem('drugInventory', JSON.stringify(drugInventory));
+
+        this.showNotification('Drug deleted from inventory', 'success');
+        this.loadPage('drug-inventory');
+    }
+
+    // Unavailable Medications and Orders Management
+    attachUnavailableMedsListeners() {
+        const addUnavailableMedBtn = document.getElementById('addUnavailableMedBtn');
+        const createNewOrderBtn = document.getElementById('createNewOrderBtn');
+
+        if (addUnavailableMedBtn) {
+            addUnavailableMedBtn.addEventListener('click', () => this.showAddUnavailableMedModal());
+        }
+
+        if (createNewOrderBtn) {
+            createNewOrderBtn.addEventListener('click', () => this.showCreateOrderModal());
+        }
+
+        const editButtons = document.querySelectorAll('.btn-edit-unavailable');
+        editButtons.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const medId = e.currentTarget.getAttribute('data-med-id');
+                if (medId) {
+                    this.showEditUnavailableMedModal(medId);
+                }
+            });
+        });
+
+        const deleteButtons = document.querySelectorAll('.btn-delete-unavailable');
+        deleteButtons.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const medId = e.currentTarget.getAttribute('data-med-id');
+                if (medId) {
+                    this.deleteUnavailableMed(medId);
+                }
+            });
+        });
+
+        const viewOrderButtons = document.querySelectorAll('.btn-view-order');
+        viewOrderButtons.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const orderId = e.currentTarget.getAttribute('data-order-id');
+                if (orderId) {
+                    this.showOrderDetailsModal(orderId);
+                }
+            });
+        });
+
+        const updateStatusButtons = document.querySelectorAll('.btn-update-order-status');
+        updateStatusButtons.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const orderId = e.currentTarget.getAttribute('data-order-id');
+                if (orderId) {
+                    this.showUpdateOrderStatusModal(orderId);
+                }
+            });
+        });
+    }
+
+    showAddUnavailableMedModal() {
+        const modal = document.createElement('div');
+        modal.className = 'modal-overlay';
+        modal.innerHTML = `
+            <div class="modal-content" style="max-width: 700px;">
+                <div class="modal-header">
+                    <h2><i class="fas fa-exclamation-triangle"></i> Report Unavailable Medication</h2>
+                    <button class="modal-close" id="closeAddUnavailableModal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <form id="addUnavailableMedForm">
+                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px;">
+                            <div class="form-group">
+                                <label for="unavailableMedName">Medication Name (Brand) <span style="color: red;">*</span></label>
+                                <input type="text" id="unavailableMedName" class="form-control" required placeholder="e.g., Biogesic">
+                            </div>
+                            <div class="form-group">
+                                <label for="unavailableGenericName">Generic Name</label>
+                                <input type="text" id="unavailableGenericName" class="form-control" placeholder="e.g., Paracetamol">
+                            </div>
+                            <div class="form-group">
+                                <label for="unavailableStatus">Status <span style="color: red;">*</span></label>
+                                <select id="unavailableStatus" class="form-control" required>
+                                    <option value="">-- Select Status --</option>
+                                    <option value="Out of Stock">Out of Stock</option>
+                                    <option value="Backordered">Backordered</option>
+                                    <option value="Discontinued">Discontinued</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="unavailableDateReported">Date Reported <span style="color: red;">*</span></label>
+                                <input type="date" id="unavailableDateReported" class="form-control" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="expectedRestockDate">Expected Restock Date</label>
+                                <input type="date" id="expectedRestockDate" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label for="alternativeMed">Alternative Medication</label>
+                                <input type="text" id="alternativeMed" class="form-control" placeholder="Suggested alternative">
+                            </div>
+                        </div>
+                        <div class="form-group" style="margin-top: 20px;">
+                            <label for="unavailableReason">Reason</label>
+                            <input type="text" id="unavailableReason" class="form-control" placeholder="Why is this medication unavailable?">
+                        </div>
+                        <div class="form-group">
+                            <label for="unavailableNotes">Notes</label>
+                            <textarea id="unavailableNotes" class="form-control" rows="3" placeholder="Additional information..."></textarea>
+                        </div>
+                        <div class="modal-actions" style="margin-top: 24px;">
+                            <button type="button" class="btn btn-secondary" id="cancelAddUnavailable">Cancel</button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Report Medication
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+        document.getElementById('unavailableDateReported').valueAsDate = new Date();
+
+        document.getElementById('closeAddUnavailableModal').addEventListener('click', () => modal.remove());
+        document.getElementById('cancelAddUnavailable').addEventListener('click', () => modal.remove());
+        document.getElementById('addUnavailableMedForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.saveUnavailableMed(modal);
+        });
+    }
+
+    showEditUnavailableMedModal(medId) {
+        const allMeds = JSON.parse(localStorage.getItem('unavailableMeds') || '[]');
+        const med = allMeds.find(m => m.id === medId);
+
+        if (!med) {
+            this.showNotification('Medication not found', 'error');
+            return;
+        }
+
+        const modal = document.createElement('div');
+        modal.className = 'modal-overlay';
+        modal.innerHTML = `
+            <div class="modal-content" style="max-width: 700px;">
+                <div class="modal-header">
+                    <h2><i class="fas fa-edit"></i> Edit Unavailable Medication</h2>
+                    <button class="modal-close" id="closeEditUnavailableModal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <form id="editUnavailableMedForm">
+                        <input type="hidden" id="editUnavailableMedId" value="${med.id}">
+                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px;">
+                            <div class="form-group">
+                                <label for="editUnavailableMedName">Medication Name (Brand) <span style="color: red;">*</span></label>
+                                <input type="text" id="editUnavailableMedName" class="form-control" required value="${med.medicationName}">
+                            </div>
+                            <div class="form-group">
+                                <label for="editUnavailableGenericName">Generic Name</label>
+                                <input type="text" id="editUnavailableGenericName" class="form-control" value="${med.genericName || ''}">
+                            </div>
+                            <div class="form-group">
+                                <label for="editUnavailableStatus">Status <span style="color: red;">*</span></label>
+                                <select id="editUnavailableStatus" class="form-control" required>
+                                    <option value="Out of Stock" ${med.status === 'Out of Stock' ? 'selected' : ''}>Out of Stock</option>
+                                    <option value="Backordered" ${med.status === 'Backordered' ? 'selected' : ''}>Backordered</option>
+                                    <option value="Discontinued" ${med.status === 'Discontinued' ? 'selected' : ''}>Discontinued</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="editUnavailableDateReported">Date Reported <span style="color: red;">*</span></label>
+                                <input type="date" id="editUnavailableDateReported" class="form-control" required value="${med.dateReported}">
+                            </div>
+                            <div class="form-group">
+                                <label for="editExpectedRestockDate">Expected Restock Date</label>
+                                <input type="date" id="editExpectedRestockDate" class="form-control" value="${med.expectedRestockDate || ''}">
+                            </div>
+                            <div class="form-group">
+                                <label for="editAlternativeMed">Alternative Medication</label>
+                                <input type="text" id="editAlternativeMed" class="form-control" value="${med.alternativeMed || ''}">
+                            </div>
+                        </div>
+                        <div class="form-group" style="margin-top: 20px;">
+                            <label for="editUnavailableReason">Reason</label>
+                            <input type="text" id="editUnavailableReason" class="form-control" value="${med.reason || ''}">
+                        </div>
+                        <div class="form-group">
+                            <label for="editUnavailableNotes">Notes</label>
+                            <textarea id="editUnavailableNotes" class="form-control" rows="3">${med.notes || ''}</textarea>
+                        </div>
+                        <div class="modal-actions" style="margin-top: 24px;">
+                            <button type="button" class="btn btn-secondary" id="cancelEditUnavailable">Cancel</button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Update Medication
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        document.getElementById('closeEditUnavailableModal').addEventListener('click', () => modal.remove());
+        document.getElementById('cancelEditUnavailable').addEventListener('click', () => modal.remove());
+        document.getElementById('editUnavailableMedForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.updateUnavailableMed(modal);
+        });
+    }
+
+    saveUnavailableMed(modal) {
+        const med = {
+            id: 'UNAVAIL' + Date.now(),
+            medicationName: document.getElementById('unavailableMedName').value,
+            genericName: document.getElementById('unavailableGenericName').value,
+            status: document.getElementById('unavailableStatus').value,
+            dateReported: document.getElementById('unavailableDateReported').value,
+            expectedRestockDate: document.getElementById('expectedRestockDate').value,
+            alternativeMed: document.getElementById('alternativeMed').value,
+            reason: document.getElementById('unavailableReason').value,
+            notes: document.getElementById('unavailableNotes').value,
+            reportedBy: this.currentUser.name,
+            reportedDate: new Date().toLocaleDateString('en-US')
+        };
+
+        let unavailableMeds = JSON.parse(localStorage.getItem('unavailableMeds') || '[]');
+        unavailableMeds.unshift(med);
+        localStorage.setItem('unavailableMeds', JSON.stringify(unavailableMeds));
+
+        this.showNotification('Unavailable medication reported successfully!', 'success');
+        modal.remove();
+        this.loadPage('unavailable-meds');
+    }
+
+    updateUnavailableMed(modal) {
+        const medId = document.getElementById('editUnavailableMedId').value;
+        let unavailableMeds = JSON.parse(localStorage.getItem('unavailableMeds') || '[]');
+        const medIndex = unavailableMeds.findIndex(m => m.id === medId);
+
+        if (medIndex === -1) {
+            this.showNotification('Medication not found', 'error');
+            return;
+        }
+
+        unavailableMeds[medIndex] = {
+            ...unavailableMeds[medIndex],
+            medicationName: document.getElementById('editUnavailableMedName').value,
+            genericName: document.getElementById('editUnavailableGenericName').value,
+            status: document.getElementById('editUnavailableStatus').value,
+            dateReported: document.getElementById('editUnavailableDateReported').value,
+            expectedRestockDate: document.getElementById('editExpectedRestockDate').value,
+            alternativeMed: document.getElementById('editAlternativeMed').value,
+            reason: document.getElementById('editUnavailableReason').value,
+            notes: document.getElementById('editUnavailableNotes').value,
+            lastUpdated: new Date().toLocaleDateString('en-US'),
+            updatedBy: this.currentUser.name
+        };
+
+        localStorage.setItem('unavailableMeds', JSON.stringify(unavailableMeds));
+        this.showNotification('Medication updated successfully!', 'success');
+        modal.remove();
+        this.loadPage('unavailable-meds');
+    }
+
+    deleteUnavailableMed(medId) {
+        if (!confirm('Are you sure you want to remove this medication from the unavailable list?')) {
+            return;
+        }
+
+        let unavailableMeds = JSON.parse(localStorage.getItem('unavailableMeds') || '[]');
+        unavailableMeds = unavailableMeds.filter(m => m.id !== medId);
+        localStorage.setItem('unavailableMeds', JSON.stringify(unavailableMeds));
+
+        this.showNotification('Medication removed from unavailable list', 'success');
+        this.loadPage('unavailable-meds');
+    }
+
+    showCreateOrderModal(unavailableMedId = null) {
+        let prefilledMedName = '';
+        if (unavailableMedId) {
+            const unavailableMeds = JSON.parse(localStorage.getItem('unavailableMeds') || '[]');
+            const med = unavailableMeds.find(m => m.id === unavailableMedId);
+            if (med) {
+                prefilledMedName = med.medicationName;
+            }
+        }
+
+        const modal = document.createElement('div');
+        modal.className = 'modal-overlay';
+        modal.innerHTML = `
+            <div class="modal-content" style="max-width: 800px;">
+                <div class="modal-header">
+                    <h2><i class="fas fa-shopping-cart"></i> Create Medication Order</h2>
+                    <button class="modal-close" id="closeCreateOrderModal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <form id="createOrderForm">
+                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px;">
+                            <div class="form-group">
+                                <label for="orderMedicationName">Medication Name <span style="color: red;">*</span></label>
+                                <input type="text" id="orderMedicationName" class="form-control" required value="${prefilledMedName}" placeholder="e.g., Biogesic">
+                            </div>
+                            <div class="form-group">
+                                <label for="orderQuantity">Quantity <span style="color: red;">*</span></label>
+                                <input type="text" id="orderQuantity" class="form-control" required placeholder="e.g., 1000 tablets">
+                            </div>
+                            <div class="form-group">
+                                <label for="orderSupplierName">Supplier Name <span style="color: red;">*</span></label>
+                                <input type="text" id="orderSupplierName" class="form-control" required placeholder="e.g., Pharma Inc.">
+                            </div>
+                            <div class="form-group">
+                                <label for="orderSupplierContact">Supplier Contact</label>
+                                <input type="text" id="orderSupplierContact" class="form-control" placeholder="Phone or email">
+                            </div>
+                            <div class="form-group">
+                                <label for="orderDate">Order Date <span style="color: red;">*</span></label>
+                                <input type="date" id="orderDate" class="form-control" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="orderExpectedDelivery">Expected Delivery Date</label>
+                                <input type="date" id="orderExpectedDelivery" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label for="orderUnitCost">Unit Cost (₱)</label>
+                                <input type="number" id="orderUnitCost" class="form-control" step="0.01" min="0" placeholder="0.00">
+                            </div>
+                            <div class="form-group">
+                                <label for="orderTotalCost">Total Cost (₱)</label>
+                                <input type="number" id="orderTotalCost" class="form-control" step="0.01" min="0" placeholder="0.00">
+                            </div>
+                            <div class="form-group">
+                                <label for="orderStatus">Order Status <span style="color: red;">*</span></label>
+                                <select id="orderStatus" class="form-control" required>
+                                    <option value="Pending">Pending</option>
+                                    <option value="Confirmed">Confirmed</option>
+                                    <option value="Received">Received</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="orderTrackingNumber">Tracking Number</label>
+                                <input type="text" id="orderTrackingNumber" class="form-control" placeholder="Shipment tracking number">
+                            </div>
+                        </div>
+                        <div class="form-group" style="margin-top: 20px;">
+                            <label for="orderNotes">Order Notes</label>
+                            <textarea id="orderNotes" class="form-control" rows="3" placeholder="Additional order information..."></textarea>
+                        </div>
+                        <div class="modal-actions" style="margin-top: 24px;">
+                            <button type="button" class="btn btn-secondary" id="cancelCreateOrder">Cancel</button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Create Order
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+        document.getElementById('orderDate').valueAsDate = new Date();
+
+        document.getElementById('closeCreateOrderModal').addEventListener('click', () => modal.remove());
+        document.getElementById('cancelCreateOrder').addEventListener('click', () => modal.remove());
+        document.getElementById('createOrderForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.saveMedicationOrder(modal);
+        });
+    }
+
+    saveMedicationOrder(modal) {
+        const orderNumber = 'ORD' + Date.now();
+        const order = {
+            id: orderNumber,
+            orderNumber: orderNumber,
+            medicationName: document.getElementById('orderMedicationName').value,
+            quantity: document.getElementById('orderQuantity').value,
+            supplierName: document.getElementById('orderSupplierName').value,
+            supplierContact: document.getElementById('orderSupplierContact').value,
+            orderDate: document.getElementById('orderDate').value,
+            expectedDelivery: document.getElementById('orderExpectedDelivery').value,
+            unitCost: parseFloat(document.getElementById('orderUnitCost').value) || 0,
+            totalCost: parseFloat(document.getElementById('orderTotalCost').value) || 0,
+            orderStatus: document.getElementById('orderStatus').value,
+            trackingNumber: document.getElementById('orderTrackingNumber').value,
+            notes: document.getElementById('orderNotes').value,
+            orderedBy: this.currentUser.name,
+            createdDate: new Date().toLocaleDateString('en-US')
+        };
+
+        let medOrders = JSON.parse(localStorage.getItem('medOrders') || '[]');
+        medOrders.unshift(order);
+        localStorage.setItem('medOrders', JSON.stringify(medOrders));
+
+        this.showNotification('Medication order created successfully!', 'success');
+        modal.remove();
+        this.loadPage('unavailable-meds');
+    }
+
+    showOrderDetailsModal(orderId) {
+        const allOrders = JSON.parse(localStorage.getItem('medOrders') || '[]');
+        const order = allOrders.find(o => o.id === orderId);
+
+        if (!order) {
+            this.showNotification('Order not found', 'error');
+            return;
+        }
+
+        const modal = document.createElement('div');
+        modal.className = 'modal-overlay';
+        modal.innerHTML = `
+            <div class="modal-content" style="max-width: 700px;">
+                <div class="modal-header">
+                    <h2><i class="fas fa-file-invoice"></i> Order Details - ${order.orderNumber}</h2>
+                    <button class="modal-close" id="closeOrderDetailsModal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                        <h4 style="color: var(--dark-pink); margin-bottom: 16px;">Order Information</h4>
+                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px;">
+                            <div><strong>Order Number:</strong> ${order.orderNumber}</div>
+                            <div><strong>Status:</strong> <span class="status-badge ${order.orderStatus.toLowerCase()}">${order.orderStatus}</span></div>
+                            <div><strong>Medication:</strong> ${order.medicationName}</div>
+                            <div><strong>Quantity:</strong> ${order.quantity}</div>
+                            <div><strong>Order Date:</strong> ${order.orderDate}</div>
+                            <div><strong>Expected Delivery:</strong> ${order.expectedDelivery || 'TBD'}</div>
+                        </div>
+                    </div>
+
+                    <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                        <h4 style="color: var(--dark-pink); margin-bottom: 16px;">Supplier Information</h4>
+                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px;">
+                            <div><strong>Supplier Name:</strong> ${order.supplierName}</div>
+                            <div><strong>Contact:</strong> ${order.supplierContact || 'N/A'}</div>
+                            <div><strong>Tracking Number:</strong> ${order.trackingNumber || 'N/A'}</div>
+                        </div>
+                    </div>
+
+                    <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                        <h4 style="color: var(--dark-pink); margin-bottom: 16px;">Cost Information</h4>
+                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px;">
+                            <div><strong>Unit Cost:</strong> ₱${order.unitCost.toFixed(2)}</div>
+                            <div><strong>Total Cost:</strong> ₱${order.totalCost.toFixed(2)}</div>
+                        </div>
+                    </div>
+
+                    ${order.notes ? `
+                    <div style="background: #f8f9fa; padding: 20px; border-radius: 8px;">
+                        <h4 style="color: var(--dark-pink); margin-bottom: 12px;">Notes</h4>
+                        <p style="margin: 0;">${order.notes}</p>
+                    </div>
+                    ` : ''}
+
+                    <div class="modal-actions" style="margin-top: 24px;">
+                        <button type="button" class="btn btn-secondary" id="closeOrderDetails">Close</button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        document.getElementById('closeOrderDetailsModal').addEventListener('click', () => modal.remove());
+        document.getElementById('closeOrderDetails').addEventListener('click', () => modal.remove());
+    }
+
+    showUpdateOrderStatusModal(orderId) {
+        const allOrders = JSON.parse(localStorage.getItem('medOrders') || '[]');
+        const order = allOrders.find(o => o.id === orderId);
+
+        if (!order) {
+            this.showNotification('Order not found', 'error');
+            return;
+        }
+
+        const modal = document.createElement('div');
+        modal.className = 'modal-overlay';
+        modal.innerHTML = `
+            <div class="modal-content" style="max-width: 500px;">
+                <div class="modal-header">
+                    <h2><i class="fas fa-sync"></i> Update Order Status</h2>
+                    <button class="modal-close" id="closeUpdateStatusModal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <form id="updateOrderStatusForm">
+                        <input type="hidden" id="updateOrderId" value="${order.id}">
+                        <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                            <div><strong>Order Number:</strong> ${order.orderNumber}</div>
+                            <div><strong>Medication:</strong> ${order.medicationName}</div>
+                            <div><strong>Current Status:</strong> <span class="status-badge ${order.orderStatus.toLowerCase()}">${order.orderStatus}</span></div>
+                        </div>
+                        <div class="form-group">
+                            <label for="newOrderStatus">New Status <span style="color: red;">*</span></label>
+                            <select id="newOrderStatus" class="form-control" required>
+                                <option value="Pending" ${order.orderStatus === 'Pending' ? 'selected' : ''}>Pending</option>
+                                <option value="Confirmed" ${order.orderStatus === 'Confirmed' ? 'selected' : ''}>Confirmed</option>
+                                <option value="Received" ${order.orderStatus === 'Received' ? 'selected' : ''}>Received</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="statusUpdateNotes">Update Notes</label>
+                            <textarea id="statusUpdateNotes" class="form-control" rows="3" placeholder="Add any notes about this status change..."></textarea>
+                        </div>
+                        <div class="modal-actions" style="margin-top: 24px;">
+                            <button type="button" class="btn btn-secondary" id="cancelUpdateStatus">Cancel</button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Update Status
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        document.getElementById('closeUpdateStatusModal').addEventListener('click', () => modal.remove());
+        document.getElementById('cancelUpdateStatus').addEventListener('click', () => modal.remove());
+        document.getElementById('updateOrderStatusForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.updateOrderStatus(modal);
+        });
+    }
+
+    updateOrderStatus(modal) {
+        const orderId = document.getElementById('updateOrderId').value;
+        const newStatus = document.getElementById('newOrderStatus').value;
+        const statusNotes = document.getElementById('statusUpdateNotes').value;
+
+        let medOrders = JSON.parse(localStorage.getItem('medOrders') || '[]');
+        const orderIndex = medOrders.findIndex(o => o.id === orderId);
+
+        if (orderIndex === -1) {
+            this.showNotification('Order not found', 'error');
+            return;
+        }
+
+        medOrders[orderIndex].orderStatus = newStatus;
+        medOrders[orderIndex].lastStatusUpdate = new Date().toLocaleDateString('en-US');
+        medOrders[orderIndex].updatedBy = this.currentUser.name;
+        if (statusNotes) {
+            medOrders[orderIndex].statusNotes = statusNotes;
+        }
+
+        localStorage.setItem('medOrders', JSON.stringify(medOrders));
+        this.showNotification('Order status updated successfully!', 'success');
+        modal.remove();
+        this.loadPage('unavailable-meds');
+    }
+
+    // Quality Control Listeners and Functions
+    attachQualityControlListeners() {
+        const qcForm = document.getElementById('newQCForm');
+        const clearFormBtn = document.getElementById('clearQCForm');
+        const historyFilter = document.getElementById('qcHistoryFilter');
+
+        if (qcForm) {
+            qcForm.addEventListener('submit', (e) => this.saveQualityControl(e));
+        }
+
+        if (clearFormBtn) {
+            clearFormBtn.addEventListener('click', () => this.clearQCForm());
+        }
+
+        if (historyFilter) {
+            historyFilter.addEventListener('change', (e) => this.loadQCHistory(e.target.value));
+        }
+
+        const viewDetailsButtons = document.querySelectorAll('.btn-view-qc-details');
+        viewDetailsButtons.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const qcId = e.currentTarget.getAttribute('data-qc-id');
+                if (qcId) {
+                    this.showQCDetailsModal(qcId);
+                }
+            });
+        });
+
+        // Load initial history
+        this.loadQCHistory('');
+    }
+
+    clearQCForm() {
+        document.getElementById('qcTestName').value = '';
+        document.getElementById('qcControlLevel').value = '';
+        document.getElementById('qcLotNumber').value = '';
+        document.getElementById('qcExpiryDate').value = '';
+        document.getElementById('qcObservedValue').value = '';
+        document.getElementById('qcExpectedRange').value = '';
+        document.getElementById('qcResult').value = '';
+        document.getElementById('qcInstrument').value = '';
+        document.getElementById('qcNotes').value = '';
+    }
+
+    saveQualityControl(e) {
+        e.preventDefault();
+
+        const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+        
+        const qcRecord = {
+            id: 'QC' + Date.now(),
+            testName: document.getElementById('qcTestName').value,
+            controlLevel: document.getElementById('qcControlLevel').value,
+            lotNumber: document.getElementById('qcLotNumber').value,
+            expiryDate: document.getElementById('qcExpiryDate').value,
+            observedValue: document.getElementById('qcObservedValue').value,
+            expectedRange: document.getElementById('qcExpectedRange').value,
+            result: document.getElementById('qcResult').value,
+            instrument: document.getElementById('qcInstrument').value,
+            notes: document.getElementById('qcNotes').value,
+            testedBy: currentUser.name || 'Lab Staff',
+            testDate: new Date().toLocaleDateString(),
+            testTime: new Date().toLocaleTimeString(),
+            recordedDateTime: new Date().toISOString()
+        };
+
+        let qcRecords = JSON.parse(localStorage.getItem('qualityControl') || '[]');
+        qcRecords.unshift(qcRecord);
+        localStorage.setItem('qualityControl', JSON.stringify(qcRecords));
+
+        this.showNotification('Quality control record saved successfully', 'success');
+        this.clearQCForm();
+        this.loadQCHistory(document.getElementById('qcHistoryFilter').value);
+        
+        // Reload page to update today's summary
+        this.loadPage('quality-control');
+    }
+
+    loadQCHistory(filterTest = '') {
+        const qcRecords = JSON.parse(localStorage.getItem('qualityControl') || '[]');
+        const historyTable = document.getElementById('qcHistoryTable');
+
+        if (!historyTable) return;
+
+        let filteredRecords = qcRecords;
+        if (filterTest) {
+            filteredRecords = qcRecords.filter(qc => qc.testName === filterTest);
+        }
+
+        if (filteredRecords.length === 0) {
+            historyTable.innerHTML = `
+                <div style="text-align: center; padding: 40px; color: #999;">
+                    <i class="fas fa-clipboard-check" style="font-size: 48px; margin-bottom: 16px; opacity: 0.3;"></i>
+                    <p style="font-size: 16px;">No quality control records found.</p>
+                </div>
+            `;
+            return;
+        }
+
+        let historyRows = '';
+        filteredRecords.forEach(qc => {
+            const statusClass = qc.result === 'Within Range' ? 'active' : 
+                              qc.result === 'Out of Range' ? 'discharged' : 'admitted';
+            
+            historyRows += `
+                <tr>
+                    <td style="padding: 12px;">${qc.testName}</td>
+                    <td style="padding: 12px;">${qc.controlLevel}</td>
+                    <td style="padding: 12px;">${qc.lotNumber}</td>
+                    <td style="padding: 12px;">${qc.observedValue}</td>
+                    <td style="padding: 12px;">${qc.expectedRange}</td>
+                    <td style="padding: 12px;"><span class="status-badge ${statusClass}">${qc.result}</span></td>
+                    <td style="padding: 12px;">${qc.testDate}</td>
+                    <td style="padding: 12px;">${qc.testedBy}</td>
+                    <td style="padding: 12px;">
+                        <button class="btn btn-sm btn-view-qc-details" data-qc-id="${qc.id}">
+                            <i class="fas fa-eye"></i> View
+                        </button>
+                    </td>
+                </tr>
+            `;
+            
+            if (qc.notes) {
+                historyRows += `
+                    <tr style="background: #f8f9fa;">
+                        <td colspan="9" style="text-align: left; padding: 12px; border-left: 3px solid var(--dark-pink);">
+                            <strong style="color: var(--dark-pink);">Notes:</strong> ${qc.notes}
+                        </td>
+                    </tr>
+                `;
+            }
+        });
+
+        historyTable.innerHTML = `
+            <div style="overflow-x: auto;">
+                <table class="patients-table" style="width: 100%;">
+                    <thead>
+                        <tr>
+                            <th style="padding: 12px;">Test Name</th>
+                            <th style="padding: 12px;">Control Level</th>
+                            <th style="padding: 12px;">Lot Number</th>
+                            <th style="padding: 12px;">Observed</th>
+                            <th style="padding: 12px;">Expected Range</th>
+                            <th style="padding: 12px;">Result</th>
+                            <th style="padding: 12px;">Date</th>
+                            <th style="padding: 12px;">Tested By</th>
+                            <th style="padding: 12px;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${historyRows}
+                    </tbody>
+                </table>
+            </div>
+        `;
+
+        // Re-attach event listeners for newly created buttons
+        const viewDetailsButtons = historyTable.querySelectorAll('.btn-view-qc-details');
+        viewDetailsButtons.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const qcId = e.currentTarget.getAttribute('data-qc-id');
+                if (qcId) {
+                    this.showQCDetailsModal(qcId);
+                }
+            });
+        });
+    }
+
+    showQCDetailsModal(qcId) {
+        const qcRecords = JSON.parse(localStorage.getItem('qualityControl') || '[]');
+        const qc = qcRecords.find(record => record.id === qcId);
+
+        if (!qc) {
+            this.showNotification('QC record not found', 'error');
+            return;
+        }
+
+        const modal = document.createElement('div');
+        modal.className = 'modal';
+        modal.id = 'qcDetailsModal';
+
+        const statusClass = qc.result === 'Within Range' ? 'active' : 
+                          qc.result === 'Out of Range' ? 'discharged' : 'admitted';
+
+        modal.innerHTML = `
+            <div class="modal-content" style="max-width: 700px;">
+                <div class="modal-header">
+                    <h2><i class="fas fa-clipboard-check"></i> Quality Control Details</h2>
+                    <button class="modal-close" id="closeQCDetailsBtn">&times;</button>
+                </div>
+                <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px;">
+                        <div class="info-item">
+                            <label style="font-weight: bold; color: #666; display: block; margin-bottom: 5px;">Test Name</label>
+                            <p style="margin: 0; font-size: 16px;">${qc.testName}</p>
+                        </div>
+                        <div class="info-item">
+                            <label style="font-weight: bold; color: #666; display: block; margin-bottom: 5px;">Control Level</label>
+                            <p style="margin: 0; font-size: 16px;">${qc.controlLevel}</p>
+                        </div>
+                        <div class="info-item">
+                            <label style="font-weight: bold; color: #666; display: block; margin-bottom: 5px;">Lot Number</label>
+                            <p style="margin: 0; font-size: 16px;">${qc.lotNumber}</p>
+                        </div>
+                        <div class="info-item">
+                            <label style="font-weight: bold; color: #666; display: block; margin-bottom: 5px;">Expiry Date</label>
+                            <p style="margin: 0; font-size: 16px;">${qc.expiryDate}</p>
+                        </div>
+                        <div class="info-item">
+                            <label style="font-weight: bold; color: #666; display: block; margin-bottom: 5px;">Observed Value</label>
+                            <p style="margin: 0; font-size: 16px; font-weight: 600; color: var(--dark-pink);">${qc.observedValue}</p>
+                        </div>
+                        <div class="info-item">
+                            <label style="font-weight: bold; color: #666; display: block; margin-bottom: 5px;">Expected Range</label>
+                            <p style="margin: 0; font-size: 16px;">${qc.expectedRange}</p>
+                        </div>
+                        <div class="info-item">
+                            <label style="font-weight: bold; color: #666; display: block; margin-bottom: 5px;">Result Status</label>
+                            <p style="margin: 0; font-size: 16px;"><span class="status-badge ${statusClass}">${qc.result}</span></p>
+                        </div>
+                        <div class="info-item">
+                            <label style="font-weight: bold; color: #666; display: block; margin-bottom: 5px;">Instrument/Analyzer</label>
+                            <p style="margin: 0; font-size: 16px;">${qc.instrument}</p>
+                        </div>
+                        <div class="info-item">
+                            <label style="font-weight: bold; color: #666; display: block; margin-bottom: 5px;">Test Date & Time</label>
+                            <p style="margin: 0; font-size: 16px;">${qc.testDate} ${qc.testTime}</p>
+                        </div>
+                        <div class="info-item">
+                            <label style="font-weight: bold; color: #666; display: block; margin-bottom: 5px;">Tested By</label>
+                            <p style="margin: 0; font-size: 16px;">${qc.testedBy}</p>
+                        </div>
+                    </div>
+                    ${qc.notes ? `
+                    <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-left: 4px solid var(--dark-pink); border-radius: 4px;">
+                        <label style="font-weight: bold; color: var(--dark-pink); display: block; margin-bottom: 8px;">Notes / Corrective Actions</label>
+                        <p style="margin: 0; line-height: 1.6;">${qc.notes}</p>
+                    </div>
+                    ` : ''}
+                </div>
+                <div class="modal-actions">
+                    <button class="btn btn-secondary" id="closeQCModalBtn">Close</button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+        setTimeout(() => modal.classList.add('active'), 10);
+
+        const closeModal = () => {
+            modal.classList.remove('active');
+            setTimeout(() => modal.remove(), 300);
+        };
+
+        document.getElementById('closeQCDetailsBtn').addEventListener('click', closeModal);
+        document.getElementById('closeQCModalBtn').addEventListener('click', closeModal);
     }
 }
 

@@ -7,6 +7,9 @@ class AdminContent {
 
     // Dashboard Content for Admin
     getDashboardContent() {
+        // Get dynamic stats
+        const stats = this.getDynamicStats();
+        
         return `
             <div class="dashboard-overview">
                 ${this.getBentoBanner()}
@@ -14,47 +17,100 @@ class AdminContent {
                     ${this.getAnnouncementsSection()}
                     <div class="dashboard-cards-wrapper">
                         <div class="cards-grid">
-                    <div class="card">
+                    <div class="card stat-card">
                         <div class="card-header">
-                            <div class="card-icon">
-                                <i class="fas fa-user-injured"></i>
+                            <div class="stat-info">
+                                <div class="card-icon">
+                                    <i class="fas fa-user-injured"></i>
+                                </div>
+                                <h3 class="card-title">Patients</h3>
                             </div>
-                            <h3 class="card-title">Patients</h3>
+                            <div class="stat-number">${stats.totalPatients}</div>
                         </div>
                         <div class="card-content">
-                            <p>Manage patient information and records</p>
-                            <div class="stat-number">1,247</div>
+                            <p>Total registered patients</p>
+                            <button class="btn-view-stat" data-page="all-patients">
+                                <i class="fas fa-eye"></i> View
+                            </button>
                         </div>
                     </div>
-                    <div class="card">
+                    <div class="card stat-card">
                         <div class="card-header">
-                            <div class="card-icon">
-                                <i class="fas fa-users"></i>
+                            <div class="stat-info">
+                                <div class="card-icon">
+                                    <i class="fas fa-users"></i>
+                                </div>
+                                <h3 class="card-title">Staff</h3>
                             </div>
-                            <h3 class="card-title">Staff</h3>
+                            <div class="stat-number">${stats.totalStaff}</div>
                         </div>
                         <div class="card-content">
-                            <p>View all hospital staff members</p>
-                            <div class="stat-number">156</div>
+                            <p>Total hospital staff members</p>
+                            <button class="btn-view-stat" data-page="all-staff">
+                                <i class="fas fa-eye"></i> View
+                            </button>
                         </div>
                     </div>
-                    <div class="card">
+                    <div class="card stat-card">
                         <div class="card-header">
-                            <div class="card-icon">
-                                <i class="fas fa-flask"></i>
+                            <div class="stat-info">
+                                <div class="card-icon">
+                                    <i class="fas fa-file-invoice-dollar"></i>
+                                </div>
+                                <h3 class="card-title">Billing</h3>
                             </div>
-                            <h3 class="card-title">Lab Tests</h3>
+                            <div class="stat-number">${stats.pendingBilling}</div>
                         </div>
                         <div class="card-content">
-                            <p>Laboratory test results</p>
-                            <div class="stat-number">3,421</div>
+                            <p>Pending billing statements</p>
+                            <button class="btn-view-stat" data-page="billing">
+                                <i class="fas fa-eye"></i> View
+                            </button>
                         </div>
                     </div>
                 </div>
                     </div>
                 </div>
+                ${this.getAwardsManagementSection()}
             </div>
         `;
+    }
+
+    // Get Dynamic Stats
+    getDynamicStats() {
+        let totalPatients = 0;
+        let totalStaff = 0;
+        let pendingBilling = 0;
+
+        // Count patients
+        try {
+            const patients = JSON.parse(localStorage.getItem('patients') || '[]');
+            totalPatients = patients.length;
+            
+            // Count patients without billing (pending billing)
+            pendingBilling = patients.filter(p => !p.billing).length;
+        } catch (error) {
+            console.error('Error loading patients:', error);
+        }
+
+        // Count staff - hierarchy has 26 staff members
+        const hierarchyStaffCount = 26;
+        let addedStaffCount = 0;
+        
+        try {
+            const staff = JSON.parse(localStorage.getItem('staff') || '[]');
+            addedStaffCount = staff.length;
+        } catch (error) {
+            console.error('Error loading staff:', error);
+        }
+        
+        totalStaff = hierarchyStaffCount + addedStaffCount;
+
+        return {
+            totalPatients,
+            totalStaff,
+            pendingBilling
+        };
     }
 
     // Announcements Section
@@ -573,4 +629,864 @@ class AdminContent {
             </div>
         `;
     }
+
+    // Billing Management Content for Admin
+    getBillingContent() {
+        // Load patients from localStorage
+        let patients = [];
+        try {
+            const stored = localStorage.getItem('patients');
+            if (stored) {
+                patients = JSON.parse(stored);
+            }
+        } catch (error) {
+            console.error('Error loading patients:', error);
+        }
+
+        // Generate patient rows for billing
+        let patientRows = '';
+        patients.forEach(patient => {
+            const hasBilling = patient.billing ? true : false;
+            const billingStatus = hasBilling ? 
+                '<span class="status-badge active">Billed</span>' : 
+                '<span class="status-badge discharged">Not Billed</span>';
+            
+            const actionButton = hasBilling ?
+                `<button class="btn btn-sm btn-view-receipt" data-patient-id="${patient.id}">
+                    <i class="fas fa-receipt"></i>
+                    View Receipt
+                </button>` :
+                `<button class="btn btn-sm btn-create-billing" data-patient-id="${patient.id}">
+                    <i class="fas fa-plus"></i>
+                    Create Billing
+                </button>`;
+
+            patientRows += `
+                <tr>
+                    <td>${patient.id}</td>
+                    <td>${patient.fullName}</td>
+                    <td>${patient.age}</td>
+                    <td>${billingStatus}</td>
+                    <td>${actionButton}</td>
+                </tr>
+            `;
+        });
+
+        return `
+            <div class="billing-management">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-file-invoice-dollar"></i>
+                            Billing Management
+                        </h3>
+                    </div>
+                    <div class="card-content">
+                        <table class="patients-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 15%;">Patient ID</th>
+                                    <th style="width: 35%;">Name</th>
+                                    <th style="width: 10%;">Age</th>
+                                    <th style="width: 20%;">Billing Status</th>
+                                    <th style="width: 20%;">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${patientRows || '<tr><td colspan="5" style="text-align: center;">No patients found</td></tr>'}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    // Awards Management Section
+    getAwardsManagementSection() {
+        // Load awards from localStorage
+        let awards = [];
+        try {
+            const stored = localStorage.getItem('hospitalAwards');
+            if (stored) {
+                awards = JSON.parse(stored);
+            } else {
+                // Initialize default awards if none exist
+                awards = [
+                    {
+                        id: 1,
+                        title: 'Excellence in Healthcare Award',
+                        description: 'Recognized for outstanding patient care and medical innovation',
+                        image: './images/award1.png'
+                    },
+                    {
+                        id: 2,
+                        title: 'Best Hospital Facility Award',
+                        description: 'Awarded for state-of-the-art medical equipment and infrastructure',
+                        image: './images/award2.png'
+                    },
+                    {
+                        id: 3,
+                        title: 'Patient Satisfaction Award',
+                        description: 'Highest patient satisfaction rating in the region for exceptional care',
+                        image: './images/award3.png'
+                    }
+                ];
+                localStorage.setItem('hospitalAwards', JSON.stringify(awards));
+            }
+        } catch (error) {
+            console.error('Error loading awards:', error);
+        }
+
+        const awardsHTML = awards.map(award => `
+            <div class="award-card" data-award-id="${award.id}">
+                <div class="award-image-container">
+                    <img src="${award.image}" alt="${award.title}" onerror="this.src='https://via.placeholder.com/1024x1024/d4a5a5/ffffff?text=Award+Image'">
+                </div>
+                <div class="award-info">
+                    <h4>${award.title}</h4>
+                    <p>${award.description}</p>
+                    <div class="award-actions">
+                        <button class="btn btn-sm btn-edit-award" data-award-id="${award.id}">
+                            <i class="fas fa-edit"></i> Edit
+                        </button>
+                        <button class="btn btn-sm btn-delete-award" data-award-id="${award.id}">
+                            <i class="fas fa-trash-alt"></i> Delete
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+
+        return `
+            <div class="awards-management-section">
+                <div class="section-header">
+                    <h3>
+                        <i class="fas fa-trophy"></i>
+                        Hospital Awards & Recognition
+                    </h3>
+                    <button class="btn btn-primary" id="addAwardBtn">
+                        <i class="fas fa-plus"></i>
+                        Add Award
+                    </button>
+                </div>
+                <div class="awards-grid">
+                    ${awardsHTML}
+                </div>
+            </div>
+        `;
+    }
+
+    // Vital Signs Content for Admin (view-only with patient selection)
+    getVitalSignsContent() {
+        // Get patients from localStorage
+        let patients = [];
+        try {
+            const stored = localStorage.getItem('patients');
+            if (stored) {
+                patients = JSON.parse(stored);
+            }
+        } catch (e) {
+            console.error('Error loading patients:', e);
+        }
+
+        // Fallback to sample data if no patients in localStorage
+        if (patients.length === 0) {
+            patients = [
+                { id: 'P001', fullName: 'Miranda, Hebrew T.', age: 19, status: 'Active', doctor: 'Dr. Sta. Maria' },
+                { id: 'P002', fullName: 'Sta.Maria, Rizza M.', age: 20, status: 'Admitted', doctor: 'Dr. Sta. Maria' },
+                { id: 'P003', fullName: 'Puquiz, Daniel T.', age: 21, status: 'Active', doctor: 'Dr. Salvador' }
+            ];
+        }
+
+        // Get all vital signs
+        const allVitalSigns = JSON.parse(localStorage.getItem('vitalSigns') || '[]');
+
+        // Create summary table with most recent vital signs per patient
+        let summaryRows = '';
+        patients.forEach(patient => {
+            const patientVitalSigns = allVitalSigns.filter(vs => vs.patientId === patient.id);
+            const latestVS = patientVitalSigns[0]; // Most recent
+
+            if (latestVS) {
+                summaryRows += `
+                    <tr>
+                        <td style="width: 10%;">${patient.id}</td>
+                        <td style="width: 20%;">${patient.fullName}</td>
+                        <td style="width: 12%;">${latestVS.recordedDate}</td>
+                        <td style="width: 12%;">${latestVS.recordedTime}</td>
+                        <td style="width: 12%;"><strong>${latestVS.bloodPressure}</strong></td>
+                        <td style="width: 10%;">${latestVS.heartRate}</td>
+                        <td style="width: 12%;">${latestVS.temperature}°C</td>
+                        <td style="width: 12%;">
+                            <button class="btn btn-sm btn-view-more-vitals" data-patient-id="${patient.id}">
+                                <i class="fas fa-eye"></i> View More
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            } else {
+                summaryRows += `
+                    <tr>
+                        <td style="width: 10%;">${patient.id}</td>
+                        <td style="width: 20%;">${patient.fullName}</td>
+                        <td colspan="5" style="text-align: center; color: #999;">No vital signs recorded</td>
+                        <td style="width: 12%;">-</td>
+                    </tr>
+                `;
+            }
+        });
+
+        // Generate patient options for dropdown
+        const patientOptions = patients.map(patient => 
+            `<option value="${patient.id}">${patient.id} - ${patient.fullName}</option>`
+        ).join('');
+
+        return `
+            <div class="vital-signs-management">
+                <!-- Summary Table -->
+                <div class="card" style="margin-bottom: 24px;">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-chart-line"></i>
+                            Recent Vital Signs Summary
+                        </h3>
+                    </div>
+                    <div class="card-content">
+                        <div style="overflow-x: auto;">
+                            <table class="patients-table" style="min-width: 900px;">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 10%;">Patient ID</th>
+                                        <th style="width: 20%;">Name</th>
+                                        <th style="width: 12%;">Date</th>
+                                        <th style="width: 12%;">Time</th>
+                                        <th style="width: 12%;">BP</th>
+                                        <th style="width: 10%;">HR</th>
+                                        <th style="width: 12%;">Temp</th>
+                                        <th style="width: 12%;">Actions</th>
+                                    </tr>
+                                </thead>
+                            </table>
+                            <div style="max-height: 180px; overflow-y: auto;">
+                                <table class="patients-table" style="min-width: 900px;">
+                                    <tbody>
+                                        ${summaryRows || '<tr><td colspan="8" style="text-align: center; padding: 20px; color: #999;">No vital signs recorded yet</td></tr>'}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Detailed View -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-heartbeat"></i>
+                            Vital Signs Records
+                        </h3>
+                    </div>
+                    <div class="card-content">
+                        <!-- Patient Selection -->
+                        <div class="patient-selector" style="margin-bottom: 24px; padding: 20px; background: var(--light-pink); border-radius: 8px;">
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label for="vitalSignsPatient" style="font-weight: 600; margin-bottom: 8px; display: block;">
+                                    <i class="fas fa-user-injured"></i> Select Patient
+                                </label>
+                                <select id="vitalSignsPatient" class="form-control" required style="font-size: 14px;">
+                                    <option value="">-- Select a patient --</option>
+                                    ${patientOptions}
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Patient Info Display (hidden until patient selected) -->
+                        <div id="selectedPatientInfo" style="display: none; margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-left: 4px solid var(--dark-pink); border-radius: 4px;">
+                            <h4 style="margin: 0 0 10px 0; color: var(--dark-pink); font-size: 16px;">
+                                <i class="fas fa-user"></i> Patient Information
+                            </h4>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
+                                <div><strong>Patient ID:</strong> <span id="displayPatientId"></span></div>
+                                <div><strong>Name:</strong> <span id="displayPatientName"></span></div>
+                                <div><strong>Age:</strong> <span id="displayPatientAge"></span></div>
+                                <div><strong>Physician:</strong> <span id="displayPatientDoctor"></span></div>
+                            </div>
+                        </div>
+
+                        <!-- Vital Signs History -->
+                        <div id="vitalSignsHistory" style="display: none; margin-top: 32px;">
+                            <h4 style="color: var(--dark-pink); margin-bottom: 16px; padding-bottom: 8px; border-bottom: 2px solid var(--light-pink);">
+                                <i class="fas fa-history"></i> Vital Signs History
+                            </h4>
+                            <div id="vitalSignsHistoryTable"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    // Lab Results Content for Admin (view-only with patient selection)
+    getLabResultsContent() {
+        let patients = [];
+        try {
+            const stored = localStorage.getItem('patients');
+            if (stored) {
+                patients = JSON.parse(stored);
+            }
+        } catch (e) {
+            console.error('Error loading patients:', e);
+        }
+
+        if (patients.length === 0) {
+            patients = [
+                { id: 'P001', fullName: 'Miranda, Hebrew T.', age: 19, status: 'Active', doctor: 'Dr. Sta. Maria' },
+                { id: 'P002', fullName: 'Sta.Maria, Rizza M.', age: 20, status: 'Admitted', doctor: 'Dr. Sta. Maria' },
+                { id: 'P003', fullName: 'Puquiz, Daniel T.', age: 21, status: 'Active', doctor: 'Dr. Salvador' }
+            ];
+        }
+
+        const allLabResults = JSON.parse(localStorage.getItem('labResults') || '[]');
+
+        let summaryRows = '';
+        patients.forEach(patient => {
+            const patientLabs = allLabResults.filter(lab => lab.patientId === patient.id);
+            const latest = patientLabs[0];
+
+            if (latest) {
+                summaryRows += `
+                    <tr>
+                        <td style="width: 10%;">${patient.id}</td>
+                        <td style="width: 20%;">${patient.fullName}</td>
+                        <td style="width: 15%;">${latest.testType}</td>
+                        <td style="width: 12%;">${latest.testDate}</td>
+                        <td style="width: 10%;">${latest.status || 'Completed'}</td>
+                        <td style="width: 12%;">
+                            <button class="btn btn-sm btn-view-more-labs" data-patient-id="${patient.id}">
+                                <i class="fas fa-eye"></i> View More
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            } else {
+                summaryRows += `
+                    <tr>
+                        <td style="width: 10%;">${patient.id}</td>
+                        <td style="width: 20%;">${patient.fullName}</td>
+                        <td colspan="3" style="text-align: center; color: #999;">No lab results</td>
+                        <td style="width: 12%;">-</td>
+                    </tr>
+                `;
+            }
+        });
+
+        const patientOptions = patients.map(patient => 
+            `<option value="${patient.id}">${patient.id} - ${patient.fullName}</option>`
+        ).join('');
+
+        return `
+            <div class="lab-results-management">
+                <div class="card" style="margin-bottom: 24px;">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-chart-line"></i>
+                            Lab Results Summary
+                        </h3>
+                    </div>
+                    <div class="card-content">
+                        <div style="overflow-x: auto;">
+                            <table class="patients-table" style="min-width: 900px;">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 10%;">Patient ID</th>
+                                        <th style="width: 20%;">Name</th>
+                                        <th style="width: 15%;">Test Type</th>
+                                        <th style="width: 12%;">Test Date</th>
+                                        <th style="width: 10%;">Status</th>
+                                        <th style="width: 12%;">Actions</th>
+                                    </tr>
+                                </thead>
+                            </table>
+                            <div style="max-height: 180px; overflow-y: auto;">
+                                <table class="patients-table" style="min-width: 900px;">
+                                    <tbody>
+                                        ${summaryRows || '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #999;">No lab results yet</td></tr>'}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-flask"></i>
+                            Laboratory Results (View Only)
+                        </h3>
+                    </div>
+                    <div class="card-content">
+                        <div class="patient-selector" style="margin-bottom: 24px; padding: 20px; background: var(--light-pink); border-radius: 8px;">
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label for="labResultsPatient" style="font-weight: 600; margin-bottom: 8px; display: block;">
+                                    <i class="fas fa-user-injured"></i> Select Patient
+                                </label>
+                                <select id="labResultsPatient" class="form-control" required style="font-size: 14px;">
+                                    <option value="">-- Select a patient --</option>
+                                    ${patientOptions}
+                                </select>
+                            </div>
+                        </div>
+
+                        <div id="selectedPatientInfoLabs" style="display: none; margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-left: 4px solid var(--dark-pink); border-radius: 4px;">
+                            <h4 style="margin-bottom: 10px; color: var(--dark-pink);">
+                                <i class="fas fa-user-injured"></i> <span id="selectedPatientNameLabs"></span>
+                            </h4>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
+                                <div><strong>Patient ID:</strong> <span id="selectedPatientIdLabs"></span></div>
+                                <div><strong>Age:</strong> <span id="selectedPatientAgeLabs"></span></div>
+                                <div><strong>Status:</strong> <span id="selectedPatientStatusLabs"></span></div>
+                                <div><strong>Doctor:</strong> <span id="selectedPatientDoctorLabs"></span></div>
+                            </div>
+                        </div>
+
+                        <div id="labResultsHistory" style="display: none; margin-top: 24px;">
+                            <h4 style="color: var(--dark-pink); margin-bottom: 16px;">
+                                <i class="fas fa-history"></i> Lab Results History
+                            </h4>
+                            <div id="labResultsHistoryTable"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    // Prescriptions Content for Admin (view-only with patient selection)
+    getPrescriptionsContent() {
+        // Get patients from localStorage
+        let patients = [];
+        try {
+            const stored = localStorage.getItem('patients');
+            if (stored) {
+                patients = JSON.parse(stored);
+            }
+        } catch (e) {
+            console.error('Error loading patients:', e);
+        }
+
+        // Fallback to sample data if no patients
+        if (patients.length === 0) {
+            patients = [
+                { id: 'P001', fullName: 'Miranda, Hebrew T.', age: 19, status: 'Active', doctor: 'Dr. Sta. Maria' },
+                { id: 'P002', fullName: 'Sta.Maria, Rizza M.', age: 20, status: 'Admitted', doctor: 'Dr. Sta. Maria' },
+                { id: 'P003', fullName: 'Puquiz, Daniel T.', age: 21, status: 'Active', doctor: 'Dr. Salvador' }
+            ];
+        }
+
+        // Get all medications (prescriptions)
+        const allPrescriptions = JSON.parse(localStorage.getItem('medications') || '[]');
+
+        // Create summary table with most recent prescriptions per patient
+        let summaryRows = '';
+        patients.forEach(patient => {
+            const patientPrescriptions = allPrescriptions.filter(med => med.patientId === patient.id);
+            const latestRx = patientPrescriptions[0]; // Most recent
+
+            if (latestRx) {
+                summaryRows += `
+                    <tr>
+                        <td style="width: 10%;">${patient.id}</td>
+                        <td style="width: 20%;">${patient.fullName}</td>
+                        <td style="width: 15%;">${latestRx.medicationName}</td>
+                        <td style="width: 12%;">${latestRx.dosage}</td>
+                        <td style="width: 10%;">${latestRx.frequency}</td>
+                        <td style="width: 12%;">${latestRx.prescribedDate}</td>
+                        <td style="width: 12%;">
+                            <button class="btn btn-sm btn-view-more-prescriptions" data-patient-id="${patient.id}">
+                                <i class="fas fa-eye"></i> View More
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            } else {
+                summaryRows += `
+                    <tr>
+                        <td style="width: 10%;">${patient.id}</td>
+                        <td style="width: 20%;">${patient.fullName}</td>
+                        <td colspan="4" style="text-align: center; color: #999;">No prescriptions</td>
+                        <td style="width: 12%;">-</td>
+                    </tr>
+                `;
+            }
+        });
+
+        // Generate patient options for dropdown
+        const patientOptions = patients.map(patient => 
+            `<option value="${patient.id}">${patient.id} - ${patient.fullName}</option>`
+        ).join('');
+
+        return `
+            <div class="prescriptions-management">
+                <!-- Summary Table -->
+                <div class="card" style="margin-bottom: 24px;">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-chart-line"></i>
+                            Recent Prescriptions Summary
+                        </h3>
+                    </div>
+                    <div class="card-content">
+                        <div style="overflow-x: auto;">
+                            <table class="patients-table" style="min-width: 900px;">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 10%;">Patient ID</th>
+                                        <th style="width: 20%;">Name</th>
+                                        <th style="width: 15%;">Medication</th>
+                                        <th style="width: 12%;">Dosage</th>
+                                        <th style="width: 10%;">Frequency</th>
+                                        <th style="width: 12%;">Date Prescribed</th>
+                                        <th style="width: 12%;">Actions</th>
+                                    </tr>
+                                </thead>
+                            </table>
+                            <div style="max-height: 180px; overflow-y: auto;">
+                                <table class="patients-table" style="min-width: 900px;">
+                                    <tbody>
+                                        ${summaryRows || '<tr><td colspan="7" style="text-align: center; padding: 20px; color: #999;">No prescriptions yet</td></tr>'}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Detailed View -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-prescription"></i>
+                            Patient Prescriptions
+                        </h3>
+                    </div>
+                    <div class="card-content">
+                        <!-- Patient Selection -->
+                        <div class="patient-selector" style="margin-bottom: 24px; padding: 20px; background: var(--light-pink); border-radius: 8px;">
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label for="prescriptionsPatient" style="font-weight: 600; margin-bottom: 8px; display: block;">
+                                    <i class="fas fa-user-injured"></i> Select Patient
+                                </label>
+                                <select id="prescriptionsPatient" class="form-control" required style="font-size: 14px;">
+                                    <option value="">-- Select a patient --</option>
+                                    ${patientOptions}
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Patient Info Display (hidden until patient selected) -->
+                        <div id="selectedPatientInfoPrescriptions" style="display: none; margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-left: 4px solid var(--dark-pink); border-radius: 4px;">
+                            <h4 style="margin-bottom: 10px; color: var(--dark-pink);">
+                                <i class="fas fa-user-injured"></i> <span id="selectedPatientNamePrescriptions"></span>
+                            </h4>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
+                                <div><strong>Patient ID:</strong> <span id="selectedPatientIdPrescriptions"></span></div>
+                                <div><strong>Age:</strong> <span id="selectedPatientAgePrescriptions"></span></div>
+                                <div><strong>Status:</strong> <span id="selectedPatientStatusPrescriptions"></span></div>
+                                <div><strong>Doctor:</strong> <span id="selectedPatientDoctorPrescriptions"></span></div>
+                            </div>
+                        </div>
+
+                        <!-- Prescriptions History -->
+                        <div id="prescriptionsHistory" style="display: none; margin-top: 24px;">
+                            <h4 style="color: var(--dark-pink); margin-bottom: 16px;">
+                                <i class="fas fa-history"></i> Prescription History
+                            </h4>
+                            <div id="prescriptionsHistoryTable"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    // Imaging Results Content (View Only)
+    getImagingResultsContent() {
+        let patients = [];
+        try {
+            const stored = localStorage.getItem('patients');
+            if (stored) {
+                patients = JSON.parse(stored);
+            }
+        } catch (e) {
+            console.error('Error loading patients:', e);
+        }
+
+        if (patients.length === 0) {
+            patients = [
+                { id: 'P001', fullName: 'Miranda, Hebrew T.', age: 19, status: 'Active', doctor: 'Dr. Sta. Maria' },
+                { id: 'P002', fullName: 'Sta.Maria, Rizza M.', age: 20, status: 'Admitted', doctor: 'Dr. Sta. Maria' },
+                { id: 'P003', fullName: 'Puquiz, Daniel T.', age: 21, status: 'Active', doctor: 'Dr. Salvador' }
+            ];
+        }
+
+        const allImagingResults = JSON.parse(localStorage.getItem('imagingResults') || '[]');
+
+        let summaryRows = '';
+        patients.forEach(patient => {
+            const patientImaging = allImagingResults.filter(img => img.patientId === patient.id);
+            const latest = patientImaging[0];
+
+            if (latest) {
+                summaryRows += `
+                    <tr>
+                        <td style="width: 10%;">${patient.id}</td>
+                        <td style="width: 20%;">${patient.fullName}</td>
+                        <td style="width: 15%;">${latest.imagingModality}</td>
+                        <td style="width: 12%;">${latest.imagingDate}</td>
+                        <td style="width: 10%;">${latest.status || 'Completed'}</td>
+                        <td style="width: 12%;">
+                            <button class="btn btn-sm btn-view-more-imaging" data-patient-id="${patient.id}">
+                                <i class="fas fa-eye"></i> View More
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            } else {
+                summaryRows += `
+                    <tr>
+                        <td style="width: 10%;">${patient.id}</td>
+                        <td style="width: 20%;">${patient.fullName}</td>
+                        <td colspan="3" style="text-align: center; color: #999;">No imaging results</td>
+                        <td style="width: 12%;">-</td>
+                    </tr>
+                `;
+            }
+        });
+
+        const patientOptions = patients.map(patient => 
+            `<option value="${patient.id}">${patient.id} - ${patient.fullName}</option>`
+        ).join('');
+
+        return `
+            <div class="imaging-results-management">
+                <!-- Summary Table -->
+                <div class="card" style="margin-bottom: 24px;">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-chart-line"></i>
+                            Imaging Results Summary
+                        </h3>
+                    </div>
+                    <div class="card-content">
+                        <div style="overflow-x: auto;">
+                            <table class="patients-table" style="min-width: 900px;">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 10%;">Patient ID</th>
+                                        <th style="width: 20%;">Name</th>
+                                        <th style="width: 15%;">Modality</th>
+                                        <th style="width: 12%;">Date</th>
+                                        <th style="width: 10%;">Status</th>
+                                        <th style="width: 12%;">Actions</th>
+                                    </tr>
+                                </thead>
+                            </table>
+                            <div style="max-height: 180px; overflow-y: auto;">
+                                <table class="patients-table" style="min-width: 900px;">
+                                    <tbody>
+                                        ${summaryRows || '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #999;">No imaging results recorded yet</td></tr>'}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Patient Selection and History -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-x-ray"></i>
+                            Imaging Results (View Only)
+                        </h3>
+                    </div>
+                    <div class="card-content">
+                        <div class="patient-selector" style="margin-bottom: 24px; padding: 20px; background: var(--light-pink); border-radius: 8px;">
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label for="imagingResultsPatientAdmin" style="font-weight: 600; margin-bottom: 8px; display: block;">
+                                    <i class="fas fa-user-injured"></i> Select Patient
+                                </label>
+                                <select id="imagingResultsPatientAdmin" class="form-control" style="font-size: 14px;">
+                                    <option value="">-- Select a patient --</option>
+                                    ${patientOptions}
+                                </select>
+                            </div>
+                        </div>
+
+                        <div id="selectedPatientInfoImagingAdmin" style="display: none; margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-left: 4px solid var(--dark-pink); border-radius: 4px;">
+                            <h4 style="margin-bottom: 10px; color: var(--dark-pink);">
+                                <i class="fas fa-user-injured"></i> <span id="selectedPatientNameImagingAdmin"></span>
+                            </h4>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
+                                <div><strong>Patient ID:</strong> <span id="selectedPatientIdImagingAdmin"></span></div>
+                                <div><strong>Age:</strong> <span id="selectedPatientAgeImagingAdmin"></span></div>
+                                <div><strong>Status:</strong> <span id="selectedPatientStatusImagingAdmin"></span></div>
+                                <div><strong>Doctor:</strong> <span id="selectedPatientDoctorImagingAdmin"></span></div>
+                            </div>
+                        </div>
+
+                        <div id="imagingResultsHistoryAdmin" style="display: none; margin-top: 24px;">
+                            <h4 style="color: var(--dark-pink); margin-bottom: 16px;">
+                                <i class="fas fa-history"></i> Imaging Results History
+                            </h4>
+                            <div id="imagingResultsHistoryTableAdmin"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    // Drug Dispensing Content for Admin (View Only)
+    getDrugDispensingContent() {
+        let patients = [];
+        try {
+            const stored = localStorage.getItem('patients');
+            if (stored) {
+                patients = JSON.parse(stored);
+            }
+        } catch (e) {
+            console.error('Error loading patients:', e);
+        }
+
+        if (patients.length === 0) {
+            patients = [
+                { id: 'P001', fullName: 'Miranda, Hebrew T.', age: 19, status: 'Active', doctor: 'Dr. Sta. Maria' },
+                { id: 'P002', fullName: 'Sta.Maria, Rizza M.', age: 20, status: 'Admitted', doctor: 'Dr. Sta. Maria' },
+                { id: 'P003', fullName: 'Puquiz, Daniel T.', age: 21, status: 'Active', doctor: 'Dr. Salvador' }
+            ];
+        }
+
+        const allDispensing = JSON.parse(localStorage.getItem('drugDispensing') || '[]');
+
+        let summaryRows = '';
+        patients.forEach(patient => {
+            const patientDispensing = allDispensing.filter(d => d.patientId === patient.id);
+            const latest = patientDispensing[0];
+
+            if (latest) {
+                summaryRows += `
+                    <tr>
+                        <td style="width: 10%;">${patient.id}</td>
+                        <td style="width: 20%;">${patient.fullName}</td>
+                        <td style="width: 15%;">${latest.drugName}</td>
+                        <td style="width: 10%;">${latest.quantity}</td>
+                        <td style="width: 12%;">${latest.dispensedDate}</td>
+                        <td style="width: 12%;">${latest.batchNumber || '-'}</td>
+                        <td style="width: 12%;">
+                            <button class="btn btn-sm btn-view-more-dispensing" data-patient-id="${patient.id}">
+                                <i class="fas fa-eye"></i> View More
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            } else {
+                summaryRows += `
+                    <tr>
+                        <td style="width: 10%;">${patient.id}</td>
+                        <td style="width: 20%;">${patient.fullName}</td>
+                        <td colspan="4" style="text-align: center; color: #999;">No dispensing records</td>
+                        <td style="width: 12%;">-</td>
+                    </tr>
+                `;
+            }
+        });
+
+        const patientOptions = patients.map(patient => 
+            `<option value="${patient.id}">${patient.id} - ${patient.fullName}</option>`
+        ).join('');
+
+        return `
+            <div class="drug-dispensing-management">
+                <!-- Summary Table -->
+                <div class="card" style="margin-bottom: 24px;">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-chart-line"></i>
+                            Recent Drug Dispensing Summary
+                        </h3>
+                    </div>
+                    <div class="card-content">
+                        <div style="overflow-x: auto;">
+                            <table class="patients-table" style="min-width: 900px;">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 10%;">Patient ID</th>
+                                        <th style="width: 20%;">Name</th>
+                                        <th style="width: 15%;">Drug Name</th>
+                                        <th style="width: 10%;">Quantity</th>
+                                        <th style="width: 12%;">Date Dispensed</th>
+                                        <th style="width: 12%;">Batch Number</th>
+                                        <th style="width: 12%;">Actions</th>
+                                    </tr>
+                                </thead>
+                            </table>
+                            <div style="max-height: 180px; overflow-y: auto;">
+                                <table class="patients-table" style="min-width: 900px;">
+                                    <tbody>
+                                        ${summaryRows || '<tr><td colspan="7" style="text-align: center; padding: 20px; color: #999;">No dispensing records yet</td></tr>'}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Detailed View -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-pills"></i>
+                            Drug Dispensing Records (View Only)
+                        </h3>
+                    </div>
+                    <div class="card-content">
+                        <div class="patient-selector" style="margin-bottom: 24px; padding: 20px; background: var(--light-pink); border-radius: 8px;">
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label for="drugDispensingPatientAdmin" style="font-weight: 600; margin-bottom: 8px; display: block;">
+                                    <i class="fas fa-user-injured"></i> Select Patient
+                                </label>
+                                <select id="drugDispensingPatientAdmin" class="form-control" required style="font-size: 14px;">
+                                    <option value="">-- Select a patient --</option>
+                                    ${patientOptions}
+                                </select>
+                            </div>
+                        </div>
+
+                        <div id="selectedPatientInfoDispensingAdmin" style="display: none; margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-left: 4px solid var(--dark-pink); border-radius: 4px;">
+                            <h4 style="margin-bottom: 10px; color: var(--dark-pink);">
+                                <i class="fas fa-user-injured"></i> <span id="selectedPatientNameDispensingAdmin"></span>
+                            </h4>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
+                                <div><strong>Patient ID:</strong> <span id="selectedPatientIdDispensingAdmin"></span></div>
+                                <div><strong>Age:</strong> <span id="selectedPatientAgeDispensingAdmin"></span></div>
+                                <div><strong>Status:</strong> <span id="selectedPatientStatusDispensingAdmin"></span></div>
+                                <div><strong>Doctor:</strong> <span id="selectedPatientDoctorDispensingAdmin"></span></div>
+                            </div>
+                        </div>
+
+                        <div id="drugDispensingHistoryAdmin" style="display: none; margin-top: 24px;">
+                            <h4 style="color: var(--dark-pink); margin-bottom: 16px;">
+                                <i class="fas fa-history"></i> Dispensing History
+                            </h4>
+                            <div id="drugDispensingHistoryTableAdmin"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
 }
+

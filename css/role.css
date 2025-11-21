@@ -59,9 +59,75 @@
     justify-content: space-between;
 }
 
+/* Stats Card Layout */
+.stat-card .card-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 15px;
+}
+
+.stat-card .stat-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.stat-card .stat-number {
+    font-size: 36px;
+    font-weight: 700;
+    color: var(--dark-pink);
+    line-height: 1;
+}
+
+.stat-card .card-content {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+}
+
+.stat-card .card-content p {
+    margin: 0;
+    font-size: 14px;
+    color: var(--text-light);
+    flex: 1;
+}
+
+.btn-view-stat {
+    padding: 8px 16px;
+    background: var(--dark-pink);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+}
+
+.btn-view-stat:hover {
+    background: var(--secondary-pink);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(176, 90, 122, 0.3);
+}
+
+.btn-view-stat i {
+    font-size: 12px;
+}
+
 @media (max-width: 1400px) {
     .dashboard-cards-wrapper .cards-grid {
         grid-template-columns: 1fr;
+    }
+    
+    .stat-card .stat-number {
+        font-size: 32px;
     }
 }
 
@@ -134,10 +200,6 @@
 
 /* Hide actions for Patient role */
 body.patient-role .patients-table .actions-column {
-    display: none;
-}
-
-body.patient-role .patients-table th:nth-child(6) {
     display: none;
 }
 
@@ -1093,5 +1155,281 @@ body.patient-role .patients-table th:nth-child(6) {
     .btn-info {
         width: 100%;
         justify-content: center;
+    }
+}
+
+/* Awards Carousel Styles */
+.awards-carousel-wrapper {
+    flex: 0 0 40%;
+}
+
+.awards-carousel-container {
+    background: var(--white);
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+}
+
+.awards-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-dark);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.awards-title i {
+    color: var(--dark-pink);
+}
+
+.awards-carousel {
+    position: relative;
+    overflow: hidden;
+    border-radius: 12px;
+    background: var(--light-pink);
+}
+
+.carousel-track {
+    display: flex;
+    transition: transform 0.5s ease-in-out;
+}
+
+.award-slide {
+    min-width: 100%;
+    display: none;
+    flex-direction: column;
+}
+
+.award-slide.active {
+    display: flex;
+}
+
+.award-slide img {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1 / 1;
+    object-fit: cover;
+    border-radius: 12px;
+}
+
+.award-caption {
+    padding: 20px;
+    text-align: center;
+    background: var(--white);
+    border-radius: 0 0 12px 12px;
+}
+
+.award-caption h4 {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--dark-pink);
+    margin: 0 0 8px 0;
+}
+
+.award-caption p {
+    font-size: 14px;
+    color: var(--text-light);
+    margin: 0;
+    line-height: 1.5;
+}
+
+.carousel-btn {
+    position: absolute;
+    top: 45%;
+    transform: translateY(-50%);
+    background: rgba(255, 255, 255, 0.9);
+    border: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    z-index: 10;
+}
+
+.carousel-btn:hover {
+    background: var(--dark-pink);
+    color: white;
+    transform: translateY(-50%) scale(1.1);
+}
+
+.carousel-btn.prev {
+    left: 15px;
+}
+
+.carousel-btn.next {
+    right: 15px;
+}
+
+.carousel-indicators {
+    position: absolute;
+    bottom: 100px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 10px;
+    z-index: 10;
+}
+
+.indicator {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.5);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 2px solid white;
+}
+
+.indicator.active {
+    background: var(--dark-pink);
+    width: 30px;
+    border-radius: 6px;
+}
+
+.indicator:hover {
+    background: rgba(255, 255, 255, 0.8);
+}
+
+@media (max-width: 1200px) {
+    .awards-carousel-wrapper {
+        flex: 1;
+    }
+}
+
+@media (max-width: 768px) {
+    .carousel-btn {
+        width: 35px;
+        height: 35px;
+    }
+    
+    .carousel-btn.prev {
+        left: 10px;
+    }
+    
+    .carousel-btn.next {
+        right: 10px;
+    }
+    
+    .award-caption h4 {
+        font-size: 16px;
+    }
+    
+    .award-caption p {
+        font-size: 13px;
+    }
+}
+
+/* Awards Management Section (Admin) */
+.awards-management-section {
+    margin-top: 30px;
+    background: var(--white);
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+}
+
+.awards-management-section .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid var(--light-pink);
+}
+
+.awards-management-section .section-header h3 {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text-dark);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0;
+}
+
+.awards-management-section .section-header h3 i {
+    color: var(--dark-pink);
+}
+
+.awards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 24px;
+}
+
+.award-card {
+    background: var(--white);
+    border: 2px solid var(--light-pink);
+    border-radius: 12px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.award-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+    border-color: var(--secondary-pink);
+}
+
+.award-image-container {
+    width: 100%;
+    height: 250px;
+    overflow: hidden;
+    background: var(--light-pink);
+}
+
+.award-image-container img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.award-info {
+    padding: 20px;
+}
+
+.award-info h4 {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--dark-pink);
+    margin: 0 0 10px 0;
+}
+
+.award-info p {
+    font-size: 14px;
+    color: var(--text-light);
+    margin: 0 0 15px 0;
+    line-height: 1.5;
+}
+
+.award-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.award-actions .btn {
+    flex: 1;
+}
+
+@media (max-width: 768px) {
+    .awards-management-section .section-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+    
+    .awards-management-section .section-header button {
+        width: 100%;
+    }
+    
+    .awards-grid {
+        grid-template-columns: 1fr;
     }
 }

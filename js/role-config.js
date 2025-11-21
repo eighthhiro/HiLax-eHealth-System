@@ -40,20 +40,19 @@ const ROLE_PERMISSIONS = {
             'Patient demographics', 'Nurse PRD / vital signs', 'MedTech results', 
             'RadTech results', 'Pharmacy dispense logs', 'Billing summary (optional)'
         ],
-        insert: ['Prescriptions', 'Diagnostic orders (labs / imaging)'],
-        update: ['Their own prescriptions', 'Progress notes (if included)'],
+        insert: ['Prescriptions', 'Progress notes'],
+        update: ['Their own prescriptions', 'Progress notes'],
         cannot: [
             'DELETE: Patient records, Lab results, Imaging results, Billing, Staff records',
             'EDIT: Vital signs, Pharmacy logs, Lab/Imaging values'
         ],
         menu: [
             { icon: 'fas fa-tachometer-alt', text: 'Dashboard', id: 'dashboard' },
-            { icon: 'fas fa-user-injured', text: 'My Patients', id: 'my-patients' },
+            { icon: 'fas fa-user-injured', text: 'Patient List', id: 'patient-list' },
+            { icon: 'fas fa-file-medical', text: 'Progress Notes', id: 'progress-notes' },
             { icon: 'fas fa-prescription', text: 'Prescriptions', id: 'prescriptions' },
-            { icon: 'fas fa-stethoscope', text: 'Diagnostic Orders', id: 'diagnostic-orders' },
             { icon: 'fas fa-flask', text: 'Lab Results', id: 'lab-results' },
             { icon: 'fas fa-x-ray', text: 'Imaging Results', id: 'imaging-results' },
-            { icon: 'fas fa-file-medical', text: 'Progress Notes', id: 'progress-notes' },
             { icon: 'fas fa-heartbeat', text: 'Vital Signs', id: 'vital-signs' }
         ]
     },
@@ -91,9 +90,8 @@ const ROLE_PERMISSIONS = {
         menu: [
             { icon: 'fas fa-tachometer-alt', text: 'Dashboard', id: 'dashboard' },
             { icon: 'fas fa-prescription', text: 'Prescriptions', id: 'prescriptions' },
-            { icon: 'fas fa-pills', text: 'Drug Inventory', id: 'drug-inventory' },
+            { icon: 'fas fa-boxes', text: 'Drug Inventory', id: 'drug-inventory' },
             { icon: 'fas fa-capsules', text: 'Dispensing', id: 'dispensing' },
-            { icon: 'fas fa-boxes', text: 'Batch Management', id: 'batch-management' },
             { icon: 'fas fa-exclamation-triangle', text: 'Unavailable Meds', id: 'unavailable-meds' }
         ]
     },
@@ -106,24 +104,20 @@ const ROLE_PERMISSIONS = {
         ],
         menu: [
             { icon: 'fas fa-tachometer-alt', text: 'Dashboard', id: 'dashboard' },
-            { icon: 'fas fa-vial', text: 'Lab Orders', id: 'lab-orders' },
-            { icon: 'fas fa-microscope', text: 'Test Results', id: 'test-results' },
-            { icon: 'fas fa-flask', text: 'Lab Tests', id: 'lab-tests' },
+            { icon: 'fas fa-vial', text: 'Lab Orders', id: 'lab-results' },
             { icon: 'fas fa-clipboard-check', text: 'Quality Control', id: 'quality-control' }
         ]
     },
     'RadTech': {
         view: ['Physician imaging requests', 'Patient demographics', 'PRD'],
-        insert: ['X-ray results', 'CT scan results', 'Image file links', 'Imaging impressions'],
-        update: ['X-ray results', 'CT scan results', 'Image file links', 'Imaging impressions'],
+        insert: ['Imaging results', 'Image files', 'Imaging impressions'],
+        update: ['Imaging results', 'Image files', 'Imaging impressions'],
         cannot: [
             'EDIT OR DELETE: Patient demographics, Lab results, Prescriptions, Billing, Vital signs'
         ],
         menu: [
             { icon: 'fas fa-tachometer-alt', text: 'Dashboard', id: 'dashboard' },
             { icon: 'fas fa-x-ray', text: 'Imaging Orders', id: 'imaging-orders' },
-            { icon: 'fas fa-camera', text: 'Radiology', id: 'radiology' },
-            { icon: 'fas fa-brain', text: 'CT Scans', id: 'ct-scans' },
             { icon: 'fas fa-file-image', text: 'Image Archive', id: 'image-archive' },
             { icon: 'fas fa-stethoscope', text: 'Impressions', id: 'impressions' }
         ]
