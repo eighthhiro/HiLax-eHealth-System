@@ -72,6 +72,7 @@ class AdminContent {
                     </div>
                 </div>
                 ${this.getAwardsManagementSection()}
+                ${this.getSystemManagementSection()}
                 ${new SharedContent(this.currentUser).getSocialFooter()}
             </div>
         `;
@@ -1524,6 +1525,83 @@ class AdminContent {
                                 <i class="fas fa-history"></i> Dispensing History
                             </h4>
                             <div id="drugDispensingHistoryTableAdmin"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    // System Management Section - Export/Import Data
+    getSystemManagementSection() {
+        return `
+            <div class="card" style="margin-top: 24px; border: 2px dashed #ddd;">
+                <div class="card-header" style="background: linear-gradient(135deg, #536976 0%, #292E49 100%); cursor: pointer;" onclick="this.parentElement.querySelector('.system-management-content').classList.toggle('hidden')">
+                    <h3 class="card-title" style="color: white; display: flex; align-items: center; justify-content: space-between;">
+                        <span>
+                            <i class="fas fa-cog"></i> System Management
+                        </span>
+                        <i class="fas fa-chevron-down" style="font-size: 14px;"></i>
+                    </h3>
+                </div>
+                <div class="card-content system-management-content hidden" style="padding: 24px;">
+                    <div style="background: #fff3cd; padding: 16px; border-left: 4px solid #ffc107; border-radius: 4px; margin-bottom: 20px;">
+                        <div style="display: flex; align-items: start; gap: 12px;">
+                            <i class="fas fa-exclamation-triangle" style="color: #856404; font-size: 20px; margin-top: 2px;"></i>
+                            <div>
+                                <strong style="color: #856404; display: block; margin-bottom: 4px;">System Administration Tools</strong>
+                                <p style="margin: 0; color: #856404; font-size: 14px;">These tools allow you to export and import all system data. Use with caution. Export data regularly for backup purposes.</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <!-- Export Data -->
+                        <div style="padding: 20px; border: 2px solid var(--light-pink); border-radius: 8px;">
+                            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+                                <div style="width: 48px; height: 48px; background: var(--light-pink); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                    <i class="fas fa-download" style="color: var(--dark-pink); font-size: 20px;"></i>
+                                </div>
+                                <div>
+                                    <h4 style="margin: 0; color: var(--dark-pink);">Export All Data</h4>
+                                    <p style="margin: 4px 0 0 0; font-size: 13px; color: #666;">Download complete system backup</p>
+                                </div>
+                            </div>
+                            <p style="font-size: 14px; color: #666; margin-bottom: 16px;">
+                                Exports all patients, staff, medical records, inventory, and system data to a JSON file.
+                            </p>
+                            <button class="btn btn-primary" id="exportAllDataBtn" style="width: 100%;">
+                                <i class="fas fa-file-download"></i> Export System Data
+                            </button>
+                        </div>
+                        
+                        <!-- Import Data -->
+                        <div style="padding: 20px; border: 2px solid var(--light-pink); border-radius: 8px;">
+                            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+                                <div style="width: 48px; height: 48px; background: var(--light-pink); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                    <i class="fas fa-upload" style="color: var(--dark-pink); font-size: 20px;"></i>
+                                </div>
+                                <div>
+                                    <h4 style="margin: 0; color: var(--dark-pink);">Import Data</h4>
+                                    <p style="margin: 4px 0 0 0; font-size: 13px; color: #666;">Restore from backup file</p>
+                                </div>
+                            </div>
+                            <p style="font-size: 14px; color: #666; margin-bottom: 16px;">
+                                Import previously exported data. This will merge with existing data.
+                            </p>
+                            <input type="file" id="importDataFileInput" accept=".json" style="display: none;">
+                            <button class="btn btn-secondary" id="importDataBtn" style="width: 100%;">
+                                <i class="fas fa-file-upload"></i> Import System Data
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-top: 20px; padding: 12px; background: #e7f3ff; border-left: 4px solid #2196F3; border-radius: 4px;">
+                        <div style="display: flex; align-items: start; gap: 10px;">
+                            <i class="fas fa-info-circle" style="color: #1976D2; margin-top: 2px;"></i>
+                            <p style="margin: 0; font-size: 13px; color: #1976D2;">
+                                <strong>Data Included:</strong> Patients, Staff, Medications, Vital Signs, Lab Results, Imaging Results, Prescriptions, Progress Notes, Nursing Assessments, Drug Inventory, Drug Dispensing, Unavailable Meds, Announcements, and all uploaded files.
+                            </p>
                         </div>
                     </div>
                 </div>

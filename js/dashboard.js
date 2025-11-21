@@ -251,8 +251,31 @@ class Dashboard {
         // Awards management (for admin)
         this.attachAwardsManagementListeners();
 
+        // System management (export/import for admin)
+        this.attachSystemManagementListeners();
+
         // Stat card view buttons
         this.attachStatCardListeners();
+    }
+
+    attachSystemManagementListeners() {
+        const exportBtn = document.getElementById('exportAllDataBtn');
+        const importBtn = document.getElementById('importDataBtn');
+        const importFileInput = document.getElementById('importDataFileInput');
+
+        if (exportBtn) {
+            exportBtn.addEventListener('click', () => this.exportAllSystemData());
+        }
+
+        if (importBtn && importFileInput) {
+            importBtn.addEventListener('click', () => importFileInput.click());
+            importFileInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    this.importSystemData(file);
+                }
+            });
+        }
     }
 
     attachStatCardListeners() {
@@ -7270,6 +7293,110 @@ class Dashboard {
 
         document.getElementById('closeQCDetailsBtn').addEventListener('click', closeModal);
         document.getElementById('closeQCModalBtn').addEventListener('click', closeModal);
+    }
+
+    // Export All Data
+    exportAllSystemData() {
+        try {
+            const exportData = {
+                exportDate: new Date().toISOString(),
+                systemVersion: '1.0',
+                data: {
+                    patients: JSON.parse(localStorage.getItem('patients') || '[]'),
+                    staff: JSON.parse(localStorage.getItem('staff') || '[]'),
+                    medications: JSON.parse(localStorage.getItem('medications') || '[]'),
+                    vitalSigns: JSON.parse(localStorage.getItem('vitalSigns') || '[]'),
+                    labResults: JSON.parse(localStorage.getItem('labResults') || '[]'),
+                    imagingResults: JSON.parse(localStorage.getItem('imagingResults') || '[]'),
+                    prescriptions: JSON.parse(localStorage.getItem('prescriptions') || '[]'),
+                    progressNotes: JSON.parse(localStorage.getItem('progressNotes') || '[]'),
+                    nursingAssessments: JSON.parse(localStorage.getItem('nursingAssessments') || '[]'),
+                    drugInventory: JSON.parse(localStorage.getItem('drugInventory') || '[]'),
+                    drugDispensing: JSON.parse(localStorage.getItem('drugDispensing') || '[]'),
+                    dispensingRecords: JSON.parse(localStorage.getItem('dispensingRecords') || '[]'),
+                    unavailableMeds: JSON.parse(localStorage.getItem('unavailableMeds') || '[]'),
+                    announcements: JSON.parse(localStorage.getItem('announcements') || '[]'),
+                    qualityControl: JSON.parse(localStorage.getItem('qualityControl') || '[]'),
+                    uploadedFiles: JSON.parse(localStorage.getItem('uploadedFiles') || '[]')
+                }
+            };
+
+            // Create blob and download
+            const dataStr = JSON.stringify(exportData, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `hilax-hospital-backup-${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+
+            this.showNotification('System data exported successfully!', 'success');
+        } catch (error) {
+            console.error('Export error:', error);
+            this.showNotification('Error exporting data: ' + error.message, 'error');
+        }
+    }
+
+    // Import System Data
+    importSystemData(file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const importData = JSON.parse(e.target.result);
+
+                // Validate data structure
+                if (!importData.data) {
+                    throw new Error('Invalid backup file format');
+                }
+
+                // Confirmation dialog
+                const proceed = confirm(
+                    `Import data from backup file?\n\n` +
+                    `Export Date: ${new Date(importData.exportDate).toLocaleString()}\n` +
+                    `System Version: ${importData.systemVersion || 'Unknown'}\n\n` +
+                    `This will merge the imported data with existing data. Continue?`
+                );
+
+                if (!proceed) return;
+
+                // Import each data type
+                Object.keys(importData.data).forEach(key => {
+                    const existingData = JSON.parse(localStorage.getItem(key) || '[]');
+                    const importedData = importData.data[key];
+
+                    if (Array.isArray(importedData) && Array.isArray(existingData)) {
+                        // Merge arrays, avoiding duplicates by ID if available
+                        const merged = [...existingData];
+                        importedData.forEach(item => {
+                            const existingIndex = merged.findIndex(existing => 
+                                existing.id && item.id && existing.id === item.id
+                            );
+                            if (existingIndex >= 0) {
+                                // Update existing item
+                                merged[existingIndex] = { ...merged[existingIndex], ...item };
+                            } else {
+                                // Add new item
+                                merged.push(item);
+                            }
+                        });
+                        localStorage.setItem(key, JSON.stringify(merged));
+                    } else {
+                        // For non-array data, just save it
+                        localStorage.setItem(key, JSON.stringify(importedData));
+                    }
+                });
+
+                this.showNotification('Data imported successfully! Refreshing page...', 'success');
+                setTimeout(() => location.reload(), 2000);
+            } catch (error) {
+                console.error('Import error:', error);
+                this.showNotification('Error importing data: ' + error.message, 'error');
+            }
+        };
+        reader.readAsText(file);
     }
 }
 

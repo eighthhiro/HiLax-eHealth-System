@@ -1,0 +1,12 @@
+/* System Management Section Styles */
+.system-management-content.hidden {
+    display: none;
+}
+
+.card-header[onclick] {
+    user-select: none;
+}
+
+.card-header[onclick]:hover {
+    opacity: 0.95;
+}
