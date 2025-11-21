@@ -420,3 +420,23 @@
     visibility: visible;
     opacity: 1;
 }
+
+/* Clickable staff nodes for HR/Admin */
+.tree-node[data-staff-id] {
+    position: relative;
+}
+
+body[data-role="HR/Admin"] .tree-node[data-staff-id],
+body[data-role="Admin"] .tree-node[data-staff-id] {
+    cursor: pointer;
+}
+
+body[data-role="HR/Admin"] .tree-node[data-staff-id]:hover,
+body[data-role="Admin"] .tree-node[data-staff-id]:hover {
+    box-shadow: 0 8px 25px rgba(176, 90, 122, 0.3);
+}
+
+body[data-role="HR/Admin"] .tree-node[data-staff-id]:active,
+body[data-role="Admin"] .tree-node[data-staff-id]:active {
+    transform: translateY(-3px);
+}

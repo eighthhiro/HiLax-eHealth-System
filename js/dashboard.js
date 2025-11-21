@@ -182,8 +182,10 @@ class Dashboard {
 
         contentArea.innerHTML = pageContent;
         
-        // Attach event listeners after content is loaded
-        this.attachPageEventListeners(pageId);
+        // Attach event listeners after content is loaded and DOM is updated
+        setTimeout(() => {
+            this.attachPageEventListeners(pageId);
+        }, 0);
     }
 
     attachPageEventListeners(pageId) {
@@ -412,11 +414,252 @@ class Dashboard {
     }
 
     attachStaffPageListeners() {
+        // Attach listeners for editable organizational hierarchy nodes
+        const editableNodes = document.querySelectorAll('.editable-node');
+        editableNodes.forEach(node => {
+            node.addEventListener('click', (e) => {
+                const nodeId = e.currentTarget.getAttribute('data-node-id');
+                const title = e.currentTarget.getAttribute('data-title');
+                const name = e.currentTarget.getAttribute('data-name');
+                this.showEditStaffNodeModal(nodeId, title, name);
+            });
+        });
+
+        // Add staff button
         const addStaffBtn = document.getElementById('addStaffBtn');
         if (addStaffBtn) {
             addStaffBtn.addEventListener('click', () => this.showAddStaffModal());
         }
     }
+
+    showEditStaffNodeModal(nodeId, title, name) {
+        const role = this.currentUser.role;
+        if (role !== 'HR/Admin') {
+            alert('Only HR/Admin can edit staff information.');
+            return;
+        }
+
+        // Create modal
+        const modal = document.createElement('div');
+        modal.className = 'modal';
+        modal.innerHTML = `
+            <div class="modal-content" style="max-width: 500px;">
+                <div class="modal-header">
+                    <h3><i class="fas fa-edit"></i> Edit Staff Member</h3>
+                    <span class="close">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label><i class="fas fa-briefcase"></i> Position/Title</label>
+                        <input type="text" id="staffTitle" class="form-control" value="${title}" readonly style="background: #f5f5f5; cursor: not-allowed;">
+                        <small style="color: #666; display: block; margin-top: 5px;">Position cannot be changed</small>
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-user"></i> Name *</label>
+                        <input type="text" id="staffName" class="form-control" value="${name}" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary close-btn">Cancel</button>
+                    <button class="btn btn-primary" id="saveStaffNodeBtn">
+                        <i class="fas fa-save"></i> Save Changes
+                    </button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+        modal.style.display = 'block';
+
+        // Close handlers
+        const closeBtn = modal.querySelector('.close');
+        const closeBtnSecondary = modal.querySelector('.close-btn');
+        closeBtn.onclick = () => {
+            document.body.removeChild(modal);
+        };
+        closeBtnSecondary.onclick = () => {
+            document.body.removeChild(modal);
+        };
+        modal.onclick = (e) => {
+            if (e.target === modal) {
+                document.body.removeChild(modal);
+            }
+        };
+
+        // Save button
+        const saveBtn = document.getElementById('saveStaffNodeBtn');
+        saveBtn.onclick = () => {
+            const newName = document.getElementById('staffName').value.trim();
+            
+            if (!newName) {
+                alert('Please enter a name.');
+                return;
+            }
+
+            // Save to localStorage
+            let hierarchyStaff = {};
+            try {
+                const stored = localStorage.getItem('hierarchyStaff');
+                if (stored) {
+                    hierarchyStaff = JSON.parse(stored);
+                }
+            } catch (error) {
+                console.error('Error loading hierarchy staff:', error);
+            }
+
+            hierarchyStaff[nodeId] = {
+                title: title,
+                name: newName
+            };
+
+            localStorage.setItem('hierarchyStaff', JSON.stringify(hierarchyStaff));
+
+            // Update the DOM
+            const nodeElement = document.querySelector(`[data-node-id="${nodeId}"]`);
+            if (nodeElement) {
+                const nameElement = nodeElement.querySelector('.node-name');
+                if (nameElement) {
+                    nameElement.textContent = newName;
+                }
+                nodeElement.setAttribute('data-name', newName);
+            }
+
+            document.body.removeChild(modal);
+            
+            // Show success message
+            this.showNotification('Staff member updated successfully!', 'success');
+        };
+    }
+
+    showAddStaffModal() {
+        // Create modal for adding new staff
+        const modal = document.createElement('div');
+        modal.className = 'modal';
+        modal.innerHTML = `
+            <div class="modal-content" style="max-width: 600px;">
+                <div class="modal-header">
+                    <h3><i class="fas fa-user-plus"></i> Add New Staff Member</h3>
+                    <span class="close">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label><i class="fas fa-user"></i> Full Name *</label>
+                        <input type="text" id="newStaffName" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-id-badge"></i> Display Name (with credentials) *</label>
+                        <input type="text" id="newStaffDisplayName" class="form-control" placeholder="e.g., Dr. John Doe, MD" required>
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-building"></i> Department *</label>
+                        <select id="newStaffDepartment" class="form-control" required>
+                            <option value="">Select Department</option>
+                            <option value="Medical">Medical</option>
+                            <option value="Nursing">Nursing</option>
+                            <option value="Pharmacy">Pharmacy</option>
+                            <option value="Laboratory">Laboratory</option>
+                            <option value="Radiology">Radiology</option>
+                            <option value="Administration">Administration</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-briefcase"></i> Position *</label>
+                        <select id="newStaffPosition" class="form-control" required>
+                            <option value="">Select Position</option>
+                            <option value="Physician">Physician</option>
+                            <option value="Nurse">Nurse</option>
+                            <option value="Pharmacist">Pharmacist</option>
+                            <option value="MedTech">Medical Technologist</option>
+                            <option value="RadTech">Radiology Technologist</option>
+                            <option value="Admin">Administrator</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-star"></i> Title *</label>
+                        <input type="text" id="newStaffTitle" class="form-control" placeholder="e.g., Chief Physician, Senior Nurse" required>
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-certificate"></i> Credentials</label>
+                        <input type="text" id="newStaffCredentials" class="form-control" placeholder="e.g., MD, RN, RPh">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary close-btn">Cancel</button>
+                    <button class="btn btn-primary" id="saveNewStaffBtn">
+                        <i class="fas fa-save"></i> Add Staff
+                    </button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+        modal.style.display = 'block';
+
+        // Close handlers
+        const closeBtn = modal.querySelector('.close');
+        const closeBtnSecondary = modal.querySelector('.close-btn');
+        closeBtn.onclick = () => {
+            document.body.removeChild(modal);
+        };
+        closeBtnSecondary.onclick = () => {
+            document.body.removeChild(modal);
+        };
+        modal.onclick = (e) => {
+            if (e.target === modal) {
+                document.body.removeChild(modal);
+            }
+        };
+
+        // Save button
+        const saveBtn = document.getElementById('saveNewStaffBtn');
+        saveBtn.onclick = () => {
+            const name = document.getElementById('newStaffName').value.trim();
+            const displayName = document.getElementById('newStaffDisplayName').value.trim();
+            const department = document.getElementById('newStaffDepartment').value;
+            const position = document.getElementById('newStaffPosition').value;
+            const title = document.getElementById('newStaffTitle').value.trim();
+            const credentials = document.getElementById('newStaffCredentials').value.trim();
+
+            if (!name || !displayName || !department || !position || !title) {
+                alert('Please fill in all required fields.');
+                return;
+            }
+
+            // Load existing staff
+            let staff = [];
+            try {
+                const stored = localStorage.getItem('staff');
+                if (stored) {
+                    staff = JSON.parse(stored);
+                }
+            } catch (error) {
+                console.error('Error loading staff:', error);
+            }
+
+            // Create new staff member
+            const newStaff = {
+                id: 'STAFF-' + Date.now(),
+                name: name,
+                displayName: displayName,
+                department: department,
+                position: position,
+                title: title,
+                credentials: credentials,
+                dateAdded: new Date().toISOString()
+            };
+
+            staff.unshift(newStaff); // Add to beginning of array
+            localStorage.setItem('staff', JSON.stringify(staff));
+
+            document.body.removeChild(modal);
+            
+            // Reload the page to show the new staff
+            this.loadPage('all-staff');
+            this.showNotification('Staff member added successfully!', 'success');
+        };
+    }
+
+
 
     addPatient() {
         this.showAddPatientModal();
@@ -1964,25 +2207,29 @@ class Dashboard {
                             </tr>
                         </thead>
                         <tbody>
-                            ${patientVitalSigns.map(vs => `
-                                <tr>
-                                    <td>${vs.recordedDate}</td>
-                                    <td>${vs.recordedTime}</td>
-                                    <td><strong>${vs.bloodPressure}</strong></td>
-                                    <td>${vs.heartRate}</td>
-                                    <td>${vs.temperature}</td>
-                                    <td>${vs.respiratoryRate}</td>
-                                    <td>${vs.oxygenSaturation}%</td>
-                                    <td>${vs.painLevel !== null ? vs.painLevel + '/10' : '-'}</td>
-                                    <td>${vs.recordedBy}</td>
+                            ${patientVitalSigns.map((vs, index) => `
+                                <tr style="border-top: ${index > 0 ? '8px solid #fff' : '0'}; background: #fafafa;">
+                                    <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${vs.recordedDate}</td>
+                                    <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${vs.recordedTime}</td>
+                                    <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;"><strong>${vs.bloodPressure}</strong></td>
+                                    <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${vs.heartRate}</td>
+                                    <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${vs.temperature}</td>
+                                    <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${vs.respiratoryRate}</td>
+                                    <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${vs.oxygenSaturation}%</td>
+                                    <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${vs.painLevel !== null ? vs.painLevel + '/10' : '-'}</td>
+                                    <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${vs.recordedBy}</td>
                                 </tr>
                                 ${vs.notes ? `
-                                <tr style="background: #f8f9fa;">
-                                    <td colspan="9" style="text-align: left; padding: 12px; border-left: 3px solid var(--dark-pink);">
+                                <tr style="background: #fafafa;">
+                                    <td colspan="9" style="text-align: left; padding: 12px 12px 14px 12px; border-left: 4px solid var(--dark-pink); border-bottom: 2px solid #e0e0e0; background: #fff3f8;">
                                         <strong style="color: var(--dark-pink);">Notes:</strong> ${vs.notes}
                                     </td>
                                 </tr>
-                                ` : ''}
+                                ` : `
+                                <tr style="background: #fafafa;">
+                                    <td colspan="9" style="padding: 0; border-bottom: 2px solid #e0e0e0; height: 4px;"></td>
+                                </tr>
+                                `}
                             `).join('')}
                         </tbody>
                     </table>
@@ -2107,136 +2354,7 @@ class Dashboard {
     }
 
     // Staff Management Methods
-    showAddStaffModal() {
-        const modal = document.createElement('div');
-        modal.className = 'modal-overlay';
-        modal.id = 'addStaffModal';
-        modal.innerHTML = `
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h2>Add New Staff Member</h2>
-                    <button class="modal-close" id="closeStaffModal">&times;</button>
-                </div>
-                <form id="addStaffForm" class="modal-form">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="staffName">Full Name *</label>
-                            <input type="text" id="staffName" placeholder="Enter full name" required>
-                        </div>
-                    </div>
 
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="staffDepartment">Department *</label>
-                            <select id="staffDepartment" required>
-                                <option value="">Select Department</option>
-                                <option value="Medical">Medical</option>
-                                <option value="Nursing">Nursing</option>
-                                <option value="Pharmacy">Pharmacy</option>
-                                <option value="Laboratory">Laboratory</option>
-                                <option value="Radiology">Radiology</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="staffPosition">Position *</label>
-                            <select id="staffPosition" required>
-                                <option value="">Select Position</option>
-                                <option value="Director">Director</option>
-                                <option value="Physician">Physician</option>
-                                <option value="Nurse">Nurse</option>
-                                <option value="Pharmacist">Pharmacist</option>
-                                <option value="Medical Technologist">Medical Technologist</option>
-                                <option value="Radiologic Technologist">Radiologic Technologist</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="staffTitle">Job Title</label>
-                            <input type="text" id="staffTitle" placeholder="e.g., Chief Physician, Head Nurse">
-                        </div>
-                        <div class="form-group">
-                            <label for="staffCredentials">Credentials</label>
-                            <input type="text" id="staffCredentials" placeholder="e.g., RN, RPh, MD">
-                        </div>
-                    </div>
-
-                    <div class="modal-actions">
-                        <button type="button" class="btn btn-secondary" id="cancelStaffBtn">Cancel</button>
-                        <button type="submit" class="btn btn-primary">Add Staff Member</button>
-                    </div>
-                </form>
-            </div>
-        `;
-
-        document.body.appendChild(modal);
-
-        // Event listeners
-        document.getElementById('closeStaffModal').addEventListener('click', () => modal.remove());
-        document.getElementById('cancelStaffBtn').addEventListener('click', () => modal.remove());
-        document.getElementById('addStaffForm').addEventListener('submit', (e) => {
-            e.preventDefault();
-            this.handleAddStaff(e);
-            modal.remove();
-        });
-    }
-
-    handleAddStaff(e) {
-        const staffName = document.getElementById('staffName').value.trim();
-        const department = document.getElementById('staffDepartment').value;
-        const position = document.getElementById('staffPosition').value;
-        const title = document.getElementById('staffTitle').value.trim();
-        const credentials = document.getElementById('staffCredentials').value.trim();
-
-        // Format display name
-        let displayName = staffName;
-        if (credentials) {
-            displayName += `, ${credentials}`;
-        }
-
-        // Create staff data object
-        const staffData = {
-            id: Date.now().toString(),
-            name: staffName,
-            displayName: displayName,
-            department: department,
-            position: position,
-            title: title || position,
-            credentials: credentials,
-            dateAdded: new Date().toISOString()
-        };
-
-        // Save to localStorage
-        this.saveStaffToStorage(staffData);
-
-        // Show success message
-        this.showNotification(`${displayName} added successfully to ${department} department!`, 'success');
-
-        // Reload the staff page
-        this.loadPage('all-staff');
-    }
-
-    saveStaffToStorage(staffData) {
-        let staff = [];
-        try {
-            const stored = localStorage.getItem('staff');
-            if (stored) {
-                staff = JSON.parse(stored);
-            }
-        } catch (error) {
-            console.error('Error loading staff:', error);
-        }
-
-        // Add new staff to beginning of array (LIFO)
-        staff.unshift(staffData);
-        
-        try {
-            localStorage.setItem('staff', JSON.stringify(staff));
-        } catch (error) {
-            console.error('Error saving staff:', error);
-        }
-    }
 
     // Billing Management Methods
     getBillingContent() {
@@ -3920,6 +4038,15 @@ class Dashboard {
         selectedPatientInfo.style.display = 'block';
         if (vitalSignsForm && this.currentUser.role === 'Nurse') {
             vitalSignsForm.style.display = 'block';
+            
+            // Set date and time to current by default if not already set
+            const recordedDateInput = document.getElementById('recordedDate');
+            const recordedTimeInput = document.getElementById('recordedTime');
+            if (recordedDateInput && !recordedDateInput.value) {
+                const now = new Date();
+                recordedDateInput.value = now.toISOString().split('T')[0];
+                recordedTimeInput.value = now.toTimeString().slice(0, 5);
+            }
         }
         vitalSignsHistory.style.display = 'block';
 
@@ -3945,6 +4072,11 @@ class Dashboard {
         document.getElementById('height').value = '';
         document.getElementById('painLevel').value = '';
         document.getElementById('vitalNotes').value = '';
+        
+        // Set date and time to current by default
+        const now = new Date();
+        document.getElementById('recordedDate').value = now.toISOString().split('T')[0];
+        document.getElementById('recordedTime').value = now.toTimeString().slice(0, 5);
     }
 
     saveVitalSigns(e) {
@@ -3955,6 +4087,10 @@ class Dashboard {
             this.showNotification('Please select a patient', 'error');
             return;
         }
+
+        const recordedDateInput = document.getElementById('recordedDate').value;
+        const recordedTimeInput = document.getElementById('recordedTime').value;
+        const recordedDateTime = new Date(`${recordedDateInput}T${recordedTimeInput}`);
 
         const vitalSignsData = {
             id: Date.now().toString(),
@@ -3971,14 +4107,24 @@ class Dashboard {
             painLevel: document.getElementById('painLevel').value ? parseInt(document.getElementById('painLevel').value) : null,
             notes: document.getElementById('vitalNotes').value,
             recordedBy: this.currentUser.name,
-            recordedAt: new Date().toISOString(),
-            recordedDate: new Date().toLocaleDateString(),
-            recordedTime: new Date().toLocaleTimeString()
+            recordedAt: recordedDateTime.toISOString(),
+            recordedDateRaw: recordedDateInput,
+            recordedTimeRaw: recordedTimeInput,
+            recordedDate: recordedDateTime.toLocaleDateString(),
+            recordedTime: recordedDateTime.toLocaleTimeString()
         };
 
         // Get existing vital signs from localStorage
         let allVitalSigns = JSON.parse(localStorage.getItem('vitalSigns') || '[]');
-        allVitalSigns.unshift(vitalSignsData); // Add to beginning of array
+        allVitalSigns.push(vitalSignsData);
+        
+        // Sort by recorded date and time (most recent first)
+        allVitalSigns.sort((a, b) => {
+            const dateTimeA = new Date(a.recordedAt);
+            const dateTimeB = new Date(b.recordedAt);
+            return dateTimeB - dateTimeA;
+        });
+        
         localStorage.setItem('vitalSigns', JSON.stringify(allVitalSigns));
 
         this.showNotification('Vital signs saved successfully!', 'success');
@@ -3989,7 +4135,14 @@ class Dashboard {
     loadVitalSignsHistory(patientId) {
         const historyTable = document.getElementById('vitalSignsHistoryTable');
         const allVitalSigns = JSON.parse(localStorage.getItem('vitalSigns') || '[]');
-        const patientVitalSigns = allVitalSigns.filter(vs => vs.patientId === patientId);
+        let patientVitalSigns = allVitalSigns.filter(vs => vs.patientId === patientId);
+        
+        // Sort by recorded date and time (most recent first)
+        patientVitalSigns.sort((a, b) => {
+            const dateTimeA = new Date(a.recordedAt);
+            const dateTimeB = new Date(b.recordedAt);
+            return dateTimeB - dateTimeA;
+        });
 
         if (patientVitalSigns.length === 0) {
             historyTable.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">No vital signs recorded yet.</p>';
@@ -4013,25 +4166,29 @@ class Dashboard {
                         </tr>
                     </thead>
                     <tbody>
-                        ${patientVitalSigns.map(vs => `
-                            <tr>
-                                <td>${vs.recordedDate}</td>
-                                <td>${vs.recordedTime}</td>
-                                <td><strong>${vs.bloodPressure}</strong></td>
-                                <td>${vs.heartRate}</td>
-                                <td>${vs.temperature}</td>
-                                <td>${vs.respiratoryRate}</td>
-                                <td>${vs.oxygenSaturation}%</td>
-                                <td>${vs.painLevel !== null ? vs.painLevel + '/10' : '-'}</td>
-                                <td>${vs.recordedBy}</td>
+                        ${patientVitalSigns.map((vs, index) => `
+                            <tr style="border-top: ${index > 0 ? '8px solid #fff' : '0'}; background: #fafafa;">
+                                <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${vs.recordedDate}</td>
+                                <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${vs.recordedTime}</td>
+                                <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;"><strong>${vs.bloodPressure}</strong></td>
+                                <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${vs.heartRate}</td>
+                                <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${vs.temperature}</td>
+                                <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${vs.respiratoryRate}</td>
+                                <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${vs.oxygenSaturation}%</td>
+                                <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${vs.painLevel !== null ? vs.painLevel + '/10' : '-'}</td>
+                                <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${vs.recordedBy}</td>
                             </tr>
                             ${vs.notes ? `
-                            <tr style="background: #f8f9fa;">
-                                <td colspan="9" style="text-align: left; padding: 12px; border-left: 3px solid var(--dark-pink);">
+                            <tr style="background: #fafafa;">
+                                <td colspan="9" style="text-align: left; padding: 12px 12px 14px 12px; border-left: 4px solid var(--dark-pink); border-bottom: 2px solid #e0e0e0; background: #fff3f8;">
                                     <strong style="color: var(--dark-pink);">Notes:</strong> ${vs.notes}
                                 </td>
                             </tr>
-                            ` : ''}
+                            ` : `
+                            <tr style="background: #fafafa;">
+                                <td colspan="9" style="padding: 0; border-bottom: 2px solid #e0e0e0; height: 4px;"></td>
+                            </tr>
+                            `}
                         `).join('')}
                     </tbody>
                 </table>
@@ -4122,6 +4279,13 @@ class Dashboard {
             if (medicationsForm) medicationsForm.style.display = 'block';
             medicationsHistory.style.display = 'block';
 
+            // Set prescribed date to today by default
+            const prescribedDateInput = document.getElementById('prescribedDate');
+            if (prescribedDateInput && !prescribedDateInput.value) {
+                const today = new Date().toISOString().split('T')[0];
+                prescribedDateInput.value = today;
+            }
+
             // Load medications history
             this.loadMedicationsHistory(patientId);
         }
@@ -4143,6 +4307,10 @@ class Dashboard {
         document.getElementById('duration').value = '';
         document.getElementById('startDate').value = '';
         document.getElementById('medicationNotes').value = '';
+        
+        // Set prescribed date to today by default
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('prescribedDate').value = today;
     }
 
     saveMedication(e) {
@@ -4155,6 +4323,9 @@ class Dashboard {
         }
 
         // Get form values
+        const prescribedDateInput = document.getElementById('prescribedDate').value;
+        const prescribedDateObj = new Date(prescribedDateInput);
+        
         const medication = {
             id: 'MED' + Date.now(),
             patientId: patientId,
@@ -4166,15 +4337,23 @@ class Dashboard {
             startDate: document.getElementById('startDate').value,
             notes: document.getElementById('medicationNotes').value,
             prescribedBy: 'Dr. Sta. Maria',
-            prescribedDate: new Date().toLocaleDateString('en-US'),
+            prescribedDate: prescribedDateObj.toLocaleDateString('en-US'),
+            prescribedDateRaw: prescribedDateInput, // Store raw date for sorting
             prescribedTime: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
         };
 
         // Get existing medications
         let medications = JSON.parse(localStorage.getItem('medications') || '[]');
         
-        // Add new medication at the beginning (most recent first)
-        medications.unshift(medication);
+        // Add new medication
+        medications.push(medication);
+        
+        // Sort medications by prescribed date (most recent first)
+        medications.sort((a, b) => {
+            const dateA = new Date(a.prescribedDateRaw || a.prescribedDate);
+            const dateB = new Date(b.prescribedDateRaw || b.prescribedDate);
+            return dateB - dateA;
+        });
         
         // Save to localStorage
         localStorage.setItem('medications', JSON.stringify(medications));
@@ -4191,7 +4370,14 @@ class Dashboard {
         if (!historyTable) return;
 
         const allMedications = JSON.parse(localStorage.getItem('medications') || '[]');
-        const patientMedications = allMedications.filter(med => med.patientId === patientId);
+        let patientMedications = allMedications.filter(med => med.patientId === patientId);
+        
+        // Sort by prescribed date chronologically (most recent first)
+        patientMedications.sort((a, b) => {
+            const dateA = new Date(a.prescribedDateRaw || a.prescribedDate);
+            const dateB = new Date(b.prescribedDateRaw || b.prescribedDate);
+            return dateB - dateA;
+        });
 
         if (patientMedications.length === 0) {
             historyTable.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">No medications prescribed yet.</p>';
@@ -4214,24 +4400,28 @@ class Dashboard {
                         </tr>
                     </thead>
                     <tbody>
-                        ${patientMedications.map(med => `
-                            <tr>
-                                <td><strong>${med.medicationName}</strong></td>
-                                <td>${med.dosage}</td>
-                                <td>${med.frequency}</td>
-                                <td>${med.route}</td>
-                                <td>${med.duration}</td>
-                                <td>${med.startDate}</td>
-                                <td>${med.prescribedDate}</td>
-                                <td>${med.prescribedBy}</td>
+                        ${patientMedications.map((med, index) => `
+                            <tr style="border-top: ${index > 0 ? '8px solid #fff' : '0'}; background: #fafafa;">
+                                <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;"><strong>${med.medicationName}</strong></td>
+                                <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${med.dosage}</td>
+                                <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${med.frequency}</td>
+                                <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${med.route}</td>
+                                <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${med.duration}</td>
+                                <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${med.startDate}</td>
+                                <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${med.prescribedDate}</td>
+                                <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${med.prescribedBy}</td>
                             </tr>
                             ${med.notes ? `
-                            <tr style="background: #f8f9fa;">
-                                <td colspan="8" style="text-align: left; padding: 12px; border-left: 3px solid var(--dark-pink);">
+                            <tr style="background: #fafafa;">
+                                <td colspan="8" style="text-align: left; padding: 12px 12px 14px 12px; border-left: 4px solid var(--dark-pink); border-bottom: 2px solid #e0e0e0; background: #fff3f8;">
                                     <strong style="color: var(--dark-pink);">Notes:</strong> ${med.notes}
                                 </td>
                             </tr>
-                            ` : ''}
+                            ` : `
+                            <tr style="background: #fafafa;">
+                                <td colspan="8" style="padding: 0; border-bottom: 2px solid #e0e0e0; height: 4px;"></td>
+                            </tr>
+                            `}
                         `).join('')}
                     </tbody>
                 </table>
@@ -4263,7 +4453,14 @@ class Dashboard {
 
         // Get medications for this patient
         const allMedications = JSON.parse(localStorage.getItem('medications') || '[]');
-        const patientMedications = allMedications.filter(med => med.patientId === patientId);
+        let patientMedications = allMedications.filter(med => med.patientId === patientId);
+        
+        // Sort by prescribed date chronologically (most recent first)
+        patientMedications.sort((a, b) => {
+            const dateA = new Date(a.prescribedDateRaw || a.prescribedDate);
+            const dateB = new Date(b.prescribedDateRaw || b.prescribedDate);
+            return dateB - dateA;
+        });
 
         const modal = document.createElement('div');
         modal.className = 'modal-overlay';
@@ -4298,24 +4495,28 @@ class Dashboard {
                             </tr>
                         </thead>
                         <tbody>
-                            ${patientMedications.map(med => `
-                                <tr>
-                                    <td><strong>${med.medicationName}</strong></td>
-                                    <td>${med.dosage}</td>
-                                    <td>${med.frequency}</td>
-                                    <td>${med.route}</td>
-                                    <td>${med.duration}</td>
-                                    <td>${med.startDate}</td>
-                                    <td>${med.prescribedDate}</td>
-                                    <td>${med.prescribedBy}</td>
+                            ${patientMedications.map((med, index) => `
+                                <tr style="border-top: ${index > 0 ? '8px solid #fff' : '0'}; background: #fafafa;">
+                                    <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;"><strong>${med.medicationName}</strong></td>
+                                    <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${med.dosage}</td>
+                                    <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${med.frequency}</td>
+                                    <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${med.route}</td>
+                                    <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${med.duration}</td>
+                                    <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${med.startDate}</td>
+                                    <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${med.prescribedDate}</td>
+                                    <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${med.prescribedBy}</td>
                                 </tr>
                                 ${med.notes ? `
-                                <tr style="background: #f8f9fa;">
-                                    <td colspan="8" style="text-align: left; padding: 12px; border-left: 3px solid var(--dark-pink);">
+                                <tr style="background: #fafafa;">
+                                    <td colspan="8" style="text-align: left; padding: 12px 12px 14px 12px; border-left: 4px solid var(--dark-pink); border-bottom: 2px solid #e0e0e0; background: #fff3f8;">
                                         <strong style="color: var(--dark-pink);">Notes:</strong> ${med.notes}
                                     </td>
                                 </tr>
-                                ` : ''}
+                                ` : `
+                                <tr style="background: #fafafa;">
+                                    <td colspan="8" style="padding: 0; border-bottom: 2px solid #e0e0e0; height: 4px;"></td>
+                                </tr>
+                                `}
                             `).join('')}
                         </tbody>
                     </table>
@@ -4624,7 +4825,14 @@ class Dashboard {
         if (!historyTable) return;
 
         const allPrescriptions = JSON.parse(localStorage.getItem('medications') || '[]');
-        const patientPrescriptions = allPrescriptions.filter(med => med.patientId === patientId);
+        let patientPrescriptions = allPrescriptions.filter(med => med.patientId === patientId);
+        
+        // Sort by prescribed date chronologically (most recent first)
+        patientPrescriptions.sort((a, b) => {
+            const dateA = new Date(a.prescribedDateRaw || a.prescribedDate);
+            const dateB = new Date(b.prescribedDateRaw || b.prescribedDate);
+            return dateB - dateA;
+        });
 
         if (patientPrescriptions.length === 0) {
             historyTable.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">No prescriptions yet.</p>';
@@ -4647,24 +4855,28 @@ class Dashboard {
                         </tr>
                     </thead>
                     <tbody>
-                        ${patientPrescriptions.map(med => `
-                            <tr>
-                                <td><strong>${med.medicationName}</strong></td>
-                                <td>${med.dosage}</td>
-                                <td>${med.frequency}</td>
-                                <td>${med.route}</td>
-                                <td>${med.duration}</td>
-                                <td>${med.startDate}</td>
-                                <td>${med.prescribedDate}</td>
-                                <td>${med.prescribedBy}</td>
+                        ${patientPrescriptions.map((med, index) => `
+                            <tr style="border-top: ${index > 0 ? '8px solid #fff' : '0'}; background: #fafafa;">
+                                <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;"><strong>${med.medicationName}</strong></td>
+                                <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${med.dosage}</td>
+                                <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${med.frequency}</td>
+                                <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${med.route}</td>
+                                <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${med.duration}</td>
+                                <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${med.startDate}</td>
+                                <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${med.prescribedDate}</td>
+                                <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${med.prescribedBy}</td>
                             </tr>
                             ${med.notes ? `
-                            <tr style="background: #f8f9fa;">
-                                <td colspan="8" style="text-align: left; padding: 12px; border-left: 3px solid var(--dark-pink);">
+                            <tr style="background: #fafafa;">
+                                <td colspan="8" style="text-align: left; padding: 12px 12px 14px 12px; border-left: 4px solid var(--dark-pink); border-bottom: 2px solid #e0e0e0; background: #fff3f8;">
                                     <strong style="color: var(--dark-pink);">Notes:</strong> ${med.notes}
                                 </td>
                             </tr>
-                            ` : ''}
+                            ` : `
+                            <tr style="background: #fafafa;">
+                                <td colspan="8" style="padding: 0; border-bottom: 2px solid #e0e0e0; height: 4px;"></td>
+                            </tr>
+                            `}
                         `).join('')}
                     </tbody>
                 </table>
@@ -4696,7 +4908,14 @@ class Dashboard {
 
         // Get prescriptions for this patient
         const allPrescriptions = JSON.parse(localStorage.getItem('medications') || '[]');
-        const patientPrescriptions = allPrescriptions.filter(med => med.patientId === patientId);
+        let patientPrescriptions = allPrescriptions.filter(med => med.patientId === patientId);
+        
+        // Sort by prescribed date chronologically (most recent first)
+        patientPrescriptions.sort((a, b) => {
+            const dateA = new Date(a.prescribedDateRaw || a.prescribedDate);
+            const dateB = new Date(b.prescribedDateRaw || b.prescribedDate);
+            return dateB - dateA;
+        });
 
         const modal = document.createElement('div');
         modal.className = 'modal-overlay';
@@ -4736,24 +4955,28 @@ class Dashboard {
                                 </tr>
                             </thead>
                             <tbody>
-                                ${patientPrescriptions.map(med => `
-                                    <tr>
-                                        <td><strong>${med.medicationName}</strong></td>
-                                        <td>${med.dosage}</td>
-                                        <td>${med.frequency}</td>
-                                        <td>${med.route}</td>
-                                        <td>${med.duration}</td>
-                                        <td>${med.startDate}</td>
-                                        <td>${med.prescribedDate}</td>
-                                        <td>${med.prescribedBy}</td>
+                                ${patientPrescriptions.map((med, index) => `
+                                    <tr style="border-top: ${index > 0 ? '8px solid #fff' : '0'}; background: #fafafa;">
+                                        <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;"><strong>${med.medicationName}</strong></td>
+                                        <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${med.dosage}</td>
+                                        <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${med.frequency}</td>
+                                        <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${med.route}</td>
+                                        <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${med.duration}</td>
+                                        <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${med.startDate}</td>
+                                        <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${med.prescribedDate}</td>
+                                        <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${med.prescribedBy}</td>
                                     </tr>
                                     ${med.notes ? `
-                                    <tr style="background: #f8f9fa;">
-                                        <td colspan="8" style="text-align: left; padding: 12px; border-left: 3px solid var(--dark-pink);">
+                                    <tr style="background: #fafafa;">
+                                        <td colspan="8" style="text-align: left; padding: 12px 12px 14px 12px; border-left: 4px solid var(--dark-pink); border-bottom: 2px solid #e0e0e0; background: #fff3f8;">
                                             <strong style="color: var(--dark-pink);">Notes:</strong> ${med.notes}
                                         </td>
                                     </tr>
-                                    ` : ''}
+                                    ` : `
+                                    <tr style="background: #fafafa;">
+                                        <td colspan="8" style="padding: 0; border-bottom: 2px solid #e0e0e0; height: 4px;"></td>
+                                    </tr>
+                                    `}
                                 `).join('')}
                             </tbody>
                         </table>
@@ -4869,10 +5092,13 @@ class Dashboard {
 
     clearLabResultsForm() {
         document.getElementById('testType').value = '';
-        document.getElementById('testDate').value = '';
         document.getElementById('labStatus').value = 'Completed';
         document.getElementById('labResultDetails').value = '';
         document.getElementById('resultFile').value = '';
+        
+        // Set test date to today by default
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('testDate').value = today;
         
         // Reset file name display
         const resultFileName = document.getElementById('resultFileName');
@@ -4896,6 +5122,7 @@ class Dashboard {
             patientId: patientId,
             testType: document.getElementById('testType').value,
             testDate: document.getElementById('testDate').value,
+            testDateRaw: document.getElementById('testDate').value,
             status: document.getElementById('labStatus').value,
             resultDetails: document.getElementById('labResultDetails').value,
             performedBy: this.currentUser.name,
@@ -4918,7 +5145,15 @@ class Dashboard {
         }
 
         let labResults = JSON.parse(localStorage.getItem('labResults') || '[]');
-        labResults.unshift(labResult);
+        labResults.push(labResult);
+        
+        // Sort by test date (most recent first)
+        labResults.sort((a, b) => {
+            const dateA = new Date(a.testDateRaw || a.testDate);
+            const dateB = new Date(b.testDateRaw || b.testDate);
+            return dateB - dateA;
+        });
+        
         localStorage.setItem('labResults', JSON.stringify(labResults));
 
         this.showNotification('Lab result saved successfully!', 'success');
@@ -4931,7 +5166,14 @@ class Dashboard {
         if (!historyTable) return;
 
         const allLabResults = JSON.parse(localStorage.getItem('labResults') || '[]');
-        const patientLabResults = allLabResults.filter(lab => lab.patientId === patientId);
+        let patientLabResults = allLabResults.filter(lab => lab.patientId === patientId);
+        
+        // Sort by test date (most recent first)
+        patientLabResults.sort((a, b) => {
+            const dateA = new Date(a.testDateRaw || a.testDate);
+            const dateB = new Date(b.testDateRaw || b.testDate);
+            return dateB - dateA;
+        });
 
         if (patientLabResults.length === 0) {
             historyTable.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">No lab results yet.</p>';
@@ -5431,11 +5673,14 @@ class Dashboard {
     clearImagingResultsForm() {
         document.getElementById('imagingType').value = '';
         document.getElementById('bodyPart').value = '';
-        document.getElementById('imagingDate').value = '';
         document.getElementById('imagingStatus').value = 'Completed';
         document.getElementById('imagingFindings').value = '';
         document.getElementById('radiologistName').value = '';
         document.getElementById('imagingFile').value = '';
+        
+        // Set default date to today
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('imagingDate').value = today;
     }
 
     saveImagingResult(e) {
@@ -5453,6 +5698,7 @@ class Dashboard {
             imagingType: document.getElementById('imagingType').value,
             bodyPart: document.getElementById('bodyPart').value,
             imagingDate: document.getElementById('imagingDate').value,
+            imagingDateRaw: document.getElementById('imagingDate').value,
             status: document.getElementById('imagingStatus').value,
             findings: document.getElementById('imagingFindings').value,
             radiologist: document.getElementById('radiologistName').value || 'Not specified',
@@ -5462,7 +5708,15 @@ class Dashboard {
         };
 
         let imagingResults = JSON.parse(localStorage.getItem('imagingResults') || '[]');
-        imagingResults.unshift(imagingResult);
+        imagingResults.push(imagingResult);
+        
+        // Sort by imaging date (newest first)
+        imagingResults.sort((a, b) => {
+            const dateA = new Date(a.imagingDateRaw || a.imagingDate);
+            const dateB = new Date(b.imagingDateRaw || b.imagingDate);
+            return dateB - dateA;
+        });
+        
         localStorage.setItem('imagingResults', JSON.stringify(imagingResults));
 
         this.showNotification('Imaging result saved successfully!', 'success');
@@ -5489,7 +5743,7 @@ class Dashboard {
                         <tr>
                             <th style="width: 15%;">Imaging Type</th>
                             <th style="width: 12%;">Body Part</th>
-                            <th style="width: 12%;">Date</th>
+                            <th style="width: 12%;">Imaging Date</th>
                             <th style="width: 10%;">Status</th>
                             <th style="width: 15%;">Radiologist</th>
                             <th style="width: 12%;">Recorded Date</th>
@@ -5630,6 +5884,7 @@ class Dashboard {
             patientId: patientId,
             imagingModality: document.getElementById('imagingModality').value,
             imagingDate: document.getElementById('imagingDate').value,
+            imagingDateRaw: document.getElementById('imagingDate').value,
             status: document.getElementById('imagingStatus').value,
             imagingFindings: document.getElementById('imagingFindings').value,
             performedBy: this.currentUser.name,
@@ -5652,7 +5907,15 @@ class Dashboard {
         }
 
         let imagingResults = JSON.parse(localStorage.getItem('imagingResults') || '[]');
-        imagingResults.unshift(imagingResult);
+        imagingResults.push(imagingResult);
+        
+        // Sort by imaging date (newest first)
+        imagingResults.sort((a, b) => {
+            const dateA = new Date(a.imagingDateRaw || a.imagingDate);
+            const dateB = new Date(b.imagingDateRaw || b.imagingDate);
+            return dateB - dateA;
+        });
+        
         localStorage.setItem('imagingResults', JSON.stringify(imagingResults));
 
         this.showNotification('Imaging result saved successfully!', 'success');
@@ -5665,7 +5928,14 @@ class Dashboard {
         if (!historyTable) return;
 
         const allImagingResults = JSON.parse(localStorage.getItem('imagingResults') || '[]');
-        const patientImagingResults = allImagingResults.filter(img => img.patientId === patientId);
+        let patientImagingResults = allImagingResults.filter(img => img.patientId === patientId);
+        
+        // Sort by imaging date (newest first)
+        patientImagingResults.sort((a, b) => {
+            const dateA = new Date(a.imagingDateRaw || a.imagingDate);
+            const dateB = new Date(b.imagingDateRaw || b.imagingDate);
+            return dateB - dateA;
+        });
 
         if (patientImagingResults.length === 0) {
             historyTable.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">No imaging results yet.</p>';
@@ -5678,7 +5948,7 @@ class Dashboard {
                     <thead>
                         <tr>
                             <th style="width: 18%;">Modality</th>
-                            <th style="width: 12%;">Date</th>
+                            <th style="width: 12%;">Imaging Date</th>
                             <th style="width: 10%;">Status</th>
                             <th style="width: 15%;">Performed By</th>
                             <th style="width: 12%;">Recorded Date</th>
@@ -5807,8 +6077,11 @@ class Dashboard {
         document.getElementById('batchNumber').value = '';
         document.getElementById('lotNumber').value = '';
         document.getElementById('expiryDate').value = '';
-        document.getElementById('dispensingDate').value = '';
         document.getElementById('drugDispensingNotes').value = '';
+        
+        // Set default date to today
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('dispensingDate').value = today;
     }
 
     saveDrugDispensing(e) {
@@ -5829,6 +6102,7 @@ class Dashboard {
             lotNumber: document.getElementById('lotNumber').value || 'Not specified',
             expiryDate: document.getElementById('expiryDate').value || 'Not specified',
             dispensedDate: document.getElementById('dispensingDate').value,
+            dispensedDateRaw: document.getElementById('dispensingDate').value,
             notes: document.getElementById('drugDispensingNotes').value,
             dispensedBy: this.currentUser.name,
             recordedDate: new Date().toLocaleDateString('en-US'),
@@ -5836,7 +6110,15 @@ class Dashboard {
         };
 
         let drugDispensings = JSON.parse(localStorage.getItem('drugDispensing') || '[]');
-        drugDispensings.unshift(drugDispensing);
+        drugDispensings.push(drugDispensing);
+        
+        // Sort by dispensed date (newest first)
+        drugDispensings.sort((a, b) => {
+            const dateA = new Date(a.dispensedDateRaw || a.dispensedDate);
+            const dateB = new Date(b.dispensedDateRaw || b.dispensedDate);
+            return dateB - dateA;
+        });
+        
         localStorage.setItem('drugDispensing', JSON.stringify(drugDispensings));
 
         this.showNotification('Drug dispensing recorded successfully!', 'success');
@@ -5871,23 +6153,27 @@ class Dashboard {
                         </tr>
                     </thead>
                     <tbody>
-                        ${patientDrugDispensings.map(disp => `
-                            <tr>
-                                <td><strong>${disp.drugName}</strong></td>
-                                <td>${disp.quantity}</td>
-                                <td>${disp.batchNumber}</td>
-                                <td>${disp.lotNumber}</td>
-                                <td>${disp.expiryDate}</td>
-                                <td>${disp.dispensedDate}</td>
-                                <td>${disp.dispensedBy}</td>
+                        ${patientDrugDispensings.map((disp, index) => `
+                            <tr style="border-top: ${index > 0 ? '8px solid #fff' : '0'}; background: #fafafa;">
+                                <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;"><strong>${disp.drugName}</strong></td>
+                                <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${disp.quantity}</td>
+                                <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${disp.batchNumber}</td>
+                                <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${disp.lotNumber}</td>
+                                <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${disp.expiryDate}</td>
+                                <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${disp.dispensedDate}</td>
+                                <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${disp.dispensedBy}</td>
                             </tr>
                             ${disp.notes ? `
-                            <tr style="background: #f8f9fa;">
-                                <td colspan="7" style="text-align: left; padding: 12px; border-left: 3px solid var(--dark-pink);">
+                            <tr style="background: #fafafa;">
+                                <td colspan="7" style="text-align: left; padding: 12px 12px 14px 12px; border-left: 4px solid var(--dark-pink); border-bottom: 2px solid #e0e0e0; background: #fff3f8;">
                                     <strong style="color: var(--dark-pink);">Notes:</strong> ${disp.notes}
                                 </td>
                             </tr>
-                            ` : ''}
+                            ` : `
+                            <tr style="background: #fafafa;">
+                                <td colspan="7" style="padding: 0; border-bottom: 2px solid #e0e0e0; height: 4px;"></td>
+                            </tr>
+                            `}
                         `).join('')}
                     </tbody>
                 </table>
@@ -5950,23 +6236,27 @@ class Dashboard {
                         </tr>
                     </thead>
                     <tbody>
-                        ${patientDrugDispensings.map(disp => `
-                            <tr>
-                                <td style="padding: 12px;"><strong>${disp.drugName}</strong></td>
-                                <td style="padding: 12px;">${disp.quantity}</td>
-                                <td style="padding: 12px;">${disp.batchNumber}</td>
-                                <td style="padding: 12px;">${disp.lotNumber}</td>
-                                <td style="padding: 12px;">${disp.expiryDate}</td>
-                                <td style="padding: 12px;">${disp.dispensedDate}</td>
-                                <td style="padding: 12px;">${disp.dispensedBy}</td>
+                        ${patientDrugDispensings.map((disp, index) => `
+                            <tr style="border-top: ${index > 0 ? '8px solid #fff' : '0'}; background: #fafafa;">
+                                <td style="padding: 12px; border-top: 2px solid #e0e0e0; padding-top: 14px;"><strong>${disp.drugName}</strong></td>
+                                <td style="padding: 12px; border-top: 2px solid #e0e0e0; padding-top: 14px;">${disp.quantity}</td>
+                                <td style="padding: 12px; border-top: 2px solid #e0e0e0; padding-top: 14px;">${disp.batchNumber}</td>
+                                <td style="padding: 12px; border-top: 2px solid #e0e0e0; padding-top: 14px;">${disp.lotNumber}</td>
+                                <td style="padding: 12px; border-top: 2px solid #e0e0e0; padding-top: 14px;">${disp.expiryDate}</td>
+                                <td style="padding: 12px; border-top: 2px solid #e0e0e0; padding-top: 14px;">${disp.dispensedDate}</td>
+                                <td style="padding: 12px; border-top: 2px solid #e0e0e0; padding-top: 14px;">${disp.dispensedBy}</td>
                             </tr>
                             ${disp.notes ? `
-                            <tr style="background: #f8f9fa;">
-                                <td colspan="7" style="text-align: left; padding: 12px; border-left: 3px solid var(--dark-pink);">
+                            <tr style="background: #fafafa;">
+                                <td colspan="7" style="text-align: left; padding: 12px 12px 14px 12px; border-left: 4px solid var(--dark-pink); border-bottom: 2px solid #e0e0e0; background: #fff3f8;">
                                     <strong style="color: var(--dark-pink);">Notes:</strong> ${disp.notes}
                                 </td>
                             </tr>
-                            ` : ''}
+                            ` : `
+                            <tr style="background: #fafafa;">
+                                <td colspan="7" style="padding: 0; border-bottom: 2px solid #e0e0e0; height: 4px;"></td>
+                            </tr>
+                            `}
                         `).join('')}
                     </tbody>
                 </table>
@@ -6024,23 +6314,27 @@ class Dashboard {
                                 </tr>
                             </thead>
                             <tbody>
-                                ${patientDrugDispensings.map(disp => `
-                                    <tr>
-                                        <td><strong>${disp.drugName}</strong></td>
-                                        <td>${disp.quantity}</td>
-                                        <td>${disp.batchNumber}</td>
-                                        <td>${disp.lotNumber}</td>
-                                        <td>${disp.expiryDate}</td>
-                                        <td>${disp.dispensedDate}</td>
-                                        <td>${disp.dispensedBy}</td>
+                                ${patientDrugDispensings.map((disp, index) => `
+                                    <tr style="border-top: ${index > 0 ? '8px solid #fff' : '0'}; background: #fafafa;">
+                                        <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;"><strong>${disp.drugName}</strong></td>
+                                        <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${disp.quantity}</td>
+                                        <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${disp.batchNumber}</td>
+                                        <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${disp.lotNumber}</td>
+                                        <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${disp.expiryDate}</td>
+                                        <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${disp.dispensedDate}</td>
+                                        <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${disp.dispensedBy}</td>
                                     </tr>
                                     ${disp.notes ? `
-                                    <tr style="background: #f8f9fa;">
-                                        <td colspan="7" style="text-align: left; padding: 12px; border-left: 3px solid var(--dark-pink);">
+                                    <tr style="background: #fafafa;">
+                                        <td colspan="7" style="text-align: left; padding: 12px 12px 14px 12px; border-left: 4px solid var(--dark-pink); border-bottom: 2px solid #e0e0e0; background: #fff3f8;">
                                             <strong style="color: var(--dark-pink);">Notes:</strong> ${disp.notes}
                                         </td>
                                     </tr>
-                                    ` : ''}
+                                    ` : `
+                                    <tr style="background: #fafafa;">
+                                        <td colspan="7" style="padding: 0; border-bottom: 2px solid #e0e0e0; height: 4px;"></td>
+                                    </tr>
+                                    `}
                                 `).join('')}
                             </tbody>
                         </table>

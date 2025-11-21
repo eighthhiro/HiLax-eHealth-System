@@ -443,6 +443,24 @@ class NurseContent {
                                     </div>
                                 </div>
 
+                                <div class="form-row" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 16px;">
+                                    <div class="form-group">
+                                        <label for="recordedDate">
+                                            <i class="fas fa-calendar"></i> Recorded Date *
+                                        </label>
+                                        <input type="date" id="recordedDate" class="form-control" required>
+                                        <small style="color: #666; display: block; margin-top: 4px;">Date of measurement</small>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="recordedTime">
+                                            <i class="fas fa-clock"></i> Recorded Time *
+                                        </label>
+                                        <input type="time" id="recordedTime" class="form-control" required>
+                                        <small style="color: #666; display: block; margin-top: 4px;">Time of measurement</small>
+                                    </div>
+                                </div>
+
                                 <div class="form-group">
                                     <label for="vitalNotes">
                                         <i class="fas fa-notes-medical"></i> Clinical Notes

@@ -411,6 +411,10 @@ class PhysicianContent {
                                         <label for="startDate">Start Date <span style="color: red;">*</span></label>
                                         <input type="date" id="startDate" class="form-control" required>
                                     </div>
+                                    <div class="form-group">
+                                        <label for="prescribedDate">Date Prescribed <span style="color: red;">*</span></label>
+                                        <input type="date" id="prescribedDate" class="form-control" required>
+                                    </div>
                                 </div>
                                 <div class="form-group" style="margin-bottom: 20px;">
                                     <label for="medicationNotes">Instructions / Notes</label>

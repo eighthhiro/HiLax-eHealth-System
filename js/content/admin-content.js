@@ -236,6 +236,22 @@ class AdminContent {
     getAllStaffContent() {
         const role = this.currentUser.role;
         
+        // Load saved hierarchy staff names
+        let hierarchyStaff = {};
+        try {
+            const stored = localStorage.getItem('hierarchyStaff');
+            if (stored) {
+                hierarchyStaff = JSON.parse(stored);
+            }
+        } catch (error) {
+            console.error('Error loading hierarchy staff:', error);
+        }
+
+        // Helper function to get staff name
+        const getStaffName = (nodeId, defaultName) => {
+            return hierarchyStaff[nodeId] ? hierarchyStaff[nodeId].name : defaultName;
+        };
+        
         let addStaffButton = '';
         if (role === 'HR/Admin') {
             addStaffButton = `
@@ -360,13 +376,13 @@ class AdminContent {
                         <div class="org-tree">
                             <!-- Hospital Administrator -->
                             <div class="tree-level level-1">
-                                <div class="tree-node executive">
+                                <div class="tree-node executive editable-node" data-node-id="admin-1" data-title="Hospital Administrator" data-name="${getStaffName('admin-1', 'Dr. Maria Santos')}" style="cursor: pointer;">
                                     <div class="node-icon">
                                         <i class="fas fa-user-tie"></i>
                                     </div>
                                     <div class="node-content">
                                         <h4>Hospital Administrator</h4>
-                                        <p class="node-name">Dr. Maria Santos</p>
+                                        <p class="node-name">${getStaffName('admin-1', 'Dr. Maria Santos')}</p>
                                         <span class="node-badge">Executive</span>
                                     </div>
                                 </div>
@@ -376,46 +392,46 @@ class AdminContent {
                             <div class="tree-level level-2">
                                 <!-- Medical Director -->
                                 <div class="tree-branch">
-                                    <div class="tree-node director">
+                                    <div class="tree-node director editable-node" data-node-id="med-dir-1" data-title="Medical Director" data-name="${getStaffName('med-dir-1', 'Dr. Ramon Cruz')}" style="cursor: pointer;">
                                         <div class="node-icon">
                                             <i class="fas fa-user-md"></i>
                                         </div>
                                         <div class="node-content">
                                             <h4>Medical Director</h4>
-                                            <p class="node-name">Dr. Ramon Cruz</p>
+                                            <p class="node-name">${getStaffName('med-dir-1', 'Dr. Ramon Cruz')}</p>
                                             <span class="node-badge">Director</span>
                                         </div>
                                     </div>
                                     
                                     <!-- Physicians under Medical Director -->
                                     <div class="tree-children">
-                                        <div class="tree-node physician">
+                                        <div class="tree-node physician editable-node" data-node-id="phys-1" data-title="Chief Physician" data-name="${getStaffName('phys-1', 'Dr. Isabella Reyes')}" style="cursor: pointer;">
                                             <div class="node-icon">
                                                 <i class="fas fa-stethoscope"></i>
                                             </div>
                                             <div class="node-content">
                                                 <h4>Chief Physician</h4>
-                                                <p class="node-name">Dr. Isabella Reyes</p>
+                                                <p class="node-name">${getStaffName('phys-1', 'Dr. Isabella Reyes')}</p>
                                                 <span class="node-badge">Physician</span>
                                             </div>
                                         </div>
-                                        <div class="tree-node physician">
+                                        <div class="tree-node physician editable-node" data-node-id="phys-2" data-title="Senior Physician" data-name="${getStaffName('phys-2', 'Dr. Salvador')}" style="cursor: pointer;">
                                             <div class="node-icon">
                                                 <i class="fas fa-stethoscope"></i>
                                             </div>
                                             <div class="node-content">
                                                 <h4>Senior Physician</h4>
-                                                <p class="node-name">Dr. Salvador</p>
+                                                <p class="node-name">${getStaffName('phys-2', 'Dr. Salvador')}</p>
                                                 <span class="node-badge">Physician</span>
                                             </div>
                                         </div>
-                                        <div class="tree-node physician">
+                                        <div class="tree-node physician editable-node" data-node-id="phys-3" data-title="Physician" data-name="${getStaffName('phys-3', 'Dr. Sta.Maria')}" style="cursor: pointer;">
                                             <div class="node-icon">
                                                 <i class="fas fa-stethoscope"></i>
                                             </div>
                                             <div class="node-content">
                                                 <h4>Physician</h4>
-                                                <p class="node-name">Dr. Sta.Maria</p>
+                                                <p class="node-name">${getStaffName('phys-3', 'Dr. Sta.Maria')}</p>
                                                 <span class="node-badge">Physician</span>
                                             </div>
                                         </div>
@@ -424,46 +440,46 @@ class AdminContent {
 
                                 <!-- Nursing Director -->
                                 <div class="tree-branch">
-                                    <div class="tree-node director">
+                                    <div class="tree-node director editable-node" data-node-id="nurs-dir-1" data-title="Director of Nursing" data-name="${getStaffName('nurs-dir-1', 'Josefina Torres, RN')}" style="cursor: pointer;">
                                         <div class="node-icon">
                                             <i class="fas fa-user-nurse"></i>
                                         </div>
                                         <div class="node-content">
                                             <h4>Director of Nursing</h4>
-                                            <p class="node-name">Josefina Torres, RN</p>
+                                            <p class="node-name">${getStaffName('nurs-dir-1', 'Josefina Torres, RN')}</p>
                                             <span class="node-badge">Director</span>
                                         </div>
                                     </div>
                                     
                                     <!-- Nurses under Nursing Director -->
                                     <div class="tree-children">
-                                        <div class="tree-node nurse">
+                                        <div class="tree-node nurse editable-node" data-node-id="nurse-1" data-title="Head Nurse" data-name="${getStaffName('nurse-1', 'Maria Lourdes Santos, RN')}" style="cursor: pointer;">
                                             <div class="node-icon">
                                                 <i class="fas fa-heartbeat"></i>
                                             </div>
                                             <div class="node-content">
                                                 <h4>Head Nurse</h4>
-                                                <p class="node-name">Maria Lourdes Santos, RN</p>
+                                                <p class="node-name">${getStaffName('nurse-1', 'Maria Lourdes Santos, RN')}</p>
                                                 <span class="node-badge">Nurse</span>
                                             </div>
                                         </div>
-                                        <div class="tree-node nurse">
+                                        <div class="tree-node nurse editable-node" data-node-id="nurse-2" data-title="Senior Nurse" data-name="${getStaffName('nurse-2', 'Angelica Dela Cruz, RN')}" style="cursor: pointer;">
                                             <div class="node-icon">
                                                 <i class="fas fa-heartbeat"></i>
                                             </div>
                                             <div class="node-content">
                                                 <h4>Senior Nurse</h4>
-                                                <p class="node-name">Angelica Dela Cruz, RN</p>
+                                                <p class="node-name">${getStaffName('nurse-2', 'Angelica Dela Cruz, RN')}</p>
                                                 <span class="node-badge">Nurse</span>
                                             </div>
                                         </div>
-                                        <div class="tree-node nurse">
+                                        <div class="tree-node nurse editable-node" data-node-id="nurse-3" data-title="Staff Nurse" data-name="${getStaffName('nurse-3', 'Nurse Berna, RN')}" style="cursor: pointer;">
                                             <div class="node-icon">
                                                 <i class="fas fa-heartbeat"></i>
                                             </div>
                                             <div class="node-content">
                                                 <h4>Staff Nurse</h4>
-                                                <p class="node-name">Nurse Berna, RN</p>
+                                                <p class="node-name">${getStaffName('nurse-3', 'Nurse Berna, RN')}</p>
                                                 <span class="node-badge">Nurse</span>
                                             </div>
                                         </div>
@@ -472,36 +488,36 @@ class AdminContent {
 
                                 <!-- Pharmacy Director -->
                                 <div class="tree-branch">
-                                    <div class="tree-node director">
+                                    <div class="tree-node director editable-node" data-node-id="pharm-dir-1" data-title="Pharmacy Director" data-name="${getStaffName('pharm-dir-1', 'Dr. Antonio Garcia, RPh')}" style="cursor: pointer;">
                                         <div class="node-icon">
                                             <i class="fas fa-pills"></i>
                                         </div>
                                         <div class="node-content">
                                             <h4>Pharmacy Director</h4>
-                                            <p class="node-name">Dr. Antonio Garcia, RPh</p>
+                                            <p class="node-name">${getStaffName('pharm-dir-1', 'Dr. Antonio Garcia, RPh')}</p>
                                             <span class="node-badge">Director</span>
                                         </div>
                                     </div>
                                     
                                     <!-- Pharmacists -->
                                     <div class="tree-children">
-                                        <div class="tree-node pharmacist">
+                                        <div class="tree-node pharmacist editable-node" data-node-id="pharm-1" data-title="Senior Pharmacist" data-name="${getStaffName('pharm-1', 'Carmen Lopez, RPh')}" style="cursor: pointer;">
                                             <div class="node-icon">
                                                 <i class="fas fa-prescription-bottle"></i>
                                             </div>
                                             <div class="node-content">
                                                 <h4>Senior Pharmacist</h4>
-                                                <p class="node-name">Carmen Lopez, RPh</p>
+                                                <p class="node-name">${getStaffName('pharm-1', 'Carmen Lopez, RPh')}</p>
                                                 <span class="node-badge">Pharmacist</span>
                                             </div>
                                         </div>
-                                        <div class="tree-node pharmacist">
+                                        <div class="tree-node pharmacist editable-node" data-node-id="pharm-2" data-title="Pharmacist" data-name="${getStaffName('pharm-2', 'Pharmacist Jer, RPh')}" style="cursor: pointer;">
                                             <div class="node-icon">
                                                 <i class="fas fa-prescription-bottle"></i>
                                             </div>
                                             <div class="node-content">
                                                 <h4>Pharmacist</h4>
-                                                <p class="node-name">Pharmacist Jer, RPh</p>
+                                                <p class="node-name">${getStaffName('pharm-2', 'Pharmacist Jer, RPh')}</p>
                                                 <span class="node-badge">Pharmacist</span>
                                             </div>
                                         </div>
@@ -513,36 +529,36 @@ class AdminContent {
                             <div class="tree-level level-3">
                                 <!-- Lab Director -->
                                 <div class="tree-branch">
-                                    <div class="tree-node director">
+                                    <div class="tree-node director editable-node" data-node-id="lab-dir-1" data-title="Laboratory Director" data-name="${getStaffName('lab-dir-1', 'Dr. Ricardo Fernandez')}" style="cursor: pointer;">
                                         <div class="node-icon">
                                             <i class="fas fa-microscope"></i>
                                         </div>
                                         <div class="node-content">
                                             <h4>Laboratory Director</h4>
-                                            <p class="node-name">Dr. Ricardo Fernandez</p>
+                                            <p class="node-name">${getStaffName('lab-dir-1', 'Dr. Ricardo Fernandez')}</p>
                                             <span class="node-badge">Director</span>
                                         </div>
                                     </div>
                                     
                                     <!-- MedTechs -->
                                     <div class="tree-children">
-                                        <div class="tree-node medtech">
+                                        <div class="tree-node medtech editable-node" data-node-id="medtech-1" data-title="Senior Med Tech" data-name="${getStaffName('medtech-1', 'Patricia Aquino, RMT')}" style="cursor: pointer;">
                                             <div class="node-icon">
                                                 <i class="fas fa-vial"></i>
                                             </div>
                                             <div class="node-content">
                                                 <h4>Senior Med Tech</h4>
-                                                <p class="node-name">Patricia Aquino, RMT</p>
+                                                <p class="node-name">${getStaffName('medtech-1', 'Patricia Aquino, RMT')}</p>
                                                 <span class="node-badge">MedTech</span>
                                             </div>
                                         </div>
-                                        <div class="tree-node medtech">
+                                        <div class="tree-node medtech editable-node" data-node-id="medtech-2" data-title="Medical Technologist" data-name="${getStaffName('medtech-2', 'Lab Tech Cristel, RMT')}" style="cursor: pointer;">
                                             <div class="node-icon">
                                                 <i class="fas fa-vial"></i>
                                             </div>
                                             <div class="node-content">
                                                 <h4>Medical Technologist</h4>
-                                                <p class="node-name">Lab Tech Cristel, RMT</p>
+                                                <p class="node-name">${getStaffName('medtech-2', 'Lab Tech Cristel, RMT')}</p>
                                                 <span class="node-badge">MedTech</span>
                                             </div>
                                         </div>
@@ -551,36 +567,36 @@ class AdminContent {
 
                                 <!-- Radiology Director -->
                                 <div class="tree-branch">
-                                    <div class="tree-node director">
+                                    <div class="tree-node director editable-node" data-node-id="rad-dir-1" data-title="Radiology Director" data-name="${getStaffName('rad-dir-1', 'Dr. Rodrigo Villanueva')}" style="cursor: pointer;">
                                         <div class="node-icon">
                                             <i class="fas fa-x-ray"></i>
                                         </div>
                                         <div class="node-content">
                                             <h4>Radiology Director</h4>
-                                            <p class="node-name">Dr. Rodrigo Villanueva</p>
+                                            <p class="node-name">${getStaffName('rad-dir-1', 'Dr. Rodrigo Villanueva')}</p>
                                             <span class="node-badge">Director</span>
                                         </div>
                                     </div>
                                     
                                     <!-- RadTechs -->
                                     <div class="tree-children">
-                                        <div class="tree-node radtech">
+                                        <div class="tree-node radtech editable-node" data-node-id="radtech-1" data-title="Senior Rad Tech" data-name="${getStaffName('radtech-1', 'Stephanie Ramos, RT')}" style="cursor: pointer;">
                                             <div class="node-icon">
                                                 <i class="fas fa-radiation"></i>
                                             </div>
                                             <div class="node-content">
                                                 <h4>Senior Rad Tech</h4>
-                                                <p class="node-name">Stephanie Ramos, RT</p>
+                                                <p class="node-name">${getStaffName('radtech-1', 'Stephanie Ramos, RT')}</p>
                                                 <span class="node-badge">RadTech</span>
                                             </div>
                                         </div>
-                                        <div class="tree-node radtech">
+                                        <div class="tree-node radtech editable-node" data-node-id="radtech-2" data-title="Radiologic Technologist" data-name="${getStaffName('radtech-2', 'Radiology Tech Rafael, RT')}" style="cursor: pointer;">
                                             <div class="node-icon">
                                                 <i class="fas fa-radiation"></i>
                                             </div>
                                             <div class="node-content">
                                                 <h4>Radiologic Technologist</h4>
-                                                <p class="node-name">Radiology Tech Rafael, RT</p>
+                                                <p class="node-name">${getStaffName('radtech-2', 'Radiology Tech Rafael, RT')}</p>
                                                 <span class="node-badge">RadTech</span>
                                             </div>
                                         </div>
@@ -589,36 +605,36 @@ class AdminContent {
 
                                 <!-- HR/Admin Director -->
                                 <div class="tree-branch">
-                                    <div class="tree-node director">
+                                    <div class="tree-node director editable-node" data-node-id="hr-dir-1" data-title="HR/Admin Director" data-name="${getStaffName('hr-dir-1', 'Veronica Pascual')}" style="cursor: pointer;">
                                         <div class="node-icon">
                                             <i class="fas fa-user-cog"></i>
                                         </div>
                                         <div class="node-content">
                                             <h4>HR/Admin Director</h4>
-                                            <p class="node-name">Veronica Pascual</p>
+                                            <p class="node-name">${getStaffName('hr-dir-1', 'Veronica Pascual')}</p>
                                             <span class="node-badge">Director</span>
                                         </div>
                                     </div>
                                     
                                     <!-- Admin Staff -->
                                     <div class="tree-children">
-                                        <div class="tree-node admin">
+                                        <div class="tree-node admin editable-node" data-node-id="admin-2" data-title="Senior Admin" data-name="${getStaffName('admin-2', 'Luisa Santiago')}" style="cursor: pointer;">
                                             <div class="node-icon">
                                                 <i class="fas fa-clipboard-check"></i>
                                             </div>
                                             <div class="node-content">
                                                 <h4>Senior Admin</h4>
-                                                <p class="node-name">Luisa Santiago</p>
+                                                <p class="node-name">${getStaffName('admin-2', 'Luisa Santiago')}</p>
                                                 <span class="node-badge">Admin</span>
                                             </div>
                                         </div>
-                                        <div class="tree-node admin">
+                                        <div class="tree-node admin editable-node" data-node-id="admin-3" data-title="Admin Staff" data-name="${getStaffName('admin-3', 'Chief Admin')}" style="cursor: pointer;">
                                             <div class="node-icon">
                                                 <i class="fas fa-clipboard-check"></i>
                                             </div>
                                             <div class="node-content">
                                                 <h4>Admin Staff</h4>
-                                                <p class="node-name">Chief Admin</p>
+                                                <p class="node-name">${getStaffName('admin-3', 'Chief Admin')}</p>
                                                 <span class="node-badge">Admin</span>
                                             </div>
                                         </div>
