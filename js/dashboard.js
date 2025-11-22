@@ -5262,19 +5262,22 @@ class Dashboard {
             return;
         }
 
+        const userRole = (this.currentUser.role || '').trim();
+        const isViewOnly = userRole !== 'Physician'; // Only Physician can edit medications
         const tableHTML = `
             <div style="overflow-x: auto;">
-                <table class="patients-table" >
+                <table class="patients-table">
                     <thead>
                         <tr>
-                            <th style="width: 15%;">Medication</th>
-                            <th style="width: 10%;">Dosage</th>
-                            <th style="width: 12%;">Frequency</th>
-                            <th style="width: 10%;">Route</th>
-                            <th style="width: 10%;">Duration</th>
-                            <th style="width: 10%;">Start Date</th>
-                            <th style="width: 10%;">Date Prescribed</th>
-                            <th style="width: 13%;">Prescribed By</th>
+                            <th style="width: ${isViewOnly ? '16%' : '15%'};">Medication</th>
+                            <th style="width: ${isViewOnly ? '11%' : '10%'};">Dosage</th>
+                            <th style="width: ${isViewOnly ? '13%' : '12%'};">Frequency</th>
+                            <th style="width: ${isViewOnly ? '11%' : '10%'};">Route</th>
+                            <th style="width: ${isViewOnly ? '11%' : '10%'};">Duration</th>
+                            <th style="width: ${isViewOnly ? '11%' : '10%'};">Start Date</th>
+                            <th style="width: ${isViewOnly ? '11%' : '10%'};">Date Prescribed</th>
+                            <th style="width: ${isViewOnly ? '14%' : '13%'};">Prescribed By</th>
+                            ${isViewOnly ? '' : '<th style="width: 10%;">Actions</th>'}
                         </tr>
                     </thead>
                     <tbody>
@@ -5288,16 +5291,28 @@ class Dashboard {
                                 <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${med.startDate}</td>
                                 <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${med.prescribedDate}</td>
                                 <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${med.prescribedBy}</td>
+                                ${isViewOnly ? '' : `
+                                <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">
+                                    <div style="display: flex; gap: 6px; justify-content: center;">
+                                        <button class="btn btn-sm btn-edit-medication" data-id="${med.id}" style="padding: 6px 10px; font-size: 13px; background: var(--secondary-pink); color: white; border: none; border-radius: 4px; cursor: pointer;" title="Edit">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-delete-medication" data-id="${med.id}" style="padding: 6px 10px; font-size: 13px; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;" title="Delete">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                                `}
                             </tr>
                             ${med.notes ? `
                             <tr style="background: #fafafa;">
-                                <td colspan="8" style="text-align: left; padding: 12px 12px 14px 12px; border-left: 4px solid var(--dark-pink); border-bottom: 2px solid #e0e0e0; background: #fff3f8;">
+                                <td colspan="${isViewOnly ? '8' : '9'}" style="text-align: left; padding: 12px 12px 14px 12px; border-left: 4px solid var(--dark-pink); border-bottom: 2px solid #e0e0e0; background: #fff3f8;">
                                     <strong style="color: var(--dark-pink);">Notes:</strong> ${med.notes}
                                 </td>
                             </tr>
                             ` : `
                             <tr style="background: #fafafa;">
-                                <td colspan="8" style="padding: 0; border-bottom: 2px solid #e0e0e0; height: 4px;"></td>
+                                <td colspan="${isViewOnly ? '8' : '9'}" style="padding: 0; border-bottom: 2px solid #e0e0e0; height: 4px;"></td>
                             </tr>
                             `}
                         `).join('')}
@@ -5307,6 +5322,193 @@ class Dashboard {
         `;
 
         historyTable.innerHTML = tableHTML;
+
+        if (isViewOnly) return; // Skip event listeners for view-only roles
+
+        // Add event listeners for edit and delete buttons
+        const editButtons = historyTable.querySelectorAll('.btn-edit-medication');
+        editButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                this.editMedication(btn.dataset.id, patientId);
+            });
+        });
+
+        const deleteButtons = historyTable.querySelectorAll('.btn-delete-medication');
+        deleteButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                this.deleteMedication(btn.dataset.id, patientId);
+            });
+        });
+    }
+
+    // Edit medication with modal
+    editMedication(medicationId, patientId) {
+        const allMedications = JSON.parse(localStorage.getItem('medications') || '[]');
+        const medication = allMedications.find(m => m.id === medicationId && m.patientId === patientId);
+        
+        if (!medication) {
+            alert('Medication not found.');
+            return;
+        }
+
+        // Create modal with populated form
+        const modalHTML = `
+            <div class="modal-overlay" id="editMedicationModal" style="display: flex;">
+                <div class="modal-content" style="max-width: 600px; max-height: 90vh; overflow-y: auto;">
+                    <div class="modal-header">
+                        <h3 style="margin: 0; color: var(--dark-pink);">
+                            <i class="fas fa-edit"></i> Edit Medication
+                        </h3>
+                        <button class="close-modal" onclick="document.getElementById('editMedicationModal').remove()">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <form id="editMedicationForm" style="padding: 20px;">
+                        <div class="form-group">
+                            <label>Medication Name *</label>
+                            <input type="text" name="medicationName" value="${medication.medicationName}" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Dosage *</label>
+                            <input type="text" name="dosage" value="${medication.dosage}" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Frequency *</label>
+                            <select name="frequency" required>
+                                <option value="Once daily" ${medication.frequency === 'Once daily' ? 'selected' : ''}>Once daily</option>
+                                <option value="Twice daily" ${medication.frequency === 'Twice daily' ? 'selected' : ''}>Twice daily</option>
+                                <option value="Three times daily" ${medication.frequency === 'Three times daily' ? 'selected' : ''}>Three times daily</option>
+                                <option value="Four times daily" ${medication.frequency === 'Four times daily' ? 'selected' : ''}>Four times daily</option>
+                                <option value="Every 4 hours" ${medication.frequency === 'Every 4 hours' ? 'selected' : ''}>Every 4 hours</option>
+                                <option value="Every 6 hours" ${medication.frequency === 'Every 6 hours' ? 'selected' : ''}>Every 6 hours</option>
+                                <option value="Every 8 hours" ${medication.frequency === 'Every 8 hours' ? 'selected' : ''}>Every 8 hours</option>
+                                <option value="Every 12 hours" ${medication.frequency === 'Every 12 hours' ? 'selected' : ''}>Every 12 hours</option>
+                                <option value="As needed" ${medication.frequency === 'As needed' ? 'selected' : ''}>As needed (PRN)</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Route *</label>
+                            <select name="route" required>
+                                <option value="Oral" ${medication.route === 'Oral' ? 'selected' : ''}>Oral</option>
+                                <option value="IV" ${medication.route === 'IV' ? 'selected' : ''}>IV</option>
+                                <option value="IM" ${medication.route === 'IM' ? 'selected' : ''}>IM</option>
+                                <option value="SC" ${medication.route === 'SC' ? 'selected' : ''}>SC</option>
+                                <option value="Topical" ${medication.route === 'Topical' ? 'selected' : ''}>Topical</option>
+                                <option value="Inhalation" ${medication.route === 'Inhalation' ? 'selected' : ''}>Inhalation</option>
+                                <option value="Rectal" ${medication.route === 'Rectal' ? 'selected' : ''}>Rectal</option>
+                                <option value="Sublingual" ${medication.route === 'Sublingual' ? 'selected' : ''}>Sublingual</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Duration</label>
+                            <input type="text" name="duration" value="${medication.duration || ''}">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Start Date *</label>
+                            <input type="date" name="startDate" value="${medication.startDateRaw || medication.startDate}" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Date Prescribed *</label>
+                            <input type="date" name="prescribedDate" value="${medication.prescribedDateRaw || medication.prescribedDate}" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Prescribed By *</label>
+                            <input type="text" name="prescribedBy" value="${medication.prescribedBy}" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Notes (Optional)</label>
+                            <textarea name="notes" rows="3">${medication.notes || ''}</textarea>
+                        </div>
+                        
+                        <div style="display: flex; gap: 10px; margin-top: 20px;">
+                            <button type="submit" class="btn btn-primary" style="flex: 1;">
+                                <i class="fas fa-save"></i> Save Changes
+                            </button>
+                            <button type="button" class="btn btn-secondary" onclick="document.getElementById('editMedicationModal').remove()" style="flex: 1;">
+                                <i class="fas fa-times"></i> Cancel
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        `;
+        
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+        
+        // Handle form submission
+        const form = document.getElementById('editMedicationForm');
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData(form);
+            const startDateRaw = formData.get('startDate');
+            const startDate = new Date(startDateRaw).toLocaleDateString('en-US', { 
+                year: 'numeric', 
+                month: 'short', 
+                day: 'numeric' 
+            });
+            
+            const prescribedDateRaw = formData.get('prescribedDate');
+            const prescribedDate = new Date(prescribedDateRaw).toLocaleDateString('en-US', { 
+                year: 'numeric', 
+                month: 'short', 
+                day: 'numeric' 
+            });
+            
+            // Update medication data
+            medication.medicationName = formData.get('medicationName');
+            medication.dosage = formData.get('dosage');
+            medication.frequency = formData.get('frequency');
+            medication.route = formData.get('route');
+            medication.duration = formData.get('duration');
+            medication.startDate = startDate;
+            medication.startDateRaw = startDateRaw;
+            medication.prescribedDate = prescribedDate;
+            medication.prescribedDateRaw = prescribedDateRaw;
+            medication.prescribedBy = formData.get('prescribedBy');
+            medication.notes = formData.get('notes');
+            
+            // Save to localStorage
+            const medicationIndex = allMedications.findIndex(m => m.id === medicationId);
+            if (medicationIndex !== -1) {
+                allMedications[medicationIndex] = medication;
+                localStorage.setItem('medications', JSON.stringify(allMedications));
+            }
+            
+            // Close modal and refresh
+            document.getElementById('editMedicationModal').remove();
+            this.loadMedicationsHistory(patientId);
+            this.showNotification('Medication updated successfully', 'success');
+        });
+    }
+
+    // Delete medication with confirmation
+    deleteMedication(medicationId, patientId) {
+        const allMedications = JSON.parse(localStorage.getItem('medications') || '[]');
+        const medication = allMedications.find(m => m.id === medicationId && m.patientId === patientId);
+        
+        if (!medication) {
+            alert('Medication not found.');
+            return;
+        }
+
+        if (confirm(`Delete medication "${medication.medicationName}" (${medication.dosage})?`)) {
+            // Remove from localStorage
+            const updatedMedications = allMedications.filter(m => m.id !== medicationId);
+            localStorage.setItem('medications', JSON.stringify(updatedMedications));
+            
+            // Refresh table
+            this.loadMedicationsHistory(patientId);
+            this.showNotification('Medication deleted successfully', 'success');
+        }
     }
 
     showPatientMedicationsModal(patientId, returnToPersonalInfo = false) {
@@ -5717,19 +5919,22 @@ class Dashboard {
             return;
         }
 
+        const userRole = (this.currentUser.role || '').trim();
+        const isViewOnly = userRole !== 'Physician'; // Only Physician can edit prescriptions
         const tableHTML = `
             <div style="overflow-x: auto;">
-                <table class="patients-table" >
+                <table class="patients-table">
                     <thead>
                         <tr>
-                            <th style="width: 15%;">Medication</th>
-                            <th style="width: 10%;">Dosage</th>
-                            <th style="width: 12%;">Frequency</th>
-                            <th style="width: 10%;">Route</th>
-                            <th style="width: 10%;">Duration</th>
-                            <th style="width: 10%;">Start Date</th>
-                            <th style="width: 10%;">Date Prescribed</th>
-                            <th style="width: 13%;">Prescribed By</th>
+                            <th style="width: ${isViewOnly ? '16%' : '15%'};">Medication</th>
+                            <th style="width: ${isViewOnly ? '11%' : '10%'};">Dosage</th>
+                            <th style="width: ${isViewOnly ? '13%' : '12%'};">Frequency</th>
+                            <th style="width: ${isViewOnly ? '11%' : '10%'};">Route</th>
+                            <th style="width: ${isViewOnly ? '11%' : '10%'};">Duration</th>
+                            <th style="width: ${isViewOnly ? '11%' : '10%'};">Start Date</th>
+                            <th style="width: ${isViewOnly ? '11%' : '10%'};">Date Prescribed</th>
+                            <th style="width: ${isViewOnly ? '14%' : '13%'};">Prescribed By</th>
+                            ${isViewOnly ? '' : '<th style="width: 10%;">Actions</th>'}
                         </tr>
                     </thead>
                     <tbody>
@@ -5743,16 +5948,28 @@ class Dashboard {
                                 <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${med.startDate}</td>
                                 <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${med.prescribedDate}</td>
                                 <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${med.prescribedBy}</td>
+                                ${isViewOnly ? '' : `
+                                <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">
+                                    <div style="display: flex; gap: 6px; justify-content: center;">
+                                        <button class="btn btn-sm btn-edit-prescription" data-id="${med.id}" style="padding: 6px 10px; font-size: 13px; background: var(--secondary-pink); color: white; border: none; border-radius: 4px; cursor: pointer;" title="Edit">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-delete-prescription" data-id="${med.id}" style="padding: 6px 10px; font-size: 13px; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;" title="Delete">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                                `}
                             </tr>
                             ${med.notes ? `
                             <tr style="background: #fafafa;">
-                                <td colspan="8" style="text-align: left; padding: 12px 12px 14px 12px; border-left: 4px solid var(--dark-pink); border-bottom: 2px solid #e0e0e0; background: #fff3f8;">
+                                <td colspan="${isViewOnly ? '8' : '9'}" style="text-align: left; padding: 12px 12px 14px 12px; border-left: 4px solid var(--dark-pink); border-bottom: 2px solid #e0e0e0; background: #fff3f8;">
                                     <strong style="color: var(--dark-pink);">Notes:</strong> ${med.notes}
                                 </td>
                             </tr>
                             ` : `
                             <tr style="background: #fafafa;">
-                                <td colspan="8" style="padding: 0; border-bottom: 2px solid #e0e0e0; height: 4px;"></td>
+                                <td colspan="${isViewOnly ? '8' : '9'}" style="padding: 0; border-bottom: 2px solid #e0e0e0; height: 4px;"></td>
                             </tr>
                             `}
                         `).join('')}
@@ -5762,6 +5979,181 @@ class Dashboard {
         `;
 
         historyTable.innerHTML = tableHTML;
+
+        if (isViewOnly) return; // Skip event listeners for view-only roles
+
+        // Add event listeners for edit and delete buttons
+        const editButtons = historyTable.querySelectorAll('.btn-edit-prescription');
+        editButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                this.editPrescription(btn.dataset.id, patientId);
+            });
+        });
+
+        const deleteButtons = historyTable.querySelectorAll('.btn-delete-prescription');
+        deleteButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                this.deletePrescription(btn.dataset.id, patientId);
+            });
+        });
+    }
+
+    // Edit prescription with modal
+    editPrescription(prescriptionId, patientId) {
+        const allPrescriptions = JSON.parse(localStorage.getItem('medications') || '[]');
+        const prescription = allPrescriptions.find(p => p.id === prescriptionId && p.patientId === patientId);
+        
+        if (!prescription) {
+            alert('Prescription not found.');
+            return;
+        }
+
+        // Create modal with populated form
+        const modalHTML = `
+            <div class="modal-overlay" id="editPrescriptionModal" style="display: flex;">
+                <div class="modal-content" style="max-width: 600px; max-height: 90vh; overflow-y: auto;">
+                    <div class="modal-header">
+                        <h3 style="margin: 0; color: var(--dark-pink);">
+                            <i class="fas fa-edit"></i> Edit Prescription
+                        </h3>
+                        <button class="close-modal" onclick="document.getElementById('editPrescriptionModal').remove()">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <form id="editPrescriptionForm" style="padding: 20px;">
+                        <div class="form-group">
+                            <label>Medication Name *</label>
+                            <input type="text" name="medicationName" value="${prescription.medicationName}" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Dosage *</label>
+                            <input type="text" name="dosage" value="${prescription.dosage}" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Frequency *</label>
+                            <input type="text" name="frequency" value="${prescription.frequency}" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Route *</label>
+                            <select name="route" required>
+                                <option value="Oral" ${prescription.route === 'Oral' ? 'selected' : ''}>Oral</option>
+                                <option value="IV" ${prescription.route === 'IV' ? 'selected' : ''}>IV</option>
+                                <option value="IM" ${prescription.route === 'IM' ? 'selected' : ''}>IM</option>
+                                <option value="Topical" ${prescription.route === 'Topical' ? 'selected' : ''}>Topical</option>
+                                <option value="Subcutaneous" ${prescription.route === 'Subcutaneous' ? 'selected' : ''}>Subcutaneous</option>
+                                <option value="Other" ${prescription.route === 'Other' ? 'selected' : ''}>Other</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Duration *</label>
+                            <input type="text" name="duration" value="${prescription.duration}" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Start Date *</label>
+                            <input type="date" name="startDate" value="${prescription.startDateRaw || prescription.startDate}" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Date Prescribed *</label>
+                            <input type="date" name="prescribedDate" value="${prescription.prescribedDateRaw || prescription.prescribedDate}" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Prescribed By *</label>
+                            <input type="text" name="prescribedBy" value="${prescription.prescribedBy}" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Notes (Optional)</label>
+                            <textarea name="notes" rows="3">${prescription.notes || ''}</textarea>
+                        </div>
+                        
+                        <div style="display: flex; gap: 10px; margin-top: 20px;">
+                            <button type="submit" class="btn btn-primary" style="flex: 1;">
+                                <i class="fas fa-save"></i> Save Changes
+                            </button>
+                            <button type="button" class="btn btn-secondary" onclick="document.getElementById('editPrescriptionModal').remove()" style="flex: 1;">
+                                <i class="fas fa-times"></i> Cancel
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        `;
+        
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+        
+        // Handle form submission
+        const form = document.getElementById('editPrescriptionForm');
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData(form);
+            const startDateRaw = formData.get('startDate');
+            const startDate = new Date(startDateRaw).toLocaleDateString('en-US', { 
+                year: 'numeric', 
+                month: 'short', 
+                day: 'numeric' 
+            });
+            
+            const prescribedDateRaw = formData.get('prescribedDate');
+            const prescribedDate = new Date(prescribedDateRaw).toLocaleDateString('en-US', { 
+                year: 'numeric', 
+                month: 'short', 
+                day: 'numeric' 
+            });
+            
+            // Update prescription data
+            prescription.medicationName = formData.get('medicationName');
+            prescription.dosage = formData.get('dosage');
+            prescription.frequency = formData.get('frequency');
+            prescription.route = formData.get('route');
+            prescription.duration = formData.get('duration');
+            prescription.startDate = startDate;
+            prescription.startDateRaw = startDateRaw;
+            prescription.prescribedDate = prescribedDate;
+            prescription.prescribedDateRaw = prescribedDateRaw;
+            prescription.prescribedBy = formData.get('prescribedBy');
+            prescription.notes = formData.get('notes');
+            
+            // Save to localStorage
+            const prescriptionIndex = allPrescriptions.findIndex(p => p.id === prescriptionId);
+            if (prescriptionIndex !== -1) {
+                allPrescriptions[prescriptionIndex] = prescription;
+                localStorage.setItem('medications', JSON.stringify(allPrescriptions));
+            }
+            
+            // Close modal and refresh
+            document.getElementById('editPrescriptionModal').remove();
+            this.loadPrescriptionsHistory(patientId);
+            this.showNotification('Prescription updated successfully', 'success');
+        });
+    }
+
+    // Delete prescription with confirmation
+    deletePrescription(prescriptionId, patientId) {
+        const allPrescriptions = JSON.parse(localStorage.getItem('medications') || '[]');
+        const prescription = allPrescriptions.find(p => p.id === prescriptionId && p.patientId === patientId);
+        
+        if (!prescription) {
+            alert('Prescription not found.');
+            return;
+        }
+
+        if (confirm(`Delete prescription for "${prescription.medicationName}" (${prescription.dosage})?`)) {
+            // Remove from localStorage
+            const updatedPrescriptions = allPrescriptions.filter(p => p.id !== prescriptionId);
+            localStorage.setItem('medications', JSON.stringify(updatedPrescriptions));
+            
+            // Refresh table
+            this.loadPrescriptionsHistory(patientId);
+            this.showNotification('Prescription deleted successfully', 'success');
+        }
     }
 
     showPatientPrescriptionsModal(patientId) {
@@ -6192,12 +6584,18 @@ class Dashboard {
                         </div>
                         
                         <div class="form-group">
-                            <label>Replace File (Optional)</label>
+                            <label>
+                                <i class="fas fa-file-upload"></i> Replace Result File (Optional)
+                            </label>
                             ${lab.fileData ? `<p style="font-size: 12px; color: #666; margin-bottom: 8px;">
                                 <i class="fas fa-paperclip"></i> Current: ${lab.fileData.fileName} (${(lab.fileData.fileSize / 1024).toFixed(1)} KB)
                             </p>` : ''}
-                            <input type="file" name="labFile" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
-                            <small style="color: #666;">Leave empty to keep existing file</small>
+                            <input type="file" id="editLabResultFile" style="display: none;" accept=".pdf,.jpg,.jpeg,.png">
+                            <button type="button" class="btn btn-secondary" onclick="document.getElementById('editLabResultFile').click()" style="width: 100%; text-align: left; display: flex; align-items: center; justify-content: space-between; padding: 10px 16px;">
+                                <span id="editLabResultFileName" style="color: #666;">${lab.fileData ? lab.fileData.fileName : 'No file chosen'}</span>
+                                <i class="fas fa-upload"></i>
+                            </button>
+                            <small style="color: #666; display: block; margin-top: 4px;">Leave unchanged to keep existing file. Upload lab result document (PDF, JPG, PNG)</small>
                         </div>
                         
                         <div style="display: flex; gap: 10px; margin-top: 20px;">
@@ -6214,6 +6612,13 @@ class Dashboard {
         `;
         
         document.body.insertAdjacentHTML('beforeend', modalHTML);
+        
+        // Update filename display when file is selected
+        const fileInput = document.getElementById('editLabResultFile');
+        fileInput.addEventListener('change', (e) => {
+            const fileName = e.target.files.length > 0 ? e.target.files[0].name : (lab.fileData ? lab.fileData.fileName : 'No file chosen');
+            document.getElementById('editLabResultFileName').textContent = fileName;
+        });
         
         // Handle form submission
         const form = document.getElementById('editLabResultForm');
@@ -6244,7 +6649,6 @@ class Dashboard {
             });
             
             // Handle new file upload if provided
-            const fileInput = form.querySelector('input[type="file"]');
             if (fileInput.files.length > 0) {
                 const file = fileInput.files[0];
                 
@@ -6937,6 +7341,21 @@ class Dashboard {
                             <textarea name="findings" rows="4" required>${imaging.findings}</textarea>
                         </div>
                         
+                        <div class="form-group">
+                            <label>
+                                <i class="fas fa-file-upload"></i> Replace Image File (Optional)
+                            </label>
+                            ${imaging.fileData ? `<p style="font-size: 12px; color: #666; margin-bottom: 8px;">
+                                <i class="fas fa-paperclip"></i> Current: ${imaging.fileData.fileName} (${(imaging.fileData.fileSize / 1024).toFixed(1)} KB)
+                            </p>` : ''}
+                            <input type="file" id="editImagingResultFile" style="display: none;" accept=".pdf,.jpg,.jpeg,.png,.dicom,.dcm">
+                            <button type="button" class="btn btn-secondary" onclick="document.getElementById('editImagingResultFile').click()" style="width: 100%; text-align: left; display: flex; justify-content: space-between; align-items: center; padding: 10px 16px;">
+                                <span id="editImagingResultFileName" style="color: #666;">${imaging.fileData ? imaging.fileData.fileName : 'No file chosen'}</span>
+                                <i class="fas fa-upload"></i>
+                            </button>
+                            <small style="color: #666; display: block; margin-top: 4px;">Leave unchanged to keep existing file. Supported: PDF, JPG, PNG, DICOM</small>
+                        </div>
+                        
                         <div style="display: flex; gap: 10px; margin-top: 20px;">
                             <button type="submit" class="btn btn-primary" style="flex: 1;">
                                 <i class="fas fa-save"></i> Save Changes
@@ -6952,9 +7371,16 @@ class Dashboard {
         
         document.body.insertAdjacentHTML('beforeend', modalHTML);
         
+        // Update filename display when file is selected
+        const fileInput = document.getElementById('editImagingResultFile');
+        fileInput.addEventListener('change', (e) => {
+            const fileName = e.target.files.length > 0 ? e.target.files[0].name : (imaging.fileData ? imaging.fileData.fileName : 'No file chosen');
+            document.getElementById('editImagingResultFileName').textContent = fileName;
+        });
+        
         // Handle form submission
         const form = document.getElementById('editImagingResultForm');
-        form.addEventListener('submit', (e) => {
+        form.addEventListener('submit', async (e) => {
             e.preventDefault();
             
             const formData = new FormData(form);
@@ -6980,6 +7406,32 @@ class Dashboard {
                 hour: '2-digit',
                 minute: '2-digit'
             });
+            
+            // Handle new file upload if provided
+            if (fileInput.files.length > 0) {
+                const file = fileInput.files[0];
+                
+                try {
+                    // Delete old file if exists
+                    if (imaging.fileData) {
+                        await fileStorage.deleteFile('imagingResults', imaging.id);
+                    }
+                    
+                    // Store new file
+                    await fileStorage.storeFile('imagingResults', imaging.id, file);
+                    
+                    // Update file metadata
+                    imaging.fileData = {
+                        fileName: file.name,
+                        fileSize: file.size,
+                        fileType: file.type
+                    };
+                } catch (error) {
+                    console.error('Error uploading new file:', error);
+                    alert('Error uploading file: ' + error.message);
+                    return;
+                }
+            }
             
             // Save to localStorage
             const imagingIndex = allImagingResults.findIndex(img => img.id === imagingId);
@@ -7185,17 +7637,22 @@ class Dashboard {
             return;
         }
 
+        // Check if user can edit (only RadTech can edit)
+        const userRole = (this.currentUser.role || '').trim();
+        const isViewOnly = userRole !== 'RadTech';
+
         const tableHTML = `
             <div style="overflow-x: auto;">
                 <table class="patients-table" >
                     <thead>
                         <tr>
-                            <th style="width: 18%;">Modality</th>
-                            <th style="width: 12%;">Imaging Date</th>
-                            <th style="width: 10%;">Status</th>
-                            <th style="width: 15%;">Performed By</th>
-                            <th style="width: 12%;">Recorded Date</th>
-                            <th style="width: 10%;">File</th>
+                            <th style="width: ${isViewOnly ? '18%' : '16%'};">Modality</th>
+                            <th style="width: ${isViewOnly ? '12%' : '11%'};">Imaging Date</th>
+                            <th style="width: ${isViewOnly ? '10%' : '9%'};">Status</th>
+                            <th style="width: ${isViewOnly ? '15%' : '13%'};">Performed By</th>
+                            <th style="width: ${isViewOnly ? '12%' : '11%'};">Recorded Date</th>
+                            <th style="width: ${isViewOnly ? '10%' : '9%'};">File</th>
+                            ${isViewOnly ? '' : '<th style="width: 10%;">Actions</th>'}
                         </tr>
                     </thead>
                     <tbody>
@@ -7218,9 +7675,19 @@ class Dashboard {
                                         </button>
                                     ` : '<span style="color: #999; font-size: 12px;">No file</span>'}
                                 </td>
+                                ${isViewOnly ? '' : `
+                                <td>
+                                    <button class="btn-icon btn-edit" data-id="${img.id}" title="Edit" style="background: var(--secondary-pink); color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; margin-right: 4px;">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn-icon btn-delete" data-id="${img.id}" title="Delete" style="background: #dc3545; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer;">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </td>
+                                `}
                             </tr>
                             <tr style="background: #f8f9fa;">
-                                <td colspan="6" style="text-align: left; padding: 12px; border-left: 3px solid var(--dark-pink);">
+                                <td colspan="${isViewOnly ? '6' : '7'}" style="text-align: left; padding: 12px; border-left: 3px solid var(--dark-pink);">
                                     <strong style="color: var(--dark-pink);">Findings:</strong> ${img.imagingFindings}
                                     ${img.fileData ? `<br><small style="color: #666;"><i class="fas fa-paperclip"></i> ${img.fileData.fileName} (${(img.fileData.fileSize / 1024).toFixed(1)} KB)</small>` : ''}
                                 </td>
@@ -7232,6 +7699,215 @@ class Dashboard {
         `;
 
         historyTable.innerHTML = tableHTML;
+
+        // Attach event listeners for action buttons
+        if (!isViewOnly) {
+            const editButtons = historyTable.querySelectorAll('.btn-edit');
+            editButtons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    this.editImagingOrderResult(btn.dataset.id, patientId);
+                });
+            });
+
+            const deleteButtons = historyTable.querySelectorAll('.btn-delete');
+            deleteButtons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    this.deleteImagingOrderResult(btn.dataset.id, patientId);
+                });
+            });
+        }
+    }
+
+    // Edit imaging order result (for RadTech board)
+    editImagingOrderResult(imagingId, patientId) {
+        const allImagingResults = JSON.parse(localStorage.getItem('imagingResults') || '[]');
+        const imaging = allImagingResults.find(img => img.id === imagingId && img.patientId === patientId);
+        
+        if (!imaging) {
+            alert('Imaging result not found.');
+            return;
+        }
+
+        // Create modal with populated form
+        const modalHTML = `
+            <div class="modal-overlay" id="editImagingOrderModal" style="display: flex;">
+                <div class="modal-content" style="max-width: 600px; max-height: 90vh; overflow-y: auto;">
+                    <div class="modal-header">
+                        <h3 style="margin: 0; color: var(--dark-pink);">
+                            <i class="fas fa-edit"></i> Edit Imaging Result
+                        </h3>
+                        <button class="close-modal" onclick="document.getElementById('editImagingOrderModal').remove()">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <form id="editImagingOrderForm" style="padding: 20px;">
+                        <div class="form-group">
+                            <label>Imaging Modality *</label>
+                            <select name="imagingModality" required>
+                                <option value="X-Ray" ${imaging.imagingModality === 'X-Ray' ? 'selected' : ''}>X-Ray</option>
+                                <option value="CT Scan" ${imaging.imagingModality === 'CT Scan' ? 'selected' : ''}>CT Scan</option>
+                                <option value="MRI" ${imaging.imagingModality === 'MRI' ? 'selected' : ''}>MRI</option>
+                                <option value="Ultrasound" ${imaging.imagingModality === 'Ultrasound' ? 'selected' : ''}>Ultrasound</option>
+                                <option value="PET Scan" ${imaging.imagingModality === 'PET Scan' ? 'selected' : ''}>PET Scan</option>
+                                <option value="Mammography" ${imaging.imagingModality === 'Mammography' ? 'selected' : ''}>Mammography</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Imaging Date *</label>
+                            <input type="date" name="imagingDate" value="${imaging.imagingDateRaw || imaging.imagingDate}" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Status *</label>
+                            <select name="status" required>
+                                <option value="Pending" ${imaging.status === 'Pending' ? 'selected' : ''}>Pending</option>
+                                <option value="Completed" ${imaging.status === 'Completed' ? 'selected' : ''}>Completed</option>
+                                <option value="Reviewed" ${imaging.status === 'Reviewed' ? 'selected' : ''}>Reviewed</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Performed By *</label>
+                            <input type="text" name="performedBy" value="${imaging.performedBy}" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Findings *</label>
+                            <textarea name="imagingFindings" rows="4" required>${imaging.imagingFindings}</textarea>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>
+                                <i class="fas fa-file-upload"></i> Replace Image File (Optional)
+                            </label>
+                            ${imaging.fileData ? `<p style="font-size: 12px; color: #666; margin-bottom: 8px;">
+                                <i class="fas fa-paperclip"></i> Current: ${imaging.fileData.fileName} (${(imaging.fileData.fileSize / 1024).toFixed(1)} KB)
+                            </p>` : ''}
+                            <input type="file" id="editImagingOrderFile" style="display: none;" accept=".pdf,.jpg,.jpeg,.png,.dicom,.dcm">
+                            <button type="button" class="btn btn-secondary" onclick="document.getElementById('editImagingOrderFile').click()" style="width: 100%; text-align: left; display: flex; justify-content: space-between; align-items: center; padding: 10px 16px;">
+                                <span id="editImagingOrderFileName" style="color: #666;">${imaging.fileData ? imaging.fileData.fileName : 'No file chosen'}</span>
+                                <i class="fas fa-upload"></i>
+                            </button>
+                            <small style="color: #666; display: block; margin-top: 4px;">Leave unchanged to keep existing file. Supported: PDF, JPG, PNG, DICOM</small>
+                        </div>
+                        
+                        <div style="display: flex; gap: 10px; margin-top: 20px;">
+                            <button type="submit" class="btn btn-primary" style="flex: 1;">
+                                <i class="fas fa-save"></i> Save Changes
+                            </button>
+                            <button type="button" class="btn btn-secondary" onclick="document.getElementById('editImagingOrderModal').remove()" style="flex: 1;">
+                                <i class="fas fa-times"></i> Cancel
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        `;
+        
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+        
+        // Update filename display when file is selected
+        const fileInput = document.getElementById('editImagingOrderFile');
+        fileInput.addEventListener('change', (e) => {
+            const fileName = e.target.files.length > 0 ? e.target.files[0].name : (imaging.fileData ? imaging.fileData.fileName : 'No file chosen');
+            document.getElementById('editImagingOrderFileName').textContent = fileName;
+        });
+        
+        // Handle form submission
+        const form = document.getElementById('editImagingOrderForm');
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData(form);
+            const imagingDateRaw = formData.get('imagingDate');
+            const imagingDate = new Date(imagingDateRaw).toLocaleDateString('en-US', { 
+                year: 'numeric', 
+                month: 'short', 
+                day: 'numeric' 
+            });
+            
+            // Update imaging result data
+            imaging.imagingModality = formData.get('imagingModality');
+            imaging.imagingDate = imagingDate;
+            imaging.imagingDateRaw = imagingDateRaw;
+            imaging.status = formData.get('status');
+            imaging.performedBy = formData.get('performedBy');
+            imaging.imagingFindings = formData.get('imagingFindings');
+            imaging.recordedDate = new Date().toLocaleString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            
+            // Handle new file upload if provided
+            if (fileInput.files.length > 0) {
+                const file = fileInput.files[0];
+                
+                try {
+                    // Delete old file if exists
+                    if (imaging.fileData) {
+                        await fileStorage.deleteFile('imagingResults', imaging.id);
+                    }
+                    
+                    // Store new file
+                    await fileStorage.storeFile('imagingResults', imaging.id, file);
+                    
+                    // Update file metadata
+                    imaging.fileData = {
+                        fileName: file.name,
+                        fileSize: file.size,
+                        fileType: file.type
+                    };
+                } catch (error) {
+                    console.error('Error uploading new file:', error);
+                    alert('Error uploading file: ' + error.message);
+                    return;
+                }
+            }
+            
+            // Save to localStorage
+            const imagingIndex = allImagingResults.findIndex(img => img.id === imagingId);
+            if (imagingIndex !== -1) {
+                allImagingResults[imagingIndex] = imaging;
+                localStorage.setItem('imagingResults', JSON.stringify(allImagingResults));
+            }
+            
+            // Close modal and refresh
+            document.getElementById('editImagingOrderModal').remove();
+            this.loadImagingOrdersHistory(patientId);
+            this.showNotification('Imaging result updated successfully', 'success');
+        });
+    }
+
+    // Delete imaging order result with confirmation (for RadTech board)
+    deleteImagingOrderResult(imagingId, patientId) {
+        const allImagingResults = JSON.parse(localStorage.getItem('imagingResults') || '[]');
+        const imaging = allImagingResults.find(img => img.id === imagingId && img.patientId === patientId);
+        
+        if (!imaging) {
+            alert('Imaging result not found.');
+            return;
+        }
+
+        if (confirm(`Delete ${imaging.imagingModality} imaging performed on ${imaging.imagingDate}?\n\nFindings: ${imaging.imagingFindings.substring(0, 100)}...`)) {
+            // Delete file from IndexedDB if exists
+            if (imaging.fileData) {
+                fileStorage.deleteFile('imagingResults', imaging.id).catch(err => {
+                    console.error('Error deleting file:', err);
+                });
+            }
+            
+            // Remove from localStorage
+            const updatedResults = allImagingResults.filter(img => img.id !== imagingId);
+            localStorage.setItem('imagingResults', JSON.stringify(updatedResults));
+            
+            // Refresh table
+            this.loadImagingOrdersHistory(patientId);
+            this.showNotification('Imaging result deleted successfully', 'success');
+        }
     }
 
     // Drug Dispensing Listeners
