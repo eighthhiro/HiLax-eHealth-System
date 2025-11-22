@@ -2375,19 +2375,19 @@ class Dashboard {
                 const isAdmin = role === 'HR/Admin';
                 
                 return `
-                    <div class="announcement-item" style="border-bottom: 1px solid #f0f0f0; padding: 25px 0; margin-bottom: 15px;">
+                    <div class="announcement-item" style="border-bottom: 1px solid #f0f0f0; padding: 20px; margin-bottom: 0; background: white;">
                         <div class="announcement-header" style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
                             <h4 style="margin: 0; font-size: 16px; font-weight: 600; color: var(--text-dark);">${announcement.title}</h4>
                             <span class="announcement-date" style="font-size: 12px; color: #999; white-space: nowrap; margin-left: 15px;">${new Date(announcement.date).toLocaleDateString()}</span>
                         </div>
                         <p style="margin: 0; color: #666; line-height: 1.6; margin-bottom: ${isAdmin ? '15px' : '0'};">${announcement.description}</p>
                         ${isAdmin ? `
-                            <div style="display: flex; gap: 10px; margin-top: 10px;">
-                                <button class="btn btn-sm btn-edit-announcement-modal" data-id="${announcement.id}" style="padding: 6px 12px; font-size: 13px; background: var(--secondary-pink); color: white; border: none; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 5px;">
-                                    <i class="fas fa-edit"></i> Edit
+                            <div style="display: flex; gap: 8px; margin-top: 10px;">
+                                <button class="btn btn-sm btn-edit-announcement-modal" data-id="${announcement.id}" style="padding: 8px 12px; font-size: 14px; background: var(--secondary-pink); color: white; border: none; border-radius: 6px; cursor: pointer;" title="Edit">
+                                    <i class="fas fa-edit"></i>
                                 </button>
-                                <button class="btn btn-sm btn-delete-announcement-modal" data-id="${announcement.id}" style="padding: 6px 12px; font-size: 13px; background: #dc3545; color: white; border: none; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 5px;">
-                                    <i class="fas fa-trash-alt"></i> Delete
+                                <button class="btn btn-sm btn-delete-announcement-modal" data-id="${announcement.id}" style="padding: 8px 12px; font-size: 14px; background: #dc3545; color: white; border: none; border-radius: 6px; cursor: pointer;" title="Delete">
+                                    <i class="fas fa-trash-alt"></i>
                                 </button>
                             </div>
                         ` : ''}
@@ -2402,12 +2402,12 @@ class Dashboard {
         modal.className = 'modal-overlay';
         modal.id = 'allAnnouncementsModal';
         modal.innerHTML = `
-            <div class="modal-content" style="max-width: 800px; max-height: 90vh;">
+            <div class="modal-content" style="max-width: 800px; max-height: 90vh; display: flex; flex-direction: column;">
                 <div class="modal-header">
                     <h2><i class="fas fa-bullhorn"></i> All Announcements</h2>
                     <button class="modal-close" id="closeAnnouncementsModal">&times;</button>
                 </div>
-                <div class="modal-body" style="max-height: calc(90vh - 120px); overflow-y: auto; padding: 0 25px;">
+                <div style="overflow-y: auto; flex: 1;">
                     ${announcementsList}
                 </div>
             </div>
@@ -2427,16 +2427,146 @@ class Dashboard {
         
         editBtnsModal.forEach(btn => {
             btn.addEventListener('click', (e) => {
+                const announcementId = btn.getAttribute('data-id');
                 modal.remove();
-                this.editAnnouncement(e);
+                this.editAnnouncementById(announcementId);
             });
         });
         
         deleteBtnsModal.forEach(btn => {
             btn.addEventListener('click', (e) => {
-                modal.remove();
-                this.deleteAnnouncement(e);
+                const announcementId = btn.getAttribute('data-id');
+                this.deleteAnnouncementById(announcementId, modal);
             });
+        });
+    }
+
+    editAnnouncementById(announcementId) {
+        // Load announcements
+        let announcements = [];
+        try {
+            const stored = localStorage.getItem('announcements');
+            if (stored) {
+                announcements = JSON.parse(stored);
+            }
+        } catch (error) {
+            console.error('Error loading announcements:', error);
+            return;
+        }
+        
+        const announcement = announcements.find(a => a.id === announcementId);
+        if (!announcement) return;
+        
+        const modal = document.createElement('div');
+        modal.className = 'modal-overlay';
+        modal.innerHTML = `
+            <div class="modal-content announcement-modal">
+                <div class="modal-header">
+                    <h3>Edit Announcement</h3>
+                    <button class="modal-close">&times;</button>
+                </div>
+                <form id="editAnnouncementForm" class="modal-form">
+                    <div class="form-group">
+                        <label for="editAnnouncementTitle">Title *</label>
+                        <input type="text" id="editAnnouncementTitle" value="${announcement.title}" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="editAnnouncementDescription">Description *</label>
+                        <textarea id="editAnnouncementDescription" rows="4" required>${announcement.description}</textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Visible To *</label>
+                        <div class="checkbox-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="visibleTo" value="All" id="editVisibleAll" ${announcement.visibleTo.includes('All') ? 'checked' : ''}>
+                                <span>All Staff</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="visibleTo" value="HR/Admin" ${announcement.visibleTo.includes('HR/Admin') ? 'checked' : ''}>
+                                <span>HR/Admin</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="visibleTo" value="Physician" ${announcement.visibleTo.includes('Physician') ? 'checked' : ''}>
+                                <span>Physician</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="visibleTo" value="Nurse" ${announcement.visibleTo.includes('Nurse') ? 'checked' : ''}>
+                                <span>Nurse</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="visibleTo" value="Med Tech" ${announcement.visibleTo.includes('Med Tech') ? 'checked' : ''}>
+                                <span>Med Tech</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="visibleTo" value="Rad Tech" ${announcement.visibleTo.includes('Rad Tech') ? 'checked' : ''}>
+                                <span>Rad Tech</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="visibleTo" value="Pharmacist" ${announcement.visibleTo.includes('Pharmacist') ? 'checked' : ''}>
+                                <span>Pharmacist</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="visibleTo" value="Patient" ${announcement.visibleTo.includes('Patient') ? 'checked' : ''}>
+                                <span>Patient</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" id="cancelEditBtn">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Update Announcement</button>
+                    </div>
+                </form>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        
+        const form = document.getElementById('editAnnouncementForm');
+        const closeBtn = modal.querySelector('.modal-close');
+        const cancelBtn = document.getElementById('cancelEditBtn');
+        
+        const removeModal = () => document.body.removeChild(modal);
+        
+        closeBtn.addEventListener('click', removeModal);
+        cancelBtn.addEventListener('click', removeModal);
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) removeModal();
+        });
+        
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.handleEditAnnouncement(form, announcementId);
+            removeModal();
+        });
+    }
+
+    deleteAnnouncementById(announcementId, parentModal) {
+        this.showConfirmModal('Are you sure you want to delete this announcement?', () => {
+            // Load existing announcements
+            let announcements = [];
+            try {
+                const stored = localStorage.getItem('announcements');
+                if (stored) {
+                    announcements = JSON.parse(stored);
+                }
+            } catch (error) {
+                console.error('Error loading announcements:', error);
+                return;
+            }
+            
+            announcements = announcements.filter(a => a.id !== announcementId);
+            localStorage.setItem('announcements', JSON.stringify(announcements));
+            
+            this.showNotification('Announcement deleted successfully!', 'success');
+            
+            // Close the modal and reload
+            if (parentModal) {
+                parentModal.remove();
+            }
+            this.loadPage('dashboard');
         });
     }
 
