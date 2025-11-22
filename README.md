@@ -1,4 +1,4 @@
-Let me introduce myself first, Hello! I am Hebrew T. Miranda, Rizza Stamaria's Partner.
+Let me introduce myself first, **Hello! I am Hebrew T. Miranda, Rizza Stamaria's Partner.**
 Rizza and her group provided an open-source program that needed minor tweaks.
 As a developer, I came in to gladly help.
 
