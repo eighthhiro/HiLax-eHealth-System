@@ -149,12 +149,6 @@ class NurseContent {
                 Vital Signs
             </button>`;
             
-            // Medical History button - view only for nurses
-            const medicalHistoryBtn = `<button class="btn btn-sm btn-medical-history" data-patient-id="${patient.id}" title="View Medical History">
-                <i class="fas fa-notes-medical"></i>
-                History
-            </button>`;
-            
             tableRows += `
                 <tr data-patient-id="${patient.id}">
                     <td>${patient.id}</td>
@@ -166,7 +160,6 @@ class NurseContent {
                     <td>${billingBtn}</td>
                     <td>${recordsContent}</td>
                     <td>${vitalSignsBtn}</td>
-                    <td>${medicalHistoryBtn}</td>
                 </tr>
             `;
         });
@@ -193,7 +186,6 @@ class NurseContent {
                                     <th>Billing</th>
                                     <th>Records</th>
                                     <th>Vital Signs</th>
-                                    <th>Medical History</th>
                                 </tr>
                             </thead>
                             <tbody>

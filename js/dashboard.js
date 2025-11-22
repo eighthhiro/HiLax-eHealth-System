@@ -2105,6 +2105,10 @@ class Dashboard {
                         <i class="fas fa-x-ray"></i>
                         Imaging Results
                     </button>
+                    <button type="button" class="btn" id="viewMedicalHistoryBtn" style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); width: 100%; justify-content: flex-start; font-size: 13px; padding: 10px 12px; transition: all 0.3s;">
+                        <i class="fas fa-notes-medical"></i>
+                        Medical History
+                    </button>
                     <button type="button" class="btn" id="viewDrugDispensingBtn" style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); width: 100%; justify-content: flex-start; font-size: 13px; padding: 10px 12px; transition: all 0.3s;">
                         <i class="fas fa-pills"></i>
                         Drug Dispensing
@@ -2211,6 +2215,10 @@ class Dashboard {
             modal.remove();
             this.showPatientImagingResultsModal(patientId, true);
         });
+        document.getElementById('viewMedicalHistoryBtn').addEventListener('click', () => {
+            modal.remove();
+            this.showPatientMedicalHistoryModal(patientId, true);
+        });
         document.getElementById('viewDrugDispensingBtn').addEventListener('click', () => {
             modal.remove();
             this.showPatientDrugDispensingModal(patientId, true);
@@ -2270,19 +2278,19 @@ class Dashboard {
                 </div>
 
                 ${patientVitalSigns.length > 0 ? `
-                <div style="overflow-x: auto;">
+                <div style="max-height: 400px; overflow-y: auto; overflow-x: auto; position: relative;">
                     <table class="patients-table" style="min-width: 900px;">
-                        <thead>
+                        <thead style="position: sticky; top: 0; z-index: 10; background: white;">
                             <tr>
-                                <th style="width: 12%;">Date</th>
-                                <th style="width: 10%;">Time</th>
-                                <th style="width: 12%;">BP (mmHg)</th>
-                                <th style="width: 11%;">HR (bpm)</th>
-                                <th style="width: 11%;">Temp (°C)</th>
+                                <th style="width: 11%;">Date</th>
+                                <th style="width: 9%;">Time</th>
+                                <th style="width: 12%;">BP</th>
+                                <th style="width: 10%;">HR</th>
+                                <th style="width: 11%;">Temp</th>
                                 <th style="width: 8%;">RR</th>
-                                <th style="width: 11%;">SpO2 (%)</th>
-                                <th style="width: 9%;">Pain</th>
-                                <th style="width: 16%;">Recorded By</th>
+                                <th style="width: 10%;">SpO2</th>
+                                <th style="width: 8%;">Pain</th>
+                                <th style="width: 17%;">Recorded By</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -2320,7 +2328,7 @@ class Dashboard {
                 </div>
                 `}
 
-                <div class="modal-actions" style="margin-top: 24px;">
+                <div style="text-align: right; margin-top: 24px;">
                     <button type="button" class="btn btn-secondary" id="closeVitalSignsBtn">Close</button>
                 </div>
             </div>
@@ -2747,16 +2755,15 @@ class Dashboard {
         modal.id = 'billingReceiptModal';
         modal.innerHTML = `
             <div class="modal-content" style="max-width: 700px;">
-                <div class="modal-header">
-                    <h2><i class="fas fa-receipt"></i> Billing Receipt</h2>
-                    <button class="modal-close" id="closeReceiptModal">&times;</button>
+                <h2 style="color: var(--dark-pink); margin-bottom: 20px;">
+                    <i class="fas fa-receipt"></i> Billing Receipt
+                </h2>
+
+                <div style="text-align: center; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 2px solid var(--dark-pink);">
+                    <h1 style="margin: 0; color: var(--dark-pink);">HILAX HOSPITAL</h1>
+                    <p style="margin: 5px 0; color: #666;">Management System</p>
+                    <p style="margin: 0; font-size: 14px; color: #999;">Official Billing Statement</p>
                 </div>
-                <div class="modal-body" style="padding: 30px;">
-                    <div style="text-align: center; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 2px solid var(--dark-pink);">
-                        <h1 style="margin: 0; color: var(--dark-pink);">HILAX HOSPITAL</h1>
-                        <p style="margin: 5px 0; color: #666;">Management System</p>
-                        <p style="margin: 0; font-size: 14px; color: #999;">Official Billing Statement</p>
-                    </div>
 
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px;">
                         <div>
@@ -2818,11 +2825,11 @@ class Dashboard {
                         <p style="margin: 0;">Thank you for choosing HiLax Hospital</p>
                         <p style="margin: 5px 0 0 0;">For inquiries, please contact our billing department</p>
                     </div>
-                </div>
-                <div class="modal-actions">
+
+                <div style="text-align: right; margin-top: 20px;">
                     <button type="button" class="btn btn-secondary" id="closeReceiptBtn">Close</button>
                     ${this.currentUser.role === 'HR/Admin' ? `
-                    <button type="button" class="btn btn-primary" id="editBillingBtn">
+                    <button type="button" class="btn btn-primary" id="editBillingBtn" style="margin-left: 10px;">
                         <i class="fas fa-edit"></i>
                         Edit Billing
                     </button>
@@ -2833,7 +2840,6 @@ class Dashboard {
 
         document.body.appendChild(modal);
 
-        document.getElementById('closeReceiptModal').addEventListener('click', () => modal.remove());
         document.getElementById('closeReceiptBtn').addEventListener('click', () => modal.remove());
         
         // Edit button only exists for HR/Admin
@@ -3384,7 +3390,7 @@ class Dashboard {
 
         const tableHTML = `
             <div style="overflow-x: auto;">
-                <table class="patients-table" style="min-width: 1000px;">
+                <table class="patients-table" >
                     <thead>
                         <tr>
                             <th style="width: 12%;">Date</th>
@@ -3608,6 +3614,26 @@ class Dashboard {
         if (medicalHistoryForm) {
             medicalHistoryForm.addEventListener('submit', (e) => this.saveMedicalHistory(e, patientSelectId, tableContainerId));
         }
+
+        // Add category change listener to show/hide allergy fields
+        const categorySelect = document.getElementById('historyCategory');
+        if (categorySelect) {
+            categorySelect.addEventListener('change', (e) => {
+                const allergyFields = document.getElementById('allergyFields');
+                const allergenInput = document.getElementById('allergen');
+                if (allergyFields && allergenInput) {
+                    if (e.target.value === 'Allergy') {
+                        allergyFields.style.display = 'block';
+                        allergenInput.setAttribute('required', 'required');
+                    } else {
+                        allergyFields.style.display = 'none';
+                        allergenInput.removeAttribute('required');
+                        allergenInput.value = '';
+                        document.getElementById('isSignificantAllergy').checked = false;
+                    }
+                }
+            });
+        }
     }
 
     handleMedicalHistoryPatientSelection(patientId, role, patientInfoId, formId, displayId, tableContainerId) {
@@ -3683,6 +3709,19 @@ class Dashboard {
             recordedTime: new Date().toTimeString().slice(0, 5)
         };
 
+        // Add allergy-specific fields if category is Allergy
+        if (category === 'Allergy') {
+            const allergenInput = document.getElementById('allergen');
+            const isSignificantCheckbox = document.getElementById('isSignificantAllergy');
+            
+            if (allergenInput) {
+                entry.allergen = allergenInput.value.trim();
+            }
+            if (isSignificantCheckbox) {
+                entry.isSignificantAllergy = isSignificantCheckbox.checked;
+            }
+        }
+
         // Save to localStorage
         let medicalHistory = JSON.parse(localStorage.getItem('medicalHistory') || '[]');
         medicalHistory.push(entry);
@@ -3690,6 +3729,13 @@ class Dashboard {
 
         // Clear form
         document.getElementById('newMedicalHistoryForm').reset();
+        // Reset allergy fields visibility
+        const allergyFields = document.getElementById('allergyFields');
+        if (allergyFields) {
+            allergyFields.style.display = 'none';
+            const allergenInput = document.getElementById('allergen');
+            if (allergenInput) allergenInput.removeAttribute('required');
+        }
 
         // Reload history
         this.loadMedicalHistory(patientId, tableContainerId);
@@ -3723,10 +3769,9 @@ class Dashboard {
                         <tr>
                             <th style="width: 10%;">Date</th>
                             <th style="width: 12%;">Category</th>
-                            <th style="width: 18%;">Title</th>
-                            <th style="width: 35%;">Description</th>
+                            <th style="width: 20%;">Title</th>
                             <th style="width: 15%;">Recorded By</th>
-                            <th style="width: 10%;">Recorded Date</th>
+                            <th style="width: 12%;">Recorded Date</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -3735,6 +3780,7 @@ class Dashboard {
         patientHistory.forEach((entry, index) => {
             const displayDate = entry.date || 'N/A';
             const categoryColor = this.getCategoryColor(entry.category);
+            const allergyBadge = entry.isSignificantAllergy ? '<span style="background: #dc3545; color: white; padding: 2px 6px; border-radius: 3px; font-size: 11px; margin-left: 6px;">SIGNIFICANT</span>' : '';
             
             tableHTML += `
                 <tr style="border-top: ${index > 0 ? '8px solid #fff' : '0'}; background: #fafafa;">
@@ -3744,17 +3790,21 @@ class Dashboard {
                             ${entry.category}
                         </span>
                     </td>
-                    <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;"><strong>${entry.title}</strong></td>
-                    <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${entry.description}</td>
+                    <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;"><strong>${entry.title}</strong>${allergyBadge}${entry.allergen ? `<br><small style="color: #666;">Allergen: ${entry.allergen}</small>` : ''}</td>
                     <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${entry.recordedBy}</td>
                     <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${entry.recordedDate}</td>
+                </tr>
+                <tr style="background: #fafafa;">
+                    <td colspan="5" style="text-align: left; padding: 12px 12px 4px 12px; border-left: 4px solid ${categoryColor};">
+                        <strong style="color: ${categoryColor};">Description:</strong> ${entry.description}
+                    </td>
                 </tr>
             `;
 
             if (entry.notes) {
                 tableHTML += `
                     <tr style="background: #fafafa;">
-                        <td colspan="6" style="text-align: left; padding: 12px 12px 14px 12px; border-left: 4px solid var(--dark-pink); border-bottom: 2px solid #e0e0e0; background: #fff3f8;">
+                        <td colspan="5" style="text-align: left; padding: 12px 12px 14px 12px; border-left: 4px solid var(--dark-pink); border-bottom: 2px solid #e0e0e0; background: #fff3f8;">
                             <strong style="color: var(--dark-pink);">Notes:</strong> ${entry.notes}
                         </td>
                     </tr>
@@ -3762,7 +3812,7 @@ class Dashboard {
             } else {
                 tableHTML += `
                     <tr style="background: #fafafa;">
-                        <td colspan="6" style="padding: 0; border-bottom: 2px solid #e0e0e0; height: 4px;"></td>
+                        <td colspan="5" style="padding: 0; border-bottom: 2px solid #e0e0e0; height: 4px;"></td>
                     </tr>
                 `;
             }
@@ -4018,7 +4068,7 @@ class Dashboard {
 
         const tableHTML = `
             <div style="overflow-x: auto;">
-                <table class="patients-table" style="min-width: 1000px;">
+                <table class="patients-table" >
                     <thead>
                         <tr>
                             <th style="width: 12%;">Date</th>
@@ -4077,7 +4127,7 @@ class Dashboard {
 
         const tableHTML = `
             <div style="overflow-x: auto;">
-                <table class="patients-table" style="min-width: 1000px;">
+                <table class="patients-table" >
                     <thead>
                         <tr>
                             <th style="width: 12%;">Date</th>
@@ -4693,7 +4743,7 @@ class Dashboard {
 
         const tableHTML = `
             <div style="overflow-x: auto;">
-                <table class="patients-table" style="min-width: 1000px;">
+                <table class="patients-table" >
                     <thead>
                         <tr>
                             <th style="width: 15%;">Medication</th>
@@ -5148,7 +5198,7 @@ class Dashboard {
 
         const tableHTML = `
             <div style="overflow-x: auto;">
-                <table class="patients-table" style="min-width: 1000px;">
+                <table class="patients-table" >
                     <thead>
                         <tr>
                             <th style="width: 15%;">Medication</th>
@@ -5248,7 +5298,7 @@ class Dashboard {
 
                     ${patientPrescriptions.length > 0 ? `
                     <div style="overflow-x: auto;">
-                        <table class="patients-table" style="min-width: 1000px;">
+                        <table class="patients-table">
                             <thead>
                                 <tr>
                                     <th style="width: 15%;">Medication</th>
@@ -5489,7 +5539,7 @@ class Dashboard {
 
         const tableHTML = `
             <div style="overflow-x: auto;">
-                <table class="patients-table" style="min-width: 1000px;">
+                <table class="patients-table" >
                     <thead>
                         <tr>
                             <th style="width: 18%;">Test Type</th>
@@ -5552,34 +5602,30 @@ class Dashboard {
         modal.className = 'modal-overlay';
         modal.innerHTML = `
             <div class="modal-content" style="max-width: 1000px;">
-                <div class="modal-header">
-                    <h2>Lab Results - ${patient.fullName}</h2>
-                    <button class="modal-close" id="closeLabResultsModalBtn">&times;</button>
-                </div>
-                <div class="modal-body">
-                    <div style="margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-left: 4px solid var(--dark-pink); border-radius: 4px;">
-                        <h4 style="margin-bottom: 10px; color: var(--dark-pink);">
-                            <i class="fas fa-user-injured"></i> Patient Information
-                        </h4>
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
-                            <div><strong>Patient ID:</strong> ${patient.id}</div>
-                            <div><strong>Name:</strong> ${patient.fullName}</div>
-                            <div><strong>Age:</strong> ${patient.age}</div>
-                            <div><strong>Doctor:</strong> ${patient.doctor || 'Not Assigned'}</div>
-                        </div>
+                <h2 style="color: var(--dark-pink); margin-bottom: 20px;">
+                    <i class="fas fa-flask"></i> Lab Results - ${patient.fullName}
+                </h2>
+
+                <div style="margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-left: 4px solid var(--dark-pink); border-radius: 4px;">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
+                        <div><strong>Patient ID:</strong> ${patient.id}</div>
+                        <div><strong>Age:</strong> ${patient.age}</div>
+                        <div><strong>Physician:</strong> ${patient.doctor || 'Not Assigned'}</div>
+                        <div><strong>Status:</strong> ${patient.status}</div>
                     </div>
+                </div>
 
                     ${patientLabResults.length > 0 ? `
-                    <div style="overflow-x: auto;">
-                        <table class="patients-table" style="min-width: 1000px;">
-                            <thead>
+                    <div style="max-height: 400px; overflow-y: auto; overflow-x: auto; position: relative;">
+                        <table class="patients-table" style="min-width: 900px;">
+                            <thead style="position: sticky; top: 0; z-index: 10; background: white;">
                                 <tr>
-                                    <th style="width: 18%;">Test Type</th>
-                                    <th style="width: 12%;">Test Date</th>
-                                    <th style="width: 10%;">Status</th>
-                                    <th style="width: 15%;">Performed By</th>
-                                    <th style="width: 12%;">Recorded Date</th>
-                                    <th style="width: 10%;">File</th>
+                                    <th style="width: 20%;">Test Type</th>
+                                    <th style="width: 12%;">Date</th>
+                                    <th style="width: 12%;">Status</th>
+                                    <th style="width: 18%;">Performed By</th>
+                                    <th style="width: 13%;">Recorded</th>
+                                    <th style="width: 13%;">File</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -5619,27 +5665,22 @@ class Dashboard {
                     ` : `
                     <div style="text-align: center; padding: 40px; color: #999;">
                         <i class="fas fa-flask" style="font-size: 48px; margin-bottom: 16px; opacity: 0.3;"></i>
-                        <p style="font-size: 16px;">No lab results yet for this patient.</p>
-                    </div>
-                    `}
+                    <p style="font-size: 16px;">No lab results yet for this patient.</p>
+                </div>
+                `}
 
-                    <div class="modal-actions" style="margin-top: 24px;">
-                        <button type="button" class="btn btn-secondary" id="closeLabResultsBtn">Close</button>
-                    </div>
+                <div style="text-align: right; margin-top: 20px;">
+                    <button type="button" class="btn btn-secondary" id="closeLabResultsBtn">Close</button>
                 </div>
             </div>
-        `;
+        `;        document.body.appendChild(modal);
 
-        document.body.appendChild(modal);
-
-        const closeAndReopenPersonalInfo = () => {
+        document.getElementById('closeLabResultsBtn').addEventListener('click', () => {
             modal.remove();
             if (returnToPersonalInfo) {
                 this.viewPersonalInfo(patientId);
             }
-        };
-        document.getElementById('closeLabResultsModalBtn').addEventListener('click', closeAndReopenPersonalInfo);
-        document.getElementById('closeLabResultsBtn').addEventListener('click', closeAndReopenPersonalInfo);
+        });
     }
 
     showPatientImagingResultsModal(patientId, returnToPersonalInfo = false) {
@@ -5658,34 +5699,30 @@ class Dashboard {
         modal.className = 'modal-overlay';
         modal.innerHTML = `
             <div class="modal-content" style="max-width: 1000px;">
-                <div class="modal-header">
-                    <h2>Imaging Results - ${patient.fullName}</h2>
-                    <button class="modal-close" id="closeImagingResultsModalBtn">&times;</button>
-                </div>
-                <div class="modal-body">
-                    <div style="margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-left: 4px solid var(--dark-pink); border-radius: 4px;">
-                        <h4 style="margin-bottom: 10px; color: var(--dark-pink);">
-                            <i class="fas fa-user-injured"></i> Patient Information
-                        </h4>
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
-                            <div><strong>Patient ID:</strong> ${patient.id}</div>
-                            <div><strong>Name:</strong> ${patient.fullName}</div>
-                            <div><strong>Age:</strong> ${patient.age}</div>
-                            <div><strong>Doctor:</strong> ${patient.doctor || 'Not Assigned'}</div>
-                        </div>
+                <h2 style="color: var(--dark-pink); margin-bottom: 20px;">
+                    <i class="fas fa-x-ray"></i> Imaging Results - ${patient.fullName}
+                </h2>
+
+                <div style="margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-left: 4px solid var(--dark-pink); border-radius: 4px;">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
+                        <div><strong>Patient ID:</strong> ${patient.id}</div>
+                        <div><strong>Age:</strong> ${patient.age}</div>
+                        <div><strong>Physician:</strong> ${patient.doctor || 'Not Assigned'}</div>
+                        <div><strong>Status:</strong> ${patient.status}</div>
                     </div>
+                </div>
 
                     ${patientImagingResults.length > 0 ? `
-                    <div style="overflow-x: auto;">
-                        <table class="patients-table" style="min-width: 1000px;">
-                            <thead>
+                    <div style="max-height: 400px; overflow-y: auto; overflow-x: auto; position: relative;">
+                        <table class="patients-table" style="min-width: 900px;">
+                            <thead style="position: sticky; top: 0; z-index: 10; background: white;">
                                 <tr>
-                                    <th style="width: 15%;">Modality</th>
+                                    <th style="width: 20%;">Modality</th>
                                     <th style="width: 12%;">Date</th>
-                                    <th style="width: 10%;">Status</th>
-                                    <th style="width: 15%;">Performed By</th>
-                                    <th style="width: 12%;">Recorded Date</th>
-                                    <th style="width: 10%;">File</th>
+                                    <th style="width: 12%;">Status</th>
+                                    <th style="width: 18%;">Performed By</th>
+                                    <th style="width: 13%;">Recorded</th>
+                                    <th style="width: 13%;">File</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -5729,23 +5766,22 @@ class Dashboard {
                     </div>
                     `}
 
-                    <div class="modal-actions" style="margin-top: 24px;">
-                        <button type="button" class="btn btn-secondary" id="closeImagingResultsBtn">Close</button>
-                    </div>
+                <div style="text-align: right; margin-top: 20px;">
+                    <button type="button" class="btn btn-secondary" id="closeImagingResultsBtn">
+                        Close
+                    </button>
                 </div>
             </div>
         `;
 
         document.body.appendChild(modal);
 
-        const closeAndReopenPersonalInfo = () => {
+        document.getElementById('closeImagingResultsBtn').addEventListener('click', () => {
             modal.remove();
             if (returnToPersonalInfo) {
                 this.viewPersonalInfo(patientId);
             }
-        };
-        document.getElementById('closeImagingResultsModalBtn').addEventListener('click', closeAndReopenPersonalInfo);
-        document.getElementById('closeImagingResultsBtn').addEventListener('click', closeAndReopenPersonalInfo);
+        });
     }
 
     // Imaging Results Listeners
@@ -6045,7 +6081,7 @@ class Dashboard {
 
         const tableHTML = `
             <div style="overflow-x: auto;">
-                <table class="patients-table" style="min-width: 1000px;">
+                <table class="patients-table" >
                     <thead>
                         <tr>
                             <th style="width: 15%;">Imaging Type</th>
@@ -6251,7 +6287,7 @@ class Dashboard {
 
         const tableHTML = `
             <div style="overflow-x: auto;">
-                <table class="patients-table" style="min-width: 1000px;">
+                <table class="patients-table" >
                     <thead>
                         <tr>
                             <th style="width: 18%;">Modality</th>
@@ -6447,7 +6483,7 @@ class Dashboard {
 
         const tableHTML = `
             <div style="overflow-x: auto;">
-                <table class="patients-table" style="min-width: 1000px;">
+                <table class="patients-table" >
                     <thead>
                         <tr>
                             <th style="width: 18%;">Drug Name</th>
@@ -6530,7 +6566,7 @@ class Dashboard {
 
         const tableHTML = `
             <div style="overflow-x: auto;">
-                <table class="patients-table" style="min-width: 1000px;">
+                <table class="patients-table" >
                     <thead>
                         <tr>
                             <th style="width: 18%; padding: 12px;">Drug Name</th>
@@ -6573,6 +6609,119 @@ class Dashboard {
         historyTable.innerHTML = tableHTML;
     }
 
+    // Show Patient Medical History Modal
+    showPatientMedicalHistoryModal(patientId, returnToPersonalInfo = false) {
+        const patients = JSON.parse(localStorage.getItem('patients') || '[]');
+        const patient = patients.find(p => p.id === patientId);
+
+        if (!patient) {
+            this.showNotification('Patient not found', 'error');
+            return;
+        }
+
+        const medicalHistory = JSON.parse(localStorage.getItem('medicalHistory') || '[]');
+        const patientHistory = medicalHistory.filter(h => h.patientId === patientId);
+
+        // Sort by date (most recent first)
+        patientHistory.sort((a, b) => {
+            if (!a.date) return 1;
+            if (!b.date) return -1;
+            return new Date(b.date) - new Date(a.date);
+        });
+
+        const modal = document.createElement('div');
+        modal.className = 'modal-overlay';
+        modal.innerHTML = `
+            <div class="modal-content" style="max-width: 1000px;">
+                <h2 style="color: var(--dark-pink); margin-bottom: 20px;">
+                    <i class="fas fa-notes-medical"></i> Medical History - ${patient.fullName}
+                </h2>
+
+                <div style="margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-left: 4px solid var(--dark-pink); border-radius: 4px;">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
+                        <div><strong>Patient ID:</strong> ${patient.id}</div>
+                        <div><strong>Age:</strong> ${patient.age}</div>
+                        <div><strong>Physician:</strong> ${patient.doctor || 'Not Assigned'}</div>
+                        <div><strong>Status:</strong> ${patient.status}</div>
+                    </div>
+                </div>
+
+                    ${patientHistory.length > 0 ? `
+                    <div style="max-height: 400px; overflow-y: auto; overflow-x: auto; position: relative;">
+                        <table class="patients-table" style="min-width: 900px;">
+                            <thead style="position: sticky; top: 0; z-index: 10; background: white;">
+                                <tr>
+                                    <th style="width: 10%;">Date</th>
+                                    <th style="width: 12%;">Category</th>
+                                    <th style="width: 20%;">Title</th>
+                                    <th style="width: 15%;">Recorded By</th>
+                                    <th style="width: 13%;">Recorded</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${patientHistory.map((entry, index) => {
+                                    const displayDate = entry.date || 'N/A';
+                                    const categoryColor = this.getCategoryColor(entry.category);
+                                    const allergyBadge = entry.isSignificantAllergy ? '<span style="background: #dc3545; color: white; padding: 2px 6px; border-radius: 3px; font-size: 11px; margin-left: 6px;">SIGNIFICANT</span>' : '';
+                                    
+                                    return `
+                                        <tr style="border-top: ${index > 0 ? '8px solid #fff' : '0'}; background: #fafafa;">
+                                            <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${displayDate}</td>
+                                            <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">
+                                                <span style="background: ${categoryColor}; padding: 4px 8px; border-radius: 4px; font-size: 12px; color: white; font-weight: 600;">
+                                                    ${entry.category}
+                                                </span>
+                                            </td>
+                                            <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;"><strong>${entry.title}</strong>${allergyBadge}${entry.allergen ? `<br><small style="color: #666;">Allergen: ${entry.allergen}</small>` : ''}</td>
+                                            <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${entry.recordedBy}</td>
+                                            <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${entry.recordedDate}</td>
+                                        </tr>
+                                        <tr style="background: #fafafa;">
+                                            <td colspan="5" style="text-align: left; padding: 12px 12px 4px 12px; border-left: 4px solid ${categoryColor};">
+                                                <strong style="color: ${categoryColor};">Description:</strong> ${entry.description}
+                                            </td>
+                                        </tr>
+                                        ${entry.notes ? `
+                                        <tr style="background: #fafafa;">
+                                            <td colspan="5" style="text-align: left; padding: 12px 12px 14px 12px; border-left: 4px solid var(--dark-pink); border-bottom: 2px solid #e0e0e0; background: #fff3f8;">
+                                                <strong style="color: var(--dark-pink);">Notes:</strong> ${entry.notes}
+                                            </td>
+                                        </tr>
+                                        ` : `
+                                        <tr style="background: #fafafa;">
+                                            <td colspan="5" style="padding: 0; border-bottom: 2px solid #e0e0e0; height: 4px;"></td>
+                                        </tr>
+                                        `}
+                                    `;
+                                }).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                    ` : `
+                    <div style="text-align: center; padding: 40px; color: #999;">
+                        <i class="fas fa-notes-medical" style="font-size: 48px; margin-bottom: 16px; opacity: 0.3;"></i>
+                        <p style="font-size: 16px;">No medical history records yet for this patient.</p>
+                    </div>
+                    `}
+
+                <div style="text-align: right; margin-top: 20px;">
+                    <button type="button" class="btn btn-secondary" id="closeMedicalHistoryBtn">
+                        Close
+                    </button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        document.getElementById('closeMedicalHistoryBtn').addEventListener('click', () => {
+            modal.remove();
+            if (returnToPersonalInfo) {
+                this.viewPersonalInfo(patientId);
+            }
+        });
+    }
+
     showPatientDrugDispensingModal(patientId, returnToPersonalInfo = false) {
         const patients = JSON.parse(localStorage.getItem('patients') || '[]');
         const patient = patients.find(p => p.id === patientId);
@@ -6589,87 +6738,80 @@ class Dashboard {
         modal.className = 'modal-overlay';
         modal.innerHTML = `
             <div class="modal-content" style="max-width: 1000px;">
-                <div class="modal-header">
-                    <h2>Drug Dispensing - ${patient.fullName}</h2>
-                    <button class="modal-close" id="closeDrugDispensingModalBtn">&times;</button>
+                <h2 style="color: var(--dark-pink); margin-bottom: 20px;">
+                    <i class="fas fa-pills"></i> Drug Dispensing - ${patient.fullName}
+                </h2>
+
+                <div style="margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-left: 4px solid var(--dark-pink); border-radius: 4px;">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
+                        <div><strong>Patient ID:</strong> ${patient.id}</div>
+                        <div><strong>Age:</strong> ${patient.age}</div>
+                        <div><strong>Physician:</strong> ${patient.doctor || 'Not Assigned'}</div>
+                        <div><strong>Status:</strong> ${patient.status}</div>
+                    </div>
                 </div>
-                <div class="modal-body">
-                    <div style="margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-left: 4px solid var(--dark-pink); border-radius: 4px;">
-                        <h4 style="margin-bottom: 10px; color: var(--dark-pink);">
-                            <i class="fas fa-user-injured"></i> Patient Information
-                        </h4>
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
-                            <div><strong>Patient ID:</strong> ${patient.id}</div>
-                            <div><strong>Name:</strong> ${patient.fullName}</div>
-                            <div><strong>Age:</strong> ${patient.age}</div>
-                            <div><strong>Doctor:</strong> ${patient.doctor || 'Not Assigned'}</div>
-                        </div>
-                    </div>
 
-                    ${patientDrugDispensings.length > 0 ? `
-                    <div style="overflow-x: auto;">
-                        <table class="patients-table" style="min-width: 1000px;">
-                            <thead>
-                                <tr>
-                                    <th style="width: 18%;">Drug Name</th>
-                                    <th style="width: 10%;">Quantity</th>
-                                    <th style="width: 12%;">Batch Number</th>
-                                    <th style="width: 12%;">Lot Number</th>
-                                    <th style="width: 12%;">Expiry Date</th>
-                                    <th style="width: 12%;">Date Dispensed</th>
-                                    <th style="width: 14%;">Dispensed By</th>
+                ${patientDrugDispensings.length > 0 ? `
+                <div style="max-height: 400px; overflow-y: auto; overflow-x: auto; position: relative;">
+                    <table class="patients-table" style="min-width: 900px;">
+                        <thead style="position: sticky; top: 0; z-index: 10; background: white;">
+                            <tr>
+                                <th style="width: 20%;">Drug Name</th>
+                                <th style="width: 8%;">Qty</th>
+                                <th style="width: 12%;">Batch</th>
+                                <th style="width: 11%;">Lot</th>
+                                <th style="width: 11%;">Expiry</th>
+                                <th style="width: 13%;">Dispensed</th>
+                                <th style="width: 17%;">Dispensed By</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${patientDrugDispensings.map((disp, index) => `
+                                <tr style="border-top: ${index > 0 ? '8px solid #fff' : '0'}; background: #fafafa;">
+                                    <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;"><strong>${disp.drugName}</strong></td>
+                                    <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${disp.quantity}</td>
+                                    <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${disp.batchNumber}</td>
+                                    <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${disp.lotNumber}</td>
+                                    <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${disp.expiryDate}</td>
+                                    <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${disp.dispensedDate}</td>
+                                    <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${disp.dispensedBy}</td>
                                 </tr>
-                            </thead>
-                            <tbody>
-                                ${patientDrugDispensings.map((disp, index) => `
-                                    <tr style="border-top: ${index > 0 ? '8px solid #fff' : '0'}; background: #fafafa;">
-                                        <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;"><strong>${disp.drugName}</strong></td>
-                                        <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${disp.quantity}</td>
-                                        <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${disp.batchNumber}</td>
-                                        <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${disp.lotNumber}</td>
-                                        <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${disp.expiryDate}</td>
-                                        <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${disp.dispensedDate}</td>
-                                        <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${disp.dispensedBy}</td>
-                                    </tr>
-                                    ${disp.notes ? `
-                                    <tr style="background: #fafafa;">
-                                        <td colspan="7" style="text-align: left; padding: 12px 12px 14px 12px; border-left: 4px solid var(--dark-pink); border-bottom: 2px solid #e0e0e0; background: #fff3f8;">
-                                            <strong style="color: var(--dark-pink);">Notes:</strong> ${disp.notes}
-                                        </td>
-                                    </tr>
-                                    ` : `
-                                    <tr style="background: #fafafa;">
-                                        <td colspan="7" style="padding: 0; border-bottom: 2px solid #e0e0e0; height: 4px;"></td>
-                                    </tr>
-                                    `}
-                                `).join('')}
-                            </tbody>
-                        </table>
-                    </div>
-                    ` : `
-                    <div style="text-align: center; padding: 40px; color: #999;">
-                        <i class="fas fa-pills" style="font-size: 48px; margin-bottom: 16px; opacity: 0.3;"></i>
-                        <p style="font-size: 16px;">No dispensing records yet for this patient.</p>
-                    </div>
-                    `}
+                                ${disp.notes ? `
+                                <tr style="background: #fafafa;">
+                                    <td colspan="7" style="text-align: left; padding: 12px 12px 14px 12px; border-left: 4px solid var(--dark-pink); border-bottom: 2px solid #e0e0e0; background: #fff3f8;">
+                                        <strong style="color: var(--dark-pink);">Notes:</strong> ${disp.notes}
+                                    </td>
+                                </tr>
+                                ` : `
+                                <tr style="background: #fafafa;">
+                                    <td colspan="7" style="padding: 0; border-bottom: 2px solid #e0e0e0; height: 4px;"></td>
+                                </tr>
+                                `}
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+                ` : `
+                <div style="text-align: center; padding: 40px; color: #999;">
+                    <i class="fas fa-pills" style="font-size: 48px; margin-bottom: 16px; opacity: 0.3;"></i>
+                    <p style="font-size: 16px;">No dispensing records yet for this patient.</p>
+                </div>
+                `}
 
-                    <div class="modal-actions" style="margin-top: 24px;">
-                        <button type="button" class="btn btn-secondary" id="closeDrugDispensingBtn">Close</button>
-                    </div>
+                <div style="text-align: right; margin-top: 20px;">
+                    <button type="button" class="btn btn-secondary" id="closeDrugDispensingBtn">Close</button>
                 </div>
             </div>
         `;
 
         document.body.appendChild(modal);
 
-        const closeAndReopenPersonalInfo = () => {
+        document.getElementById('closeDrugDispensingBtn').addEventListener('click', () => {
             modal.remove();
             if (returnToPersonalInfo) {
                 this.viewPersonalInfo(patientId);
             }
-        };
-        document.getElementById('closeDrugDispensingModalBtn').addEventListener('click', closeAndReopenPersonalInfo);
-        document.getElementById('closeDrugDispensingBtn').addEventListener('click', closeAndReopenPersonalInfo);
+        });
     }
 
     // Drug Inventory Listeners and Functions

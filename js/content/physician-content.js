@@ -182,12 +182,6 @@ class PhysicianContent {
                 Medications
             </button>`;
             
-            // Medical History button
-            const medicalHistoryBtn = `<button class="btn btn-sm btn-medical-history" data-patient-id="${patient.id}" title="View Medical History">
-                <i class="fas fa-notes-medical"></i>
-                History
-            </button>`;
-            
             tableRows += `
                 <tr data-patient-id="${patient.id}">
                     <td>${patient.id}</td>
@@ -199,7 +193,6 @@ class PhysicianContent {
                     <td>${billingBtn}</td>
                     <td>${recordsContent}</td>
                     <td>${medicationsBtn}</td>
-                    <td>${medicalHistoryBtn}</td>
                 </tr>
             `;
         });
@@ -226,7 +219,6 @@ class PhysicianContent {
                                     <th>Billing</th>
                                     <th>Records</th>
                                     <th>Medications</th>
-                                    <th>Medical History</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -1331,6 +1323,20 @@ class PhysicianContent {
                                 <div class="form-group" style="margin-bottom: 20px;">
                                     <label for="historyDescription">Description/Details <span style="color: red;">*</span></label>
                                     <textarea id="historyDescription" class="form-control" rows="4" required placeholder="Detailed information about the medical history entry..."></textarea>
+                                </div>
+
+                                <!-- Allergy-specific fields -->
+                                <div id="allergyFields" style="display: none; margin-bottom: 20px; padding: 15px; background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 4px;">
+                                    <div class="form-group" style="margin-bottom: 15px;">
+                                        <label style="display: flex; align-items: center; font-weight: 600; color: #856404;">
+                                            <input type="checkbox" id="isSignificantAllergy" style="margin-right: 8px;">
+                                            Mark as Significant Allergy (will appear in patient profile)
+                                        </label>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="allergen">Allergen <span style="color: red;">*</span></label>
+                                        <input type="text" id="allergen" class="form-control" placeholder="e.g., Penicillin, Peanuts, Latex">
+                                    </div>
                                 </div>
 
                                 <div class="form-group" style="margin-bottom: 20px;">

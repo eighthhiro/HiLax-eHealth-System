@@ -26,6 +26,25 @@ class PatientContent {
         const patients = JSON.parse(localStorage.getItem('patients') || '[]');
         let patient = patients.find(p => p.id === patientId);
 
+        // Get medical history records
+        const medicalHistory = JSON.parse(localStorage.getItem('medicalHistory') || '[]');
+        const patientMedicalHistory = medicalHistory.filter(h => h.patientId === patientId);
+        
+        // Get significant allergies
+        const allergies = patientMedicalHistory
+            .filter(h => h.category === 'Allergy' && h.isSignificantAllergy)
+            .map(h => h.allergen || h.title)
+            .filter(a => a);
+        
+        // Get significant medical conditions (Chronic Condition, Past Illness)
+        const significantConditions = patientMedicalHistory
+            .filter(h => ['Chronic Condition', 'Past Illness'].includes(h.category))
+            .map(h => h.title)
+            .filter(t => t);
+        
+        const allergiesDisplay = allergies.length > 0 ? allergies.join(', ') : 'None known';
+        const medicalHistoryDisplay = significantConditions.length > 0 ? significantConditions.join(', ') : 'No significant medical history';
+
         // Fallback to sample data if patient not found
         if (!patient) {
             patient = {
@@ -48,8 +67,6 @@ class PatientContent {
                 roomNumber: '201',
                 status: 'Active',
                 doctor: 'Dr. Sta. Maria',
-                allergies: 'None known',
-                medicalHistory: 'No significant medical history',
                 insuranceProvider: 'PhilHealth',
                 insuranceNumber: 'PH-123456789'
             };
@@ -77,8 +94,8 @@ class PatientContent {
             roomNumber: patient.roomNumber || 'N/A',
             status: patient.status || 'Active',
             doctor: patient.doctor || 'Not Assigned',
-            allergies: patient.allergies || 'None known',
-            medicalHistory: patient.medicalHistory || 'No significant medical history',
+            allergies: allergiesDisplay,
+            medicalHistory: medicalHistoryDisplay,
             insuranceProvider: (patient.billing && patient.billing.insuranceProvider) ? patient.billing.insuranceProvider : 'None',
             insuranceNumber: (patient.billing && patient.billing.insuranceNumber) ? patient.billing.insuranceNumber : 'N/A',
             height: info.height || 'Not specified',
