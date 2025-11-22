@@ -3892,16 +3892,19 @@ class Dashboard {
             return new Date(b.date) - new Date(a.date);
         });
 
+        const userRole = (this.currentUser.role || '').trim();
+        const isViewOnly = ['Patient', 'HR/Admin', 'Nurse'].includes(userRole);
         let tableHTML = `
             <div style="overflow-x: auto;">
                 <table class="patients-table">
                     <thead>
                         <tr>
-                            <th style="width: 10%;">Date</th>
-                            <th style="width: 12%;">Category</th>
-                            <th style="width: 20%;">Title</th>
-                            <th style="width: 15%;">Recorded By</th>
-                            <th style="width: 12%;">Recorded Date</th>
+                            <th style="width: ${isViewOnly ? '10%' : '9%'};">Date</th>
+                            <th style="width: ${isViewOnly ? '12%' : '11%'};">Category</th>
+                            <th style="width: ${isViewOnly ? '20%' : '18%'};">Title</th>
+                            <th style="width: ${isViewOnly ? '15%' : '13%'};">Recorded By</th>
+                            <th style="width: ${isViewOnly ? '12%' : '11%'};">Recorded Date</th>
+                            ${isViewOnly ? '' : '<th style="width: 10%;">Actions</th>'}
                         </tr>
                     </thead>
                     <tbody>
@@ -3923,9 +3926,21 @@ class Dashboard {
                     <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;"><strong>${entry.title}</strong>${allergyBadge}${entry.allergen ? `<br><small style="color: #666;">Allergen: ${entry.allergen}</small>` : ''}</td>
                     <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${entry.recordedBy}</td>
                     <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${entry.recordedDate}</td>
+                    ${isViewOnly ? '' : `
+                    <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">
+                        <div style="display: flex; gap: 6px; justify-content: center;">
+                            <button class="btn btn-sm btn-edit-medical-history" data-id="${entry.id}" style="padding: 6px 10px; font-size: 13px; background: var(--secondary-pink); color: white; border: none; border-radius: 4px; cursor: pointer;" title="Edit">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-delete-medical-history" data-id="${entry.id}" style="padding: 6px 10px; font-size: 13px; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;" title="Delete">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </div>
+                    </td>
+                    `}
                 </tr>
                 <tr style="background: #fafafa;">
-                    <td colspan="5" style="text-align: left; padding: 12px 12px 4px 12px; border-left: 4px solid ${categoryColor};">
+                    <td colspan="${isViewOnly ? '5' : '6'}" style="text-align: left; padding: 12px 12px 4px 12px; border-left: 4px solid ${categoryColor};">
                         <strong style="color: ${categoryColor};">Description:</strong> ${entry.description}
                     </td>
                 </tr>
@@ -3934,7 +3949,7 @@ class Dashboard {
             if (entry.notes) {
                 tableHTML += `
                     <tr style="background: #fafafa;">
-                        <td colspan="5" style="text-align: left; padding: 12px 12px 14px 12px; border-left: 4px solid var(--dark-pink); border-bottom: 2px solid #e0e0e0; background: #fff3f8;">
+                        <td colspan="${isViewOnly ? '5' : '6'}" style="text-align: left; padding: 12px 12px 14px 12px; border-left: 4px solid var(--dark-pink); border-bottom: 2px solid #e0e0e0; background: #fff3f8;">
                             <strong style="color: var(--dark-pink);">Notes:</strong> ${entry.notes}
                         </td>
                     </tr>
@@ -3942,7 +3957,7 @@ class Dashboard {
             } else {
                 tableHTML += `
                     <tr style="background: #fafafa;">
-                        <td colspan="5" style="padding: 0; border-bottom: 2px solid #e0e0e0; height: 4px;"></td>
+                        <td colspan="${isViewOnly ? '5' : '6'}" style="padding: 0; border-bottom: 2px solid #e0e0e0; height: 4px;"></td>
                     </tr>
                 `;
             }
@@ -3955,6 +3970,196 @@ class Dashboard {
         `;
 
         container.innerHTML = tableHTML;
+
+        if (isViewOnly) return; // Skip event listeners for view-only roles
+
+        // Add event listeners for edit and delete buttons
+        const editButtons = container.querySelectorAll('.btn-edit-medical-history');
+        editButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                this.editMedicalHistory(btn.dataset.id, patientId, tableContainerId);
+            });
+        });
+
+        const deleteButtons = container.querySelectorAll('.btn-delete-medical-history');
+        deleteButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                this.deleteMedicalHistory(btn.dataset.id, patientId, tableContainerId);
+            });
+        });
+    }
+
+    // Edit medical history with modal
+    editMedicalHistory(historyId, patientId, tableContainerId) {
+        const allMedicalHistory = JSON.parse(localStorage.getItem('medicalHistory') || '[]');
+        const history = allMedicalHistory.find(h => h.id === historyId && h.patientId === patientId);
+        
+        if (!history) {
+            alert('Medical history record not found.');
+            return;
+        }
+
+        // Create modal with populated form
+        const isAllergy = history.category === 'Allergy';
+        const modalHTML = `
+            <div class="modal-overlay" id="editMedicalHistoryModal" style="display: flex;">
+                <div class="modal-content" style="max-width: 600px; max-height: 90vh; overflow-y: auto;">
+                    <div class="modal-header">
+                        <h3 style="margin: 0; color: var(--dark-pink);">
+                            <i class="fas fa-edit"></i> Edit Medical History
+                        </h3>
+                        <button class="close-modal" onclick="document.getElementById('editMedicalHistoryModal').remove()">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <form id="editMedicalHistoryForm" style="padding: 20px;">
+                        <div class="form-group">
+                            <label>Date *</label>
+                            <input type="date" name="date" value="${history.date}" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Category *</label>
+                            <select name="category" id="editMedHistCategory" required>
+                                <option value="Past Illness" ${history.category === 'Past Illness' ? 'selected' : ''}>Past Illness</option>
+                                <option value="Surgery" ${history.category === 'Surgery' ? 'selected' : ''}>Surgery</option>
+                                <option value="Hospitalization" ${history.category === 'Hospitalization' ? 'selected' : ''}>Hospitalization</option>
+                                <option value="Chronic Condition" ${history.category === 'Chronic Condition' ? 'selected' : ''}>Chronic Condition</option>
+                                <option value="Family History" ${history.category === 'Family History' ? 'selected' : ''}>Family History</option>
+                                <option value="Social History" ${history.category === 'Social History' ? 'selected' : ''}>Social History</option>
+                                <option value="Allergy" ${history.category === 'Allergy' ? 'selected' : ''}>Allergy</option>
+                                <option value="Immunization" ${history.category === 'Immunization' ? 'selected' : ''}>Immunization</option>
+                                <option value="Other" ${history.category === 'Other' ? 'selected' : ''}>Other</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group" id="editAllergyFieldsContainer" style="display: ${isAllergy ? 'block' : 'none'};">
+                            <label>Allergen *</label>
+                            <input type="text" name="allergen" value="${history.allergen || ''}" ${isAllergy ? 'required' : ''}>
+                            
+                            <div style="margin-top: 12px;">
+                                <label style="display: flex; align-items: center; cursor: pointer;">
+                                    <input type="checkbox" name="isSignificantAllergy" ${history.isSignificantAllergy ? 'checked' : ''} style="margin-right: 8px;">
+                                    <span>Mark as Significant Allergy</span>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Title *</label>
+                            <input type="text" name="title" value="${history.title}" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Description *</label>
+                            <textarea name="description" rows="3" required>${history.description}</textarea>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Recorded By *</label>
+                            <input type="text" name="recordedBy" value="${history.recordedBy}" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Notes (Optional)</label>
+                            <textarea name="notes" rows="3">${history.notes || ''}</textarea>
+                        </div>
+                        
+                        <div style="display: flex; gap: 10px; margin-top: 20px;">
+                            <button type="submit" class="btn btn-primary" style="flex: 1;">
+                                <i class="fas fa-save"></i> Save Changes
+                            </button>
+                            <button type="button" class="btn btn-secondary" onclick="document.getElementById('editMedicalHistoryModal').remove()" style="flex: 1;">
+                                <i class="fas fa-times"></i> Cancel
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        `;
+        
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+        
+        // Handle category change to show/hide allergy fields
+        const categorySelect = document.getElementById('editMedHistCategory');
+        const allergyFieldsContainer = document.getElementById('editAllergyFieldsContainer');
+        const allergenInput = document.querySelector('#editMedicalHistoryForm input[name="allergen"]');
+        
+        categorySelect.addEventListener('change', (e) => {
+            if (e.target.value === 'Allergy') {
+                allergyFieldsContainer.style.display = 'block';
+                allergenInput.required = true;
+            } else {
+                allergyFieldsContainer.style.display = 'none';
+                allergenInput.required = false;
+                allergenInput.value = '';
+            }
+        });
+        
+        // Handle form submission
+        const form = document.getElementById('editMedicalHistoryForm');
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData(form);
+            
+            // Update history data
+            history.date = formData.get('date');
+            history.category = formData.get('category');
+            history.title = formData.get('title');
+            history.description = formData.get('description');
+            history.recordedBy = formData.get('recordedBy');
+            history.notes = formData.get('notes');
+            history.recordedDate = new Date().toLocaleString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            
+            // Handle allergy-specific fields
+            if (history.category === 'Allergy') {
+                history.allergen = formData.get('allergen');
+                history.isSignificantAllergy = formData.get('isSignificantAllergy') === 'on';
+            } else {
+                delete history.allergen;
+                delete history.isSignificantAllergy;
+            }
+            
+            // Save to localStorage
+            const historyIndex = allMedicalHistory.findIndex(h => h.id === historyId);
+            if (historyIndex !== -1) {
+                allMedicalHistory[historyIndex] = history;
+                localStorage.setItem('medicalHistory', JSON.stringify(allMedicalHistory));
+            }
+            
+            // Close modal and refresh
+            document.getElementById('editMedicalHistoryModal').remove();
+            this.loadMedicalHistory(patientId, tableContainerId);
+            this.showNotification('Medical history updated successfully', 'success');
+        });
+    }
+
+    // Delete medical history with confirmation
+    deleteMedicalHistory(historyId, patientId, tableContainerId) {
+        const allMedicalHistory = JSON.parse(localStorage.getItem('medicalHistory') || '[]');
+        const history = allMedicalHistory.find(h => h.id === historyId && h.patientId === patientId);
+        
+        if (!history) {
+            alert('Medical history record not found.');
+            return;
+        }
+
+        if (confirm(`Delete medical history record: "${history.title}" (${history.category})?`)) {
+            // Remove from localStorage
+            const updatedHistory = allMedicalHistory.filter(h => h.id !== historyId);
+            localStorage.setItem('medicalHistory', JSON.stringify(updatedHistory));
+            
+            // Refresh table
+            this.loadMedicalHistory(patientId, tableContainerId);
+            this.showNotification('Medical history deleted successfully', 'success');
+        }
     }
 
     getCategoryColor(category) {
@@ -4636,20 +4841,23 @@ class Dashboard {
             return;
         }
 
+        const userRole = (this.currentUser.role || '').trim();
+        const isViewOnly = ['Patient', 'HR/Admin', 'Physician'].includes(userRole);
         const tableHTML = `
             <div style="overflow-x: auto;">
                 <table class="patients-table" style="min-width: 900px;">
                     <thead>
                         <tr>
-                            <th style="width: 12%;">Date</th>
-                            <th style="width: 10%;">Time</th>
-                            <th style="width: 12%;">BP (mmHg)</th>
-                            <th style="width: 11%;">HR (bpm)</th>
-                            <th style="width: 11%;">Temp (°C)</th>
-                            <th style="width: 8%;">RR</th>
-                            <th style="width: 11%;">SpO2 (%)</th>
-                            <th style="width: 9%;">Pain</th>
-                            <th style="width: 16%;">Recorded By</th>
+                            <th style="width: ${isViewOnly ? '11%' : '10%'};">Date</th>
+                            <th style="width: ${isViewOnly ? '9%' : '8%'};">Time</th>
+                            <th style="width: ${isViewOnly ? '12%' : '11%'};">BP</th>
+                            <th style="width: ${isViewOnly ? '10%' : '9%'};">HR</th>
+                            <th style="width: ${isViewOnly ? '11%' : '10%'};">Temp</th>
+                            <th style="width: ${isViewOnly ? '8%' : '7%'};">RR</th>
+                            <th style="width: ${isViewOnly ? '10%' : '9%'};">SpO2</th>
+                            <th style="width: ${isViewOnly ? '8%' : '7%'};">Pain</th>
+                            <th style="width: ${isViewOnly ? '17%' : '15%'};">Recorded By</th>
+                            ${isViewOnly ? '' : '<th style="width: 10%;">Actions</th>'}
                         </tr>
                     </thead>
                     <tbody>
@@ -4664,16 +4872,28 @@ class Dashboard {
                                 <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${vs.oxygenSaturation}%</td>
                                 <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${vs.painLevel !== null ? vs.painLevel + '/10' : '-'}</td>
                                 <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${vs.recordedBy}</td>
+                                ${isViewOnly ? '' : `
+                                <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">
+                                    <div style="display: flex; gap: 6px; justify-content: center;">
+                                        <button class="btn btn-sm btn-edit-vital" data-id="${vs.id}" style="padding: 6px 10px; font-size: 13px; background: var(--secondary-pink); color: white; border: none; border-radius: 4px; cursor: pointer;" title="Edit">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-delete-vital" data-id="${vs.id}" style="padding: 6px 10px; font-size: 13px; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;" title="Delete">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                                `}
                             </tr>
                             ${vs.notes ? `
                             <tr style="background: #fafafa;">
-                                <td colspan="9" style="text-align: left; padding: 12px 12px 14px 12px; border-left: 4px solid var(--dark-pink); border-bottom: 2px solid #e0e0e0; background: #fff3f8;">
+                                <td colspan="${isViewOnly ? '9' : '10'}" style="text-align: left; padding: 12px 12px 14px 12px; border-left: 4px solid var(--dark-pink); border-bottom: 2px solid #e0e0e0; background: #fff3f8;">
                                     <strong style="color: var(--dark-pink);">Notes:</strong> ${vs.notes}
                                 </td>
                             </tr>
                             ` : `
                             <tr style="background: #fafafa;">
-                                <td colspan="9" style="padding: 0; border-bottom: 2px solid #e0e0e0; height: 4px;"></td>
+                                <td colspan="${isViewOnly ? '9' : '10'}" style="padding: 0; border-bottom: 2px solid #e0e0e0; height: 4px;"></td>
                             </tr>
                             `}
                         `).join('')}
@@ -4683,6 +4903,177 @@ class Dashboard {
         `;
 
         historyTable.innerHTML = tableHTML;
+
+        if (isViewOnly) return; // Skip event listeners for view-only roles
+        
+        // Attach event listeners for edit/delete buttons
+        const editBtns = historyTable.querySelectorAll('.btn-edit-vital');
+        const deleteBtns = historyTable.querySelectorAll('.btn-delete-vital');
+        
+        editBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const vitalId = btn.getAttribute('data-id');
+                this.editVitalSign(vitalId, patientId);
+            });
+        });
+        
+        deleteBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const vitalId = btn.getAttribute('data-id');
+                this.deleteVitalSign(vitalId, patientId);
+            });
+        });
+    }
+
+    editVitalSign(vitalId, patientId) {
+        const allVitalSigns = JSON.parse(localStorage.getItem('vitalSigns') || '[]');
+        const vitalSign = allVitalSigns.find(vs => vs.id === vitalId);
+        
+        if (!vitalSign) {
+            this.showNotification('Vital sign record not found', 'error');
+            return;
+        }
+        
+        const modal = document.createElement('div');
+        modal.className = 'modal-overlay';
+        modal.innerHTML = `
+            <div class="modal-content" style="max-width: 800px;">
+                <div class="modal-header">
+                    <h3><i class="fas fa-edit"></i> Edit Vital Signs</h3>
+                    <button class="modal-close">&times;</button>
+                </div>
+                <form id="editVitalSignsForm" class="modal-form">
+                    <div class="form-row" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 16px;">
+                        <div class="form-group">
+                            <label for="editSystolic"><i class="fas fa-heartbeat"></i> Systolic (mmHg) *</label>
+                            <input type="number" id="editSystolic" value="${vitalSign.systolic}" min="0" max="300" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="editDiastolic"><i class="fas fa-heartbeat"></i> Diastolic (mmHg) *</label>
+                            <input type="number" id="editDiastolic" value="${vitalSign.diastolic}" min="0" max="200" required>
+                        </div>
+                    </div>
+                    <div class="form-row" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 16px;">
+                        <div class="form-group">
+                            <label for="editHeartRate"><i class="fas fa-heartbeat"></i> Heart Rate (bpm) *</label>
+                            <input type="number" id="editHeartRate" value="${vitalSign.heartRate}" min="0" max="300" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="editTemperature"><i class="fas fa-thermometer-half"></i> Temperature (°C) *</label>
+                            <input type="number" step="0.1" id="editTemperature" value="${vitalSign.temperature}" min="30" max="45" required>
+                        </div>
+                    </div>
+                    <div class="form-row" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 16px;">
+                        <div class="form-group">
+                            <label for="editRespiratoryRate"><i class="fas fa-lungs"></i> Respiratory Rate *</label>
+                            <input type="number" id="editRespiratoryRate" value="${vitalSign.respiratoryRate}" min="0" max="100" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="editOxygenSaturation"><i class="fas fa-wind"></i> Oxygen Saturation (%) *</label>
+                            <input type="number" step="0.1" id="editOxygenSaturation" value="${vitalSign.oxygenSaturation}" min="0" max="100" required>
+                        </div>
+                    </div>
+                    <div class="form-row" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 16px;">
+                        <div class="form-group">
+                            <label for="editWeight"><i class="fas fa-weight"></i> Weight (kg)</label>
+                            <input type="number" step="0.1" id="editWeight" value="${vitalSign.weight || ''}" min="0" max="500">
+                        </div>
+                        <div class="form-group">
+                            <label for="editHeight"><i class="fas fa-ruler-vertical"></i> Height (cm)</label>
+                            <input type="number" step="0.1" id="editHeight" value="${vitalSign.height || ''}" min="0" max="300">
+                        </div>
+                    </div>
+                    <div class="form-row" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 16px;">
+                        <div class="form-group">
+                            <label for="editPainLevel"><i class="fas fa-exclamation-triangle"></i> Pain Level (0-10)</label>
+                            <input type="number" id="editPainLevel" value="${vitalSign.painLevel !== null ? vitalSign.painLevel : ''}" min="0" max="10">
+                        </div>
+                    </div>
+                    <div class="form-row" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 16px;">
+                        <div class="form-group">
+                            <label for="editRecordedDate"><i class="fas fa-calendar"></i> Recorded Date *</label>
+                            <input type="date" id="editRecordedDate" value="${vitalSign.recordedDateRaw}" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="editRecordedTime"><i class="fas fa-clock"></i> Recorded Time *</label>
+                            <input type="time" id="editRecordedTime" value="${vitalSign.recordedTimeRaw}" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="editVitalNotes"><i class="fas fa-notes-medical"></i> Clinical Notes</label>
+                        <textarea id="editVitalNotes" rows="3">${vitalSign.notes || ''}</textarea>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" id="cancelEditBtn">Cancel</button>
+                        <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Update Vital Signs</button>
+                    </div>
+                </form>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        
+        const form = document.getElementById('editVitalSignsForm');
+        const closeBtn = modal.querySelector('.modal-close');
+        const cancelBtn = document.getElementById('cancelEditBtn');
+        
+        const removeModal = () => document.body.removeChild(modal);
+        
+        closeBtn.addEventListener('click', removeModal);
+        cancelBtn.addEventListener('click', removeModal);
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) removeModal();
+        });
+        
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            const recordedDateInput = document.getElementById('editRecordedDate').value;
+            const recordedTimeInput = document.getElementById('editRecordedTime').value;
+            const recordedDateTime = new Date(`${recordedDateInput}T${recordedTimeInput}`);
+            
+            const updatedData = {
+                ...vitalSign,
+                bloodPressure: `${document.getElementById('editSystolic').value}/${document.getElementById('editDiastolic').value}`,
+                systolic: parseInt(document.getElementById('editSystolic').value),
+                diastolic: parseInt(document.getElementById('editDiastolic').value),
+                heartRate: parseInt(document.getElementById('editHeartRate').value),
+                temperature: parseFloat(document.getElementById('editTemperature').value),
+                respiratoryRate: parseInt(document.getElementById('editRespiratoryRate').value),
+                oxygenSaturation: parseFloat(document.getElementById('editOxygenSaturation').value),
+                weight: document.getElementById('editWeight').value ? parseFloat(document.getElementById('editWeight').value) : null,
+                height: document.getElementById('editHeight').value ? parseFloat(document.getElementById('editHeight').value) : null,
+                painLevel: document.getElementById('editPainLevel').value ? parseInt(document.getElementById('editPainLevel').value) : null,
+                notes: document.getElementById('editVitalNotes').value,
+                recordedAt: recordedDateTime.toISOString(),
+                recordedDateRaw: recordedDateInput,
+                recordedTimeRaw: recordedTimeInput,
+                recordedDate: recordedDateTime.toLocaleDateString(),
+                recordedTime: recordedDateTime.toLocaleTimeString()
+            };
+            
+            let allVitalSigns = JSON.parse(localStorage.getItem('vitalSigns') || '[]');
+            const index = allVitalSigns.findIndex(vs => vs.id === vitalId);
+            if (index !== -1) {
+                allVitalSigns[index] = updatedData;
+                allVitalSigns.sort((a, b) => new Date(b.recordedAt) - new Date(a.recordedAt));
+                localStorage.setItem('vitalSigns', JSON.stringify(allVitalSigns));
+                this.showNotification('Vital signs updated successfully!', 'success');
+                this.loadVitalSignsHistory(patientId);
+                removeModal();
+            }
+        });
+    }
+
+    deleteVitalSign(vitalId, patientId) {
+        this.showConfirmModal('Are you sure you want to delete this vital signs record?', () => {
+            let allVitalSigns = JSON.parse(localStorage.getItem('vitalSigns') || '[]');
+            allVitalSigns = allVitalSigns.filter(vs => vs.id !== vitalId);
+            localStorage.setItem('vitalSigns', JSON.stringify(allVitalSigns));
+            
+            this.showNotification('Vital signs record deleted successfully', 'success');
+            this.loadVitalSignsHistory(patientId);
+        });
     }
 
     // Medications Listeners
@@ -5667,17 +6058,20 @@ class Dashboard {
             return;
         }
 
+        const userRole = (this.currentUser.role || '').trim();
+        const isViewOnly = ['Patient', 'HR/Admin', 'Physician', 'Nurse'].includes(userRole);
         const tableHTML = `
             <div style="overflow-x: auto;">
-                <table class="patients-table" >
+                <table class="patients-table">
                     <thead>
                         <tr>
-                            <th style="width: 18%;">Test Type</th>
-                            <th style="width: 12%;">Test Date</th>
+                            <th style="width: ${isViewOnly ? '18%' : '16%'};">Test Type</th>
+                            <th style="width: ${isViewOnly ? '12%' : '11%'};">Test Date</th>
                             <th style="width: 10%;">Status</th>
-                            <th style="width: 15%;">Performed By</th>
-                            <th style="width: 12%;">Recorded Date</th>
-                            <th style="width: 10%;">File</th>
+                            <th style="width: ${isViewOnly ? '16%' : '14%'};">Performed By</th>
+                            <th style="width: ${isViewOnly ? '12%' : '11%'};">Recorded</th>
+                            <th style="width: ${isViewOnly ? '10%' : '9%'};">File</th>
+                            ${isViewOnly ? '' : '<th style="width: 10%;">Actions</th>'}
                         </tr>
                     </thead>
                     <tbody>
@@ -5700,9 +6094,21 @@ class Dashboard {
                                         </button>
                                     ` : '<span style="color: #999; font-size: 12px;">-</span>'}
                                 </td>
+                                ${isViewOnly ? '' : `
+                                <td>
+                                    <div style="display: flex; gap: 6px; justify-content: center;">
+                                        <button class="btn btn-sm btn-edit-lab" data-id="${lab.id}" style="padding: 6px 10px; font-size: 13px; background: var(--secondary-pink); color: white; border: none; border-radius: 4px; cursor: pointer;" title="Edit">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-delete-lab" data-id="${lab.id}" style="padding: 6px 10px; font-size: 13px; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;" title="Delete">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                                `}
                             </tr>
                             <tr style="background: #f8f9fa;">
-                                <td colspan="6" style="text-align: left; padding: 12px; border-left: 3px solid var(--dark-pink);">
+                                <td colspan="${isViewOnly ? '6' : '7'}" style="text-align: left; padding: 12px; border-left: 3px solid var(--dark-pink);">
                                     <strong style="color: var(--dark-pink);">Results:</strong> ${lab.resultDetails}
                                     ${lab.fileData ? `<br><small style="color: #666;"><i class="fas fa-paperclip"></i> ${lab.fileData.fileName} (${(lab.fileData.fileSize / 1024).toFixed(1)} KB)</small>` : ''}
                                 </td>
@@ -5714,6 +6120,196 @@ class Dashboard {
         `;
 
         historyTable.innerHTML = tableHTML;
+
+        if (isViewOnly) return; // Skip event listeners for view-only roles
+
+        // Add event listeners for edit and delete buttons
+        const editButtons = historyTable.querySelectorAll('.btn-edit-lab');
+        editButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                this.editLabResult(btn.dataset.id, patientId);
+            });
+        });
+
+        const deleteButtons = historyTable.querySelectorAll('.btn-delete-lab');
+        deleteButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                this.deleteLabResult(btn.dataset.id, patientId);
+            });
+        });
+    }
+
+    // Edit lab result with modal
+    editLabResult(labId, patientId) {
+        const allLabResults = JSON.parse(localStorage.getItem('labResults') || '[]');
+        const lab = allLabResults.find(l => l.id === labId && l.patientId === patientId);
+        
+        if (!lab) {
+            alert('Lab result not found.');
+            return;
+        }
+
+        // Create modal with populated form
+        const modalHTML = `
+            <div class="modal-overlay" id="editLabResultModal" style="display: flex;">
+                <div class="modal-content" style="max-width: 600px; max-height: 90vh; overflow-y: auto;">
+                    <div class="modal-header">
+                        <h3 style="margin: 0; color: var(--dark-pink);">
+                            <i class="fas fa-edit"></i> Edit Lab Result
+                        </h3>
+                        <button class="close-modal" onclick="document.getElementById('editLabResultModal').remove()">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <form id="editLabResultForm" style="padding: 20px;">
+                        <div class="form-group">
+                            <label>Test Type *</label>
+                            <input type="text" name="testType" value="${lab.testType}" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Test Date *</label>
+                            <input type="date" name="testDate" value="${lab.testDateRaw || lab.testDate}" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Status *</label>
+                            <select name="status" required>
+                                <option value="Pending" ${lab.status === 'Pending' ? 'selected' : ''}>Pending</option>
+                                <option value="Completed" ${lab.status === 'Completed' ? 'selected' : ''}>Completed</option>
+                                <option value="Reviewed" ${lab.status === 'Reviewed' ? 'selected' : ''}>Reviewed</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Performed By *</label>
+                            <input type="text" name="performedBy" value="${lab.performedBy}" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Result Details *</label>
+                            <textarea name="resultDetails" rows="4" required>${lab.resultDetails}</textarea>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Replace File (Optional)</label>
+                            ${lab.fileData ? `<p style="font-size: 12px; color: #666; margin-bottom: 8px;">
+                                <i class="fas fa-paperclip"></i> Current: ${lab.fileData.fileName} (${(lab.fileData.fileSize / 1024).toFixed(1)} KB)
+                            </p>` : ''}
+                            <input type="file" name="labFile" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
+                            <small style="color: #666;">Leave empty to keep existing file</small>
+                        </div>
+                        
+                        <div style="display: flex; gap: 10px; margin-top: 20px;">
+                            <button type="submit" class="btn btn-primary" style="flex: 1;">
+                                <i class="fas fa-save"></i> Save Changes
+                            </button>
+                            <button type="button" class="btn btn-secondary" onclick="document.getElementById('editLabResultModal').remove()" style="flex: 1;">
+                                <i class="fas fa-times"></i> Cancel
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        `;
+        
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+        
+        // Handle form submission
+        const form = document.getElementById('editLabResultForm');
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData(form);
+            const testDateRaw = formData.get('testDate');
+            const testDate = new Date(testDateRaw).toLocaleDateString('en-US', { 
+                year: 'numeric', 
+                month: 'short', 
+                day: 'numeric' 
+            });
+            
+            // Update lab result data
+            lab.testType = formData.get('testType');
+            lab.testDate = testDate;
+            lab.testDateRaw = testDateRaw;
+            lab.status = formData.get('status');
+            lab.performedBy = formData.get('performedBy');
+            lab.resultDetails = formData.get('resultDetails');
+            lab.recordedDate = new Date().toLocaleString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            
+            // Handle new file upload if provided
+            const fileInput = form.querySelector('input[type="file"]');
+            if (fileInput.files.length > 0) {
+                const file = fileInput.files[0];
+                
+                try {
+                    // Delete old file if exists
+                    if (lab.fileData) {
+                        await fileStorage.deleteFile('labResults', lab.id);
+                    }
+                    
+                    // Store new file
+                    await fileStorage.storeFile('labResults', lab.id, file);
+                    
+                    // Update file metadata
+                    lab.fileData = {
+                        fileName: file.name,
+                        fileSize: file.size,
+                        fileType: file.type
+                    };
+                } catch (error) {
+                    console.error('Error uploading new file:', error);
+                    alert('Error uploading file: ' + error.message);
+                    return;
+                }
+            }
+            
+            // Save to localStorage
+            const labIndex = allLabResults.findIndex(l => l.id === labId);
+            if (labIndex !== -1) {
+                allLabResults[labIndex] = lab;
+                localStorage.setItem('labResults', JSON.stringify(allLabResults));
+            }
+            
+            // Close modal and refresh
+            document.getElementById('editLabResultModal').remove();
+            this.loadLabResultsHistory(patientId);
+            this.showNotification('Lab result updated successfully', 'success');
+        });
+    }
+
+    // Delete lab result with confirmation
+    deleteLabResult(labId, patientId) {
+        const allLabResults = JSON.parse(localStorage.getItem('labResults') || '[]');
+        const lab = allLabResults.find(l => l.id === labId && l.patientId === patientId);
+        
+        if (!lab) {
+            alert('Lab result not found.');
+            return;
+        }
+
+        if (confirm(`Delete lab result for "${lab.testType}" performed on ${lab.testDate}?`)) {
+            // Delete file from IndexedDB if exists
+            if (lab.fileData) {
+                fileStorage.deleteFile('labResults', lab.id).catch(err => {
+                    console.error('Error deleting file:', err);
+                });
+            }
+            
+            // Remove from localStorage
+            const updatedLabResults = allLabResults.filter(l => l.id !== labId);
+            localStorage.setItem('labResults', JSON.stringify(updatedLabResults));
+            
+            // Refresh table
+            this.loadLabResultsHistory(patientId);
+            this.showNotification('Lab result deleted successfully', 'success');
+        }
     }
 
     showPatientLabResultsModal(patientId, returnToPersonalInfo = false) {
@@ -6209,17 +6805,20 @@ class Dashboard {
             return;
         }
 
+        const userRole = (this.currentUser.role || '').trim();
+        const isViewOnly = ['Patient', 'HR/Admin', 'Physician', 'Nurse'].includes(userRole);
         const tableHTML = `
             <div style="overflow-x: auto;">
-                <table class="patients-table" >
+                <table class="patients-table">
                     <thead>
                         <tr>
-                            <th style="width: 15%;">Imaging Type</th>
-                            <th style="width: 12%;">Body Part</th>
-                            <th style="width: 12%;">Imaging Date</th>
+                            <th style="width: ${isViewOnly ? '15%' : '13%'};">Imaging Type</th>
+                            <th style="width: ${isViewOnly ? '12%' : '11%'};">Body Part</th>
+                            <th style="width: ${isViewOnly ? '12%' : '11%'};">Imaging Date</th>
                             <th style="width: 10%;">Status</th>
-                            <th style="width: 15%;">Radiologist</th>
-                            <th style="width: 12%;">Recorded Date</th>
+                            <th style="width: ${isViewOnly ? '15%' : '13%'};">Radiologist</th>
+                            <th style="width: ${isViewOnly ? '12%' : '11%'};">Recorded</th>
+                            ${isViewOnly ? '' : '<th style="width: 10%;">Actions</th>'}
                         </tr>
                     </thead>
                     <tbody>
@@ -6231,9 +6830,21 @@ class Dashboard {
                                 <td><span class="status-badge ${img.status.toLowerCase().replace(' ', '-')}">${img.status}</span></td>
                                 <td>${img.radiologist}</td>
                                 <td>${img.recordedDate}</td>
+                                ${isViewOnly ? '' : `
+                                <td>
+                                    <div style="display: flex; gap: 6px; justify-content: center;">
+                                        <button class="btn btn-sm btn-edit-imaging" data-id="${img.id}" style="padding: 6px 10px; font-size: 13px; background: var(--secondary-pink); color: white; border: none; border-radius: 4px; cursor: pointer;" title="Edit">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-delete-imaging" data-id="${img.id}" style="padding: 6px 10px; font-size: 13px; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;" title="Delete">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                                `}
                             </tr>
                             <tr style="background: #f8f9fa;">
-                                <td colspan="6" style="text-align: left; padding: 12px; border-left: 3px solid var(--dark-pink);">
+                                <td colspan="${isViewOnly ? '6' : '7'}" style="text-align: left; padding: 12px; border-left: 3px solid var(--dark-pink);">
                                     <strong style="color: var(--dark-pink);">Findings:</strong> ${img.findings}
                                 </td>
                             </tr>
@@ -6244,6 +6855,165 @@ class Dashboard {
         `;
 
         historyTable.innerHTML = tableHTML;
+
+        if (isViewOnly) return; // Skip event listeners for view-only roles
+
+        // Add event listeners for edit and delete buttons
+        const editButtons = historyTable.querySelectorAll('.btn-edit-imaging');
+        editButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                this.editImagingResult(btn.dataset.id, patientId);
+            });
+        });
+
+        const deleteButtons = historyTable.querySelectorAll('.btn-delete-imaging');
+        deleteButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                this.deleteImagingResult(btn.dataset.id, patientId);
+            });
+        });
+    }
+
+    // Edit imaging result with modal
+    editImagingResult(imagingId, patientId) {
+        const allImagingResults = JSON.parse(localStorage.getItem('imagingResults') || '[]');
+        const imaging = allImagingResults.find(img => img.id === imagingId && img.patientId === patientId);
+        
+        if (!imaging) {
+            alert('Imaging result not found.');
+            return;
+        }
+
+        // Create modal with populated form
+        const modalHTML = `
+            <div class="modal-overlay" id="editImagingResultModal" style="display: flex;">
+                <div class="modal-content" style="max-width: 600px; max-height: 90vh; overflow-y: auto;">
+                    <div class="modal-header">
+                        <h3 style="margin: 0; color: var(--dark-pink);">
+                            <i class="fas fa-edit"></i> Edit Imaging Result
+                        </h3>
+                        <button class="close-modal" onclick="document.getElementById('editImagingResultModal').remove()">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <form id="editImagingResultForm" style="padding: 20px;">
+                        <div class="form-group">
+                            <label>Imaging Type *</label>
+                            <select name="imagingType" required>
+                                <option value="X-Ray" ${imaging.imagingType === 'X-Ray' ? 'selected' : ''}>X-Ray</option>
+                                <option value="CT Scan" ${imaging.imagingType === 'CT Scan' ? 'selected' : ''}>CT Scan</option>
+                                <option value="MRI" ${imaging.imagingType === 'MRI' ? 'selected' : ''}>MRI</option>
+                                <option value="Ultrasound" ${imaging.imagingType === 'Ultrasound' ? 'selected' : ''}>Ultrasound</option>
+                                <option value="PET Scan" ${imaging.imagingType === 'PET Scan' ? 'selected' : ''}>PET Scan</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Body Part *</label>
+                            <input type="text" name="bodyPart" value="${imaging.bodyPart}" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Imaging Date *</label>
+                            <input type="date" name="imagingDate" value="${imaging.imagingDateRaw || imaging.imagingDate}" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Status *</label>
+                            <select name="status" required>
+                                <option value="Pending" ${imaging.status === 'Pending' ? 'selected' : ''}>Pending</option>
+                                <option value="Completed" ${imaging.status === 'Completed' ? 'selected' : ''}>Completed</option>
+                                <option value="Reviewed" ${imaging.status === 'Reviewed' ? 'selected' : ''}>Reviewed</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Radiologist *</label>
+                            <input type="text" name="radiologist" value="${imaging.radiologist}" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Findings *</label>
+                            <textarea name="findings" rows="4" required>${imaging.findings}</textarea>
+                        </div>
+                        
+                        <div style="display: flex; gap: 10px; margin-top: 20px;">
+                            <button type="submit" class="btn btn-primary" style="flex: 1;">
+                                <i class="fas fa-save"></i> Save Changes
+                            </button>
+                            <button type="button" class="btn btn-secondary" onclick="document.getElementById('editImagingResultModal').remove()" style="flex: 1;">
+                                <i class="fas fa-times"></i> Cancel
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        `;
+        
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+        
+        // Handle form submission
+        const form = document.getElementById('editImagingResultForm');
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData(form);
+            const imagingDateRaw = formData.get('imagingDate');
+            const imagingDate = new Date(imagingDateRaw).toLocaleDateString('en-US', { 
+                year: 'numeric', 
+                month: 'short', 
+                day: 'numeric' 
+            });
+            
+            // Update imaging result data
+            imaging.imagingType = formData.get('imagingType');
+            imaging.bodyPart = formData.get('bodyPart');
+            imaging.imagingDate = imagingDate;
+            imaging.imagingDateRaw = imagingDateRaw;
+            imaging.status = formData.get('status');
+            imaging.radiologist = formData.get('radiologist');
+            imaging.findings = formData.get('findings');
+            imaging.recordedDate = new Date().toLocaleString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            
+            // Save to localStorage
+            const imagingIndex = allImagingResults.findIndex(img => img.id === imagingId);
+            if (imagingIndex !== -1) {
+                allImagingResults[imagingIndex] = imaging;
+                localStorage.setItem('imagingResults', JSON.stringify(allImagingResults));
+            }
+            
+            // Close modal and refresh
+            document.getElementById('editImagingResultModal').remove();
+            this.loadImagingResultsHistory(patientId);
+            this.showNotification('Imaging result updated successfully', 'success');
+        });
+    }
+
+    // Delete imaging result with confirmation
+    deleteImagingResult(imagingId, patientId) {
+        const allImagingResults = JSON.parse(localStorage.getItem('imagingResults') || '[]');
+        const imaging = allImagingResults.find(img => img.id === imagingId && img.patientId === patientId);
+        
+        if (!imaging) {
+            alert('Imaging result not found.');
+            return;
+        }
+
+        if (confirm(`Delete ${imaging.imagingType} imaging for ${imaging.bodyPart} performed on ${imaging.imagingDate}?`)) {
+            // Remove from localStorage
+            const updatedImagingResults = allImagingResults.filter(img => img.id !== imagingId);
+            localStorage.setItem('imagingResults', JSON.stringify(updatedImagingResults));
+            
+            // Refresh table
+            this.loadImagingResultsHistory(patientId);
+            this.showNotification('Imaging result deleted successfully', 'success');
+        }
     }
 
     // Imaging Orders Listeners (RadTech)
@@ -6611,18 +7381,21 @@ class Dashboard {
             return;
         }
 
+        const userRole = (this.currentUser.role || '').trim();
+        const isViewOnly = ['Patient', 'HR/Admin'].includes(userRole);
         const tableHTML = `
             <div style="overflow-x: auto;">
-                <table class="patients-table" >
+                <table class="patients-table">
                     <thead>
                         <tr>
-                            <th style="width: 18%;">Drug Name</th>
-                            <th style="width: 10%;">Quantity</th>
-                            <th style="width: 12%;">Batch Number</th>
-                            <th style="width: 12%;">Lot Number</th>
-                            <th style="width: 12%;">Expiry Date</th>
-                            <th style="width: 12%;">Date Dispensed</th>
-                            <th style="width: 14%;">Dispensed By</th>
+                            <th style="width: ${isViewOnly ? '18%' : '16%'};">Drug Name</th>
+                            <th style="width: ${isViewOnly ? '10%' : '9%'};">Quantity</th>
+                            <th style="width: ${isViewOnly ? '12%' : '11%'};">Batch Number</th>
+                            <th style="width: ${isViewOnly ? '12%' : '10%'};">Lot Number</th>
+                            <th style="width: ${isViewOnly ? '12%' : '11%'};">Expiry Date</th>
+                            <th style="width: ${isViewOnly ? '12%' : '11%'};">Date Dispensed</th>
+                            <th style="width: ${isViewOnly ? '14%' : '12%'};">Dispensed By</th>
+                            ${isViewOnly ? '' : '<th style="width: 10%;">Actions</th>'}
                         </tr>
                     </thead>
                     <tbody>
@@ -6635,16 +7408,28 @@ class Dashboard {
                                 <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${disp.expiryDate}</td>
                                 <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${disp.dispensedDate}</td>
                                 <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${disp.dispensedBy}</td>
+                                ${isViewOnly ? '' : `
+                                <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">
+                                    <div style="display: flex; gap: 6px; justify-content: center;">
+                                        <button class="btn btn-sm btn-edit-dispensing" data-id="${disp.id}" style="padding: 6px 10px; font-size: 13px; background: var(--secondary-pink); color: white; border: none; border-radius: 4px; cursor: pointer;" title="Edit">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-delete-dispensing" data-id="${disp.id}" style="padding: 6px 10px; font-size: 13px; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;" title="Delete">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                                `}
                             </tr>
                             ${disp.notes ? `
                             <tr style="background: #fafafa;">
-                                <td colspan="7" style="text-align: left; padding: 12px 12px 14px 12px; border-left: 4px solid var(--dark-pink); border-bottom: 2px solid #e0e0e0; background: #fff3f8;">
+                                <td colspan="${isViewOnly ? '7' : '8'}" style="text-align: left; padding: 12px 12px 14px 12px; border-left: 4px solid var(--dark-pink); border-bottom: 2px solid #e0e0e0; background: #fff3f8;">
                                     <strong style="color: var(--dark-pink);">Notes:</strong> ${disp.notes}
                                 </td>
                             </tr>
                             ` : `
                             <tr style="background: #fafafa;">
-                                <td colspan="7" style="padding: 0; border-bottom: 2px solid #e0e0e0; height: 4px;"></td>
+                                <td colspan="${isViewOnly ? '7' : '8'}" style="padding: 0; border-bottom: 2px solid #e0e0e0; height: 4px;"></td>
                             </tr>
                             `}
                         `).join('')}
@@ -6654,6 +7439,168 @@ class Dashboard {
         `;
 
         historyTable.innerHTML = tableHTML;
+
+        if (isViewOnly) return; // Skip event listeners for view-only roles
+
+        // Add event listeners for edit and delete buttons
+        const editButtons = historyTable.querySelectorAll('.btn-edit-dispensing');
+        editButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                this.editDrugDispensing(btn.dataset.id, patientId);
+            });
+        });
+
+        const deleteButtons = historyTable.querySelectorAll('.btn-delete-dispensing');
+        deleteButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                this.deleteDrugDispensing(btn.dataset.id, patientId);
+            });
+        });
+    }
+
+    // Edit drug dispensing with modal
+    editDrugDispensing(dispensingId, patientId) {
+        const allDrugDispensings = JSON.parse(localStorage.getItem('drugDispensing') || '[]');
+        const dispensing = allDrugDispensings.find(d => d.id === dispensingId && d.patientId === patientId);
+        
+        if (!dispensing) {
+            alert('Dispensing record not found.');
+            return;
+        }
+
+        // Create modal with populated form
+        const modalHTML = `
+            <div class="modal-overlay" id="editDrugDispensingModal" style="display: flex;">
+                <div class="modal-content" style="max-width: 600px; max-height: 90vh; overflow-y: auto;">
+                    <div class="modal-header">
+                        <h3 style="margin: 0; color: var(--dark-pink);">
+                            <i class="fas fa-edit"></i> Edit Drug Dispensing Record
+                        </h3>
+                        <button class="close-modal" onclick="document.getElementById('editDrugDispensingModal').remove()">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <form id="editDrugDispensingForm" style="padding: 20px;">
+                        <div class="form-group">
+                            <label>Drug Name *</label>
+                            <input type="text" name="drugName" value="${dispensing.drugName}" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Quantity *</label>
+                            <input type="number" name="quantity" value="${dispensing.quantity}" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Batch Number *</label>
+                            <input type="text" name="batchNumber" value="${dispensing.batchNumber}" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Lot Number *</label>
+                            <input type="text" name="lotNumber" value="${dispensing.lotNumber}" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Expiry Date *</label>
+                            <input type="date" name="expiryDate" value="${dispensing.expiryDateRaw || dispensing.expiryDate}" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Date Dispensed *</label>
+                            <input type="date" name="dispensedDate" value="${dispensing.dispensedDateRaw || dispensing.dispensedDate}" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Dispensed By *</label>
+                            <input type="text" name="dispensedBy" value="${dispensing.dispensedBy}" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Notes (Optional)</label>
+                            <textarea name="notes" rows="3">${dispensing.notes || ''}</textarea>
+                        </div>
+                        
+                        <div style="display: flex; gap: 10px; margin-top: 20px;">
+                            <button type="submit" class="btn btn-primary" style="flex: 1;">
+                                <i class="fas fa-save"></i> Save Changes
+                            </button>
+                            <button type="button" class="btn btn-secondary" onclick="document.getElementById('editDrugDispensingModal').remove()" style="flex: 1;">
+                                <i class="fas fa-times"></i> Cancel
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        `;
+        
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+        
+        // Handle form submission
+        const form = document.getElementById('editDrugDispensingForm');
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData(form);
+            const expiryDateRaw = formData.get('expiryDate');
+            const expiryDate = new Date(expiryDateRaw).toLocaleDateString('en-US', { 
+                year: 'numeric', 
+                month: 'short', 
+                day: 'numeric' 
+            });
+            
+            const dispensedDateRaw = formData.get('dispensedDate');
+            const dispensedDate = new Date(dispensedDateRaw).toLocaleDateString('en-US', { 
+                year: 'numeric', 
+                month: 'short', 
+                day: 'numeric' 
+            });
+            
+            // Update dispensing data
+            dispensing.drugName = formData.get('drugName');
+            dispensing.quantity = formData.get('quantity');
+            dispensing.batchNumber = formData.get('batchNumber');
+            dispensing.lotNumber = formData.get('lotNumber');
+            dispensing.expiryDate = expiryDate;
+            dispensing.expiryDateRaw = expiryDateRaw;
+            dispensing.dispensedDate = dispensedDate;
+            dispensing.dispensedDateRaw = dispensedDateRaw;
+            dispensing.dispensedBy = formData.get('dispensedBy');
+            dispensing.notes = formData.get('notes');
+            
+            // Save to localStorage
+            const dispensingIndex = allDrugDispensings.findIndex(d => d.id === dispensingId);
+            if (dispensingIndex !== -1) {
+                allDrugDispensings[dispensingIndex] = dispensing;
+                localStorage.setItem('drugDispensing', JSON.stringify(allDrugDispensings));
+            }
+            
+            // Close modal and refresh
+            document.getElementById('editDrugDispensingModal').remove();
+            this.loadDrugDispensingHistory(patientId);
+            this.showNotification('Dispensing record updated successfully', 'success');
+        });
+    }
+
+    // Delete drug dispensing with confirmation
+    deleteDrugDispensing(dispensingId, patientId) {
+        const allDrugDispensings = JSON.parse(localStorage.getItem('drugDispensing') || '[]');
+        const dispensing = allDrugDispensings.find(d => d.id === dispensingId && d.patientId === patientId);
+        
+        if (!dispensing) {
+            alert('Dispensing record not found.');
+            return;
+        }
+
+        if (confirm(`Delete dispensing record for "${dispensing.drugName}" (${dispensing.quantity} units)?`)) {
+            // Remove from localStorage
+            const updatedDispensings = allDrugDispensings.filter(d => d.id !== dispensingId);
+            localStorage.setItem('drugDispensing', JSON.stringify(updatedDispensings));
+            
+            // Refresh table
+            this.loadDrugDispensingHistory(patientId);
+            this.showNotification('Dispensing record deleted successfully', 'success');
+        }
     }
 
     loadDrugDispensingHistoryAdmin(patientId) {
