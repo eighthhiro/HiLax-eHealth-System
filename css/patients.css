@@ -56,6 +56,15 @@
     white-space: nowrap;
 }
 
+/* Notes, Findings, and Description cells - allow text wrapping */
+.patients-table td[colspan] {
+    white-space: normal;
+    word-wrap: break-word;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    max-width: 800px;
+}
+
 /* Actions column cells centered to match header */
 .patients-table td:nth-child(9) {
     text-align: center;

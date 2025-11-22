@@ -2308,7 +2308,7 @@ class Dashboard {
                                 </tr>
                                 ${vs.notes ? `
                                 <tr style="background: #fafafa;">
-                                    <td colspan="9" style="text-align: left; padding: 12px 12px 14px 12px; border-left: 4px solid var(--dark-pink); border-bottom: 2px solid #e0e0e0; background: #fff3f8;">
+                                    <td colspan="9" style="text-align: left; padding: 12px 12px 14px 12px; border-left: 4px solid var(--dark-pink); border-bottom: 2px solid #e0e0e0; background: #fff3f8; word-wrap: break-word; max-width: 800px; overflow-wrap: break-word;">
                                         <strong style="color: var(--dark-pink);">Notes:</strong> ${vs.notes}
                                     </td>
                                 </tr>
@@ -3949,7 +3949,7 @@ class Dashboard {
             if (entry.notes) {
                 tableHTML += `
                     <tr style="background: #fafafa;">
-                        <td colspan="${isViewOnly ? '5' : '6'}" style="text-align: left; padding: 12px 12px 14px 12px; border-left: 4px solid var(--dark-pink); border-bottom: 2px solid #e0e0e0; background: #fff3f8;">
+                        <td colspan="${isViewOnly ? '5' : '6'}" style="text-align: left; padding: 12px 12px 14px 12px; border-left: 4px solid var(--dark-pink); border-bottom: 2px solid #e0e0e0; background: #fff3f8; word-wrap: break-word; max-width: 800px; overflow-wrap: break-word;">
                             <strong style="color: var(--dark-pink);">Notes:</strong> ${entry.notes}
                         </td>
                     </tr>
@@ -4887,7 +4887,7 @@ class Dashboard {
                             </tr>
                             ${vs.notes ? `
                             <tr style="background: #fafafa;">
-                                <td colspan="${isViewOnly ? '9' : '10'}" style="text-align: left; padding: 12px 12px 14px 12px; border-left: 4px solid var(--dark-pink); border-bottom: 2px solid #e0e0e0; background: #fff3f8;">
+                                <td colspan="${isViewOnly ? '9' : '10'}" style="text-align: left; padding: 12px 12px 14px 12px; border-left: 4px solid var(--dark-pink); border-bottom: 2px solid #e0e0e0; background: #fff3f8; word-wrap: break-word; max-width: 800px; overflow-wrap: break-word;">
                                     <strong style="color: var(--dark-pink);">Notes:</strong> ${vs.notes}
                                 </td>
                             </tr>
@@ -6877,7 +6877,7 @@ class Dashboard {
                                         </td>
                                     </tr>
                                     <tr style="background: #f8f9fa;">
-                                        <td colspan="6" style="text-align: left; padding: 12px; border-left: 3px solid var(--dark-pink);">
+                                        <td colspan="6" style="text-align: left; padding: 12px; border-left: 3px solid var(--dark-pink); word-wrap: break-word; max-width: 800px; overflow-wrap: break-word;">
                                             <strong style="color: var(--dark-pink);">Findings:</strong> ${img.imagingFindings}
                                             ${img.fileData ? `<br><small style="color: #666; margin-top: 6px; display: inline-block;">
                                                 <i class="fas fa-paperclip"></i> ${img.fileData.fileName} 
@@ -7687,7 +7687,7 @@ class Dashboard {
                                 `}
                             </tr>
                             <tr style="background: #f8f9fa;">
-                                <td colspan="${isViewOnly ? '6' : '7'}" style="text-align: left; padding: 12px; border-left: 3px solid var(--dark-pink);">
+                                <td colspan="${isViewOnly ? '6' : '7'}" style="text-align: left; padding: 12px; border-left: 3px solid var(--dark-pink); word-wrap: break-word; max-width: 800px; overflow-wrap: break-word;">
                                     <strong style="color: var(--dark-pink);">Findings:</strong> ${img.imagingFindings}
                                     ${img.fileData ? `<br><small style="color: #666;"><i class="fas fa-paperclip"></i> ${img.fileData.fileName} (${(img.fileData.fileSize / 1024).toFixed(1)} KB)</small>` : ''}
                                 </td>
@@ -8099,7 +8099,7 @@ class Dashboard {
                             </tr>
                             ${disp.notes ? `
                             <tr style="background: #fafafa;">
-                                <td colspan="${isViewOnly ? '7' : '8'}" style="text-align: left; padding: 12px 12px 14px 12px; border-left: 4px solid var(--dark-pink); border-bottom: 2px solid #e0e0e0; background: #fff3f8;">
+                                <td colspan="${isViewOnly ? '7' : '8'}" style="text-align: left; padding: 12px 12px 14px 12px; border-left: 4px solid var(--dark-pink); border-bottom: 2px solid #e0e0e0; background: #fff3f8; word-wrap: break-word; max-width: 800px; overflow-wrap: break-word;">
                                     <strong style="color: var(--dark-pink);">Notes:</strong> ${disp.notes}
                                 </td>
                             </tr>
