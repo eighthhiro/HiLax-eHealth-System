@@ -189,6 +189,14 @@ class ContentFactory {
         return this.sharedContent.getDefaultContent('nursing-assessment');
     }
 
+    // Medical History - Physician (full access), Admin and Nurse (view only)
+    getMedicalHistoryContent() {
+        if (this.roleContent && typeof this.roleContent.getMedicalHistoryContent === 'function') {
+            return this.roleContent.getMedicalHistoryContent();
+        }
+        return this.sharedContent.getDefaultContent('medical-history');
+    }
+
     // Default content for other pages
     getDefaultContent(pageId) {
         return this.sharedContent.getDefaultContent(pageId);

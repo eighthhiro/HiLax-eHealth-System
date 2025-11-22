@@ -140,8 +140,8 @@
 }
 
 .card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    transform: translateY(-1.5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.05);
 }
 
 .card-header {
@@ -927,7 +927,7 @@ body.patient-role .patients-table .actions-column {
 
 /* Fixed heights for compact dashboard */
 .announcements-section .card {
-    height: 500px;
+    height: 520px;
     display: flex;
     flex-direction: column;
 }

@@ -79,8 +79,8 @@ class PatientContent {
             doctor: patient.doctor || 'Not Assigned',
             allergies: patient.allergies || 'None known',
             medicalHistory: patient.medicalHistory || 'No significant medical history',
-            insuranceProvider: patient.insuranceProvider || 'None',
-            insuranceNumber: patient.insuranceNumber || 'N/A',
+            insuranceProvider: (patient.billing && patient.billing.insuranceProvider) ? patient.billing.insuranceProvider : 'None',
+            insuranceNumber: (patient.billing && patient.billing.insuranceNumber) ? patient.billing.insuranceNumber : 'N/A',
             height: info.height || 'Not specified',
             weight: info.weight || 'Not specified'
         };
@@ -89,8 +89,8 @@ class PatientContent {
             <div class="my-profile-container">
                 <!-- Profile Header -->
                 <div class="card" style="margin-bottom: 24px;">
-                    <div class="card-header" style="background: linear-gradient(135deg, var(--dark-pink) 0%, #c97b8e 100%); color: white;">
-                        <h2 style="margin: 0; font-size: 24px;">
+                    <div class="card-header">
+                        <h2 style="margin: 0; font-size: 24px; color: var(--dark-pink);">
                             <i class="fas fa-user-circle"></i> My Profile
                         </h2>
                     </div>
@@ -331,8 +331,8 @@ class PatientContent {
         return `
             <div class="medical-records-container">
                 <div class="card">
-                    <div class="card-header" style="background: linear-gradient(135deg, var(--dark-pink) 0%, #c97b8e 100%); color: white;">
-                        <h2 style="margin: 0; font-size: 24px;">
+                    <div class="card-header">
+                        <h2 style="margin: 0; font-size: 24px; color: var(--dark-pink);">
                             <i class="fas fa-file-medical"></i> My Medical Records
                         </h2>
                     </div>
@@ -890,25 +890,29 @@ class PatientContent {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        ${patientVitalSigns.map(vs => `
-                                            <tr>
-                                                <td>${vs.recordedDate}</td>
-                                                <td>${vs.recordedTime}</td>
-                                                <td><strong>${vs.bloodPressure}</strong></td>
-                                                <td>${vs.heartRate}</td>
-                                                <td>${vs.temperature}</td>
-                                                <td>${vs.respiratoryRate}</td>
-                                                <td>${vs.oxygenSaturation}%</td>
-                                                <td>${vs.painLevel !== null ? vs.painLevel + '/10' : '-'}</td>
-                                                <td>${vs.recordedBy}</td>
+                                        ${patientVitalSigns.map((vs, index) => `
+                                            <tr style="border-top: ${index > 0 ? '8px solid #fff' : '0'}; background: #fafafa;">
+                                                <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${vs.recordedDate}</td>
+                                                <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${vs.recordedTime}</td>
+                                                <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;"><strong>${vs.bloodPressure}</strong></td>
+                                                <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${vs.heartRate}</td>
+                                                <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${vs.temperature}</td>
+                                                <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${vs.respiratoryRate}</td>
+                                                <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${vs.oxygenSaturation}%</td>
+                                                <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${vs.painLevel !== null ? vs.painLevel + '/10' : '-'}</td>
+                                                <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${vs.recordedBy}</td>
                                             </tr>
                                             ${vs.notes ? `
-                                            <tr style="background: #f8f9fa;">
-                                                <td colspan="9" style="text-align: left; padding: 12px; border-left: 3px solid var(--dark-pink);">
+                                            <tr style="background: #fafafa;">
+                                                <td colspan="9" style="text-align: left; padding: 12px 12px 14px 12px; border-left: 4px solid var(--dark-pink); border-bottom: 2px solid #e0e0e0; background: #fff3f8;">
                                                     <strong style="color: var(--dark-pink);">Notes:</strong> ${vs.notes}
                                                 </td>
                                             </tr>
-                                            ` : ''}
+                                            ` : `
+                                            <tr style="background: #fafafa;">
+                                                <td colspan="9" style="padding: 0; border-bottom: 2px solid #e0e0e0; height: 4px;"></td>
+                                            </tr>
+                                            `}
                                         `).join('')}
                                     </tbody>
                                 </table>
@@ -954,15 +958,15 @@ class PatientContent {
 
         let historyRows = '';
         if (myLabResults.length > 0) {
-            myLabResults.forEach(lab => {
+            myLabResults.forEach((lab, index) => {
                 historyRows += `
-                    <tr>
-                        <td style="padding: 12px;">${lab.testType}</td>
-                        <td style="padding: 12px;">${lab.testDate}</td>
-                        <td style="padding: 12px;">${lab.status || 'Completed'}</td>
-                        <td style="padding: 12px;">${lab.performedBy || 'Lab Staff'}</td>
-                        <td style="padding: 12px;">${lab.recordedDate}</td>
-                        <td style="padding: 12px;">
+                    <tr style="border-top: ${index > 0 ? '8px solid #fff' : '0'}; background: #fafafa;">
+                        <td style="border-top: 2px solid #e0e0e0; padding-top: 14px; padding: 12px;">${lab.testType}</td>
+                        <td style="border-top: 2px solid #e0e0e0; padding-top: 14px; padding: 12px;">${lab.testDate}</td>
+                        <td style="border-top: 2px solid #e0e0e0; padding-top: 14px; padding: 12px;">${lab.status || 'Completed'}</td>
+                        <td style="border-top: 2px solid #e0e0e0; padding-top: 14px; padding: 12px;">${lab.performedBy || 'Lab Staff'}</td>
+                        <td style="border-top: 2px solid #e0e0e0; padding-top: 14px; padding: 12px;">${lab.recordedDate}</td>
+                        <td style="border-top: 2px solid #e0e0e0; padding-top: 14px; padding: 12px;">
                             ${lab.fileData ? `
                                 <button class="btn btn-sm" style="padding: 5px 10px; font-size: 12px; background: var(--info-blue); color: white; margin-right: 4px;" 
                                         onclick="fileStorage.viewFile('labResults', '${lab.id}')">
@@ -978,11 +982,17 @@ class PatientContent {
                 `;
                 if (lab.resultDetails) {
                     historyRows += `
-                        <tr>
-                            <td colspan="6" style="padding: 8px 12px; background-color: #f8f9fa; font-size: 13px; text-align: left; border-left: 3px solid var(--dark-pink);">
+                        <tr style="background: #fafafa;">
+                            <td colspan="6" style="padding: 12px 12px 14px 12px; background: #fff3f8; font-size: 13px; text-align: left; border-left: 4px solid var(--dark-pink); border-bottom: 2px solid #e0e0e0;">
                                 <strong style="color: var(--dark-pink);">Results:</strong> ${lab.resultDetails}
                                 ${lab.fileData ? `<br><small style="color: #666; margin-top: 6px; display: inline-block;"><i class="fas fa-paperclip"></i> ${lab.fileData.fileName} <span style="color: #999;">(${(lab.fileData.fileSize / 1024).toFixed(1)} KB)</span></small>` : ''}
                             </td>
+                        </tr>
+                    `;
+                } else {
+                    historyRows += `
+                        <tr style="background: #fafafa;">
+                            <td colspan="6" style="padding: 0; border-bottom: 2px solid #e0e0e0; height: 4px;"></td>
                         </tr>
                     `;
                 }
@@ -1104,23 +1114,27 @@ class PatientContent {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        ${patientPrescriptions.map(med => `
-                                            <tr>
-                                                <td>${med.prescribedDate} ${med.prescribedTime || ''}</td>
-                                                <td><strong>${med.medicationName}</strong></td>
-                                                <td>${med.dosage}</td>
-                                                <td>${med.frequency}</td>
-                                                <td>${med.route}</td>
-                                                <td>${med.duration || '-'}</td>
-                                                <td>${med.prescribedBy}</td>
+                                        ${patientPrescriptions.map((med, index) => `
+                                            <tr style="border-top: ${index > 0 ? '8px solid #fff' : '0'}; background: #fafafa;">
+                                                <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${med.prescribedDate} ${med.prescribedTime || ''}</td>
+                                                <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;"><strong>${med.medicationName}</strong></td>
+                                                <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${med.dosage}</td>
+                                                <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${med.frequency}</td>
+                                                <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${med.route}</td>
+                                                <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${med.duration || '-'}</td>
+                                                <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${med.prescribedBy}</td>
                                             </tr>
                                             ${med.notes ? `
-                                            <tr style="background: #f8f9fa;">
-                                                <td colspan="7" style="text-align: left; padding: 12px; border-left: 3px solid var(--dark-pink);">
+                                            <tr style="background: #fafafa;">
+                                                <td colspan="7" style="text-align: left; padding: 12px 12px 14px 12px; border-left: 4px solid var(--dark-pink); border-bottom: 2px solid #e0e0e0; background: #fff3f8;">
                                                     <strong style="color: var(--dark-pink);">Instructions:</strong> ${med.notes}
                                                 </td>
                                             </tr>
-                                            ` : ''}
+                                            ` : `
+                                            <tr style="background: #fafafa;">
+                                                <td colspan="7" style="padding: 0; border-bottom: 2px solid #e0e0e0; height: 4px;"></td>
+                                            </tr>
+                                            `}
                                         `).join('')}
                                     </tbody>
                                 </table>
@@ -1139,7 +1153,7 @@ class PatientContent {
     }
 
     // Imaging Results Content (Own Results Only)
-    getImagingOrdersContent() {
+    getImagingResultsContent() {
         const allImagingResults = JSON.parse(localStorage.getItem('imagingResults') || '[]');
         const myImagingResults = allImagingResults.filter(img => img.patientId === this.currentUser.patientId);
 
@@ -1168,18 +1182,16 @@ class PatientContent {
                                             <th>Modality</th>
                                             <th>Date</th>
                                             <th>Status</th>
-                                            <th>Findings</th>
                                             <th>File</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        ${myImagingResults.map(result => `
-                                            <tr>
-                                                <td><strong>${result.imagingModality}</strong></td>
-                                                <td>${result.imagingDate}</td>
-                                                <td><span class="status-badge ${result.status.toLowerCase().replace(' ', '-')}">${result.status}</span></td>
-                                                <td>${result.imagingFindings}</td>
-                                                <td>
+                                        ${myImagingResults.map((result, index) => `
+                                            <tr style="border-top: ${index > 0 ? '8px solid #fff' : '0'}; background: #fafafa;">
+                                                <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;"><strong>${result.imagingModality}</strong></td>
+                                                <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${result.imagingDate}</td>
+                                                <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;"><span class="status-badge ${result.status.toLowerCase().replace(' ', '-')}">${result.status}</span></td>
+                                                <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">
                                                     ${result.fileData ? `
                                                         <button class="btn btn-sm" style="padding: 5px 10px; font-size: 12px; background: var(--info-blue); color: white; margin-right: 4px;" 
                                                                 onclick="fileStorage.viewFile('imagingResults', '${result.id}')">
@@ -1192,6 +1204,17 @@ class PatientContent {
                                                     ` : '<span style="color: #999; font-size: 12px;">No file</span>'}
                                                 </td>
                                             </tr>
+                                            ${result.imagingFindings ? `
+                                            <tr style="background: #fafafa;">
+                                                <td colspan="4" style="text-align: left; padding: 12px 12px 14px 12px; border-left: 4px solid var(--dark-pink); border-bottom: 2px solid #e0e0e0; background: #fff3f8;">
+                                                    <strong style="color: var(--dark-pink);">Findings:</strong> ${result.imagingFindings}
+                                                </td>
+                                            </tr>
+                                            ` : `
+                                            <tr style="background: #fafafa;">
+                                                <td colspan="4" style="padding: 0; border-bottom: 2px solid #e0e0e0; height: 4px;"></td>
+                                            </tr>
+                                            `}
                                         `).join('')}
                                     </tbody>
                                 </table>
@@ -1207,5 +1230,10 @@ class PatientContent {
                 </div>
             </div>
         `;
+    }
+
+    // Imaging Orders Content (for backwards compatibility)
+    getImagingOrdersContent() {
+        return this.getImagingResultsContent();
     }
 }

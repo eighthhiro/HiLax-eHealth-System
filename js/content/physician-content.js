@@ -182,6 +182,12 @@ class PhysicianContent {
                 Medications
             </button>`;
             
+            // Medical History button
+            const medicalHistoryBtn = `<button class="btn btn-sm btn-medical-history" data-patient-id="${patient.id}" title="View Medical History">
+                <i class="fas fa-notes-medical"></i>
+                History
+            </button>`;
+            
             tableRows += `
                 <tr data-patient-id="${patient.id}">
                     <td>${patient.id}</td>
@@ -193,6 +199,7 @@ class PhysicianContent {
                     <td>${billingBtn}</td>
                     <td>${recordsContent}</td>
                     <td>${medicationsBtn}</td>
+                    <td>${medicalHistoryBtn}</td>
                 </tr>
             `;
         });
@@ -219,6 +226,7 @@ class PhysicianContent {
                                     <th>Billing</th>
                                     <th>Records</th>
                                     <th>Medications</th>
+                                    <th>Medical History</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -1221,6 +1229,127 @@ class PhysicianContent {
                                 <i class="fas fa-history"></i> Imaging Results History
                             </h4>
                             <div id="imagingResultsHistoryTablePhysician"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    // Patient Medical History (PMH) Content for Physician
+    getMedicalHistoryContent() {
+        let patients = [];
+        try {
+            const stored = localStorage.getItem('patients');
+            if (stored) {
+                patients = JSON.parse(stored);
+            }
+        } catch (e) {
+            console.error('Error loading patients:', e);
+        }
+
+        if (patients.length === 0) {
+            patients = [
+                { id: 'P001', fullName: 'Miranda, Hebrew T.', age: 19, status: 'Active', doctor: 'Dr. Sta. Maria' },
+                { id: 'P002', fullName: 'Sta.Maria, Rizza M.', age: 20, status: 'Admitted', doctor: 'Dr. Sta. Maria' },
+                { id: 'P003', fullName: 'Puquiz, Daniel T.', age: 21, status: 'Active', doctor: 'Dr. Salvador' }
+            ];
+        }
+
+        const patientOptions = patients.map(patient => 
+            `<option value="${patient.id}">${patient.id} - ${patient.fullName}</option>`
+        ).join('');
+
+        return `
+            <div class="medical-history-management">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-notes-medical"></i>
+                            Patient Medical History (PMH)
+                        </h3>
+                    </div>
+                    <div class="card-content">
+                        <!-- Patient Selection -->
+                        <div class="patient-selector" style="margin-bottom: 24px; padding: 20px; background: var(--light-pink); border-radius: 8px;">
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label for="medicalHistoryPatient" style="font-weight: 600; margin-bottom: 8px; display: block;">
+                                    <i class="fas fa-user-injured"></i> Select Patient
+                                </label>
+                                <select id="medicalHistoryPatient" class="form-control" required style="font-size: 14px;">
+                                    <option value="">-- Select a patient --</option>
+                                    ${patientOptions}
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Patient Info Display -->
+                        <div id="selectedPatientInfoMedicalHistory" style="display: none; margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-left: 4px solid var(--dark-pink); border-radius: 4px;">
+                            <h4 style="margin-bottom: 10px; color: var(--dark-pink);">
+                                <i class="fas fa-user-injured"></i> <span id="selectedPatientNameMedicalHistory"></span>
+                            </h4>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
+                                <div><strong>Patient ID:</strong> <span id="selectedPatientIdMedicalHistory"></span></div>
+                                <div><strong>Age:</strong> <span id="selectedPatientAgeMedicalHistory"></span></div>
+                                <div><strong>Status:</strong> <span id="selectedPatientStatusMedicalHistory"></span></div>
+                                <div><strong>Doctor:</strong> <span id="selectedPatientDoctorMedicalHistory"></span></div>
+                            </div>
+                        </div>
+
+                        <!-- Medical History Form -->
+                        <div id="medicalHistoryForm" style="display: none;">
+                            <form id="newMedicalHistoryForm">
+                                <div style="display: grid; grid-template-columns: 1fr; gap: 20px; margin-bottom: 20px;">
+                                    <div class="form-group">
+                                        <label for="historyCategory">Category <span style="color: red;">*</span></label>
+                                        <select id="historyCategory" class="form-control" required>
+                                            <option value="">Select Category</option>
+                                            <option value="Past Illness">Past Illness</option>
+                                            <option value="Surgery">Surgery/Procedure</option>
+                                            <option value="Hospitalization">Hospitalization</option>
+                                            <option value="Chronic Condition">Chronic Condition</option>
+                                            <option value="Family History">Family History</option>
+                                            <option value="Social History">Social History</option>
+                                            <option value="Allergy">Allergy</option>
+                                            <option value="Immunization">Immunization</option>
+                                            <option value="Other">Other</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin-bottom: 20px;">
+                                    <div class="form-group">
+                                        <label for="historyDate">Date</label>
+                                        <input type="date" id="historyDate" class="form-control">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="historyTitle">Title/Diagnosis <span style="color: red;">*</span></label>
+                                        <input type="text" id="historyTitle" class="form-control" required placeholder="e.g., Appendectomy, Diabetes Type 2">
+                                    </div>
+                                </div>
+
+                                <div class="form-group" style="margin-bottom: 20px;">
+                                    <label for="historyDescription">Description/Details <span style="color: red;">*</span></label>
+                                    <textarea id="historyDescription" class="form-control" rows="4" required placeholder="Detailed information about the medical history entry..."></textarea>
+                                </div>
+
+                                <div class="form-group" style="margin-bottom: 20px;">
+                                    <label for="historyNotes">Additional Notes</label>
+                                    <textarea id="historyNotes" class="form-control" rows="2" placeholder="Any additional notes or observations..."></textarea>
+                                </div>
+
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-plus"></i> Add Medical History Entry
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- Medical History Display -->
+                        <div id="medicalHistoryDisplay" style="display: none; margin-top: 24px;">
+                            <h4 style="color: var(--dark-pink); margin-bottom: 16px;">
+                                <i class="fas fa-history"></i> Medical History Records
+                            </h4>
+                            <div id="medicalHistoryTableContainer"></div>
                         </div>
                     </div>
                 </div>

@@ -173,6 +173,9 @@ class Dashboard {
             case 'progress-notes':
                 pageContent = this.contentGenerator.getProgressNotesContent();
                 break;
+            case 'medical-history':
+                pageContent = this.contentGenerator.getMedicalHistoryContent();
+                break;
             case 'nursing-assessment':
                 pageContent = this.contentGenerator.getNursingAssessmentContent();
                 break;
@@ -220,6 +223,8 @@ class Dashboard {
             this.attachQualityControlListeners();
         } else if (pageId === 'progress-notes') {
             this.attachProgressNotesListeners();
+        } else if (pageId === 'medical-history') {
+            this.attachMedicalHistoryListeners();
         } else if (pageId === 'nursing-assessment') {
             this.attachNursingAssessmentListeners();
         }
@@ -402,6 +407,16 @@ class Dashboard {
                     const patientId = e.currentTarget.getAttribute('data-patient-id');
                     this.selectedPatientForMedications = patientId;
                     this.loadPage('medications');
+                });
+            });
+
+            // Medical History buttons
+            const medicalHistoryButtons = document.querySelectorAll('.btn-medical-history');
+            medicalHistoryButtons.forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const patientId = e.currentTarget.getAttribute('data-patient-id');
+                    this.selectedPatientForMedicalHistory = patientId;
+                    this.loadPage('medical-history');
                 });
             });
         } else {
@@ -715,6 +730,17 @@ class Dashboard {
                         </div>
                     </div>
 
+                    <div class="form-row" id="admissionFieldsRow" style="display: none;">
+                        <div class="form-group">
+                            <label for="admissionDate">Admission Date</label>
+                            <input type="date" id="admissionDate" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label for="roomNumber">Room Number</label>
+                            <input type="text" id="roomNumber" class="form-control" placeholder="e.g., 301-A">
+                        </div>
+                    </div>
+
                     <div class="form-row">
                         <div class="form-group">
                             <label for="doctor">Assigned Doctor *</label>
@@ -775,6 +801,18 @@ class Dashboard {
         document.getElementById('cancelBtn').addEventListener('click', () => this.closeModal());
         document.getElementById('addPatientForm').addEventListener('submit', (e) => this.handleAddPatient(e));
         document.getElementById('addPersonalInfoBtn').addEventListener('click', () => this.showPersonalInfoModal());
+        
+        // Status change listener for admission fields
+        document.getElementById('status').addEventListener('change', (e) => {
+            const admissionFields = document.getElementById('admissionFieldsRow');
+            if (e.target.value === 'Admitted') {
+                admissionFields.style.display = 'flex';
+            } else {
+                admissionFields.style.display = 'none';
+                document.getElementById('admissionDate').value = '';
+                document.getElementById('roomNumber').value = '';
+            }
+        });
     }
 
     generateNextPatientId() {
@@ -815,6 +853,8 @@ class Dashboard {
         const department = document.getElementById('department').value;
         const recordsUrl = document.getElementById('recordsUrl').value.trim();
         const patientId = document.getElementById('patientId').value;
+        const admissionDate = document.getElementById('admissionDate').value;
+        const roomNumber = document.getElementById('roomNumber').value.trim();
 
         // Format full name
         const fullName = middleInitial 
@@ -833,6 +873,8 @@ class Dashboard {
             doctor: doctor,
             department: department,
             recordsUrl: recordsUrl || null,
+            admissionDate: status === 'Admitted' ? admissionDate : null,
+            roomNumber: status === 'Admitted' ? roomNumber : null,
             personalInfo: this.tempPersonalInfo || null,
             prescriptions: [],
             labResults: [],
@@ -1018,6 +1060,17 @@ class Dashboard {
                         </div>
                     </div>
 
+                    <div class="form-row" id="editAdmissionFieldsRow" style="display: ${patientData.status === 'Admitted' ? 'flex' : 'none'};">
+                        <div class="form-group">
+                            <label for="editAdmissionDate">Admission Date</label>
+                            <input type="date" id="editAdmissionDate" class="form-control" value="${patientData.admissionDate || ''}">
+                        </div>
+                        <div class="form-group">
+                            <label for="editRoomNumber">Room Number</label>
+                            <input type="text" id="editRoomNumber" class="form-control" placeholder="e.g., 301-A" value="${patientData.roomNumber || ''}">
+                        </div>
+                    </div>
+
                     <div class="form-row">
                         <div class="form-group">
                             <label for="editDoctor">Assigned Doctor *</label>
@@ -1062,6 +1115,18 @@ class Dashboard {
         document.getElementById('closeEditModal').addEventListener('click', () => this.closeEditModal());
         document.getElementById('cancelEditBtn').addEventListener('click', () => this.closeEditModal());
         document.getElementById('editPatientForm').addEventListener('submit', (e) => this.handleEditPatient(e));
+        
+        // Status change listener for admission fields
+        document.getElementById('editStatus').addEventListener('change', (e) => {
+            const admissionFields = document.getElementById('editAdmissionFieldsRow');
+            if (e.target.value === 'Admitted') {
+                admissionFields.style.display = 'flex';
+            } else {
+                admissionFields.style.display = 'none';
+                document.getElementById('editAdmissionDate').value = '';
+                document.getElementById('editRoomNumber').value = '';
+            }
+        });
     }
 
     handleEditPatient(e) {
@@ -1076,6 +1141,8 @@ class Dashboard {
         const doctor = document.getElementById('editDoctor').value;
         const department = document.getElementById('editDepartment').value;
         const recordsUrl = document.getElementById('editRecordsUrl').value.trim();
+        const admissionDate = document.getElementById('editAdmissionDate').value;
+        const roomNumber = document.getElementById('editRoomNumber').value.trim();
 
         // Format full name
         const fullName = middleInitial 
@@ -1093,7 +1160,9 @@ class Dashboard {
             status: status,
             doctor: doctor,
             department: department,
-            recordsUrl: recordsUrl || null
+            recordsUrl: recordsUrl || null,
+            admissionDate: status === 'Admitted' ? admissionDate : null,
+            roomNumber: status === 'Admitted' ? roomNumber : null
         };
 
         // Update storage
@@ -1395,8 +1464,20 @@ class Dashboard {
 
     savePatientToStorage(patientData) {
         try {
-            // Store in memory map
-            this.patientStorage.set(patientData.id, patientData);
+            // Check if patient exists to merge data
+            const existingPatient = this.patientStorage.get(patientData.id);
+            
+            if (existingPatient) {
+                // Merge new data with existing data to preserve arrays and other fields
+                const mergedData = {
+                    ...existingPatient,
+                    ...patientData
+                };
+                this.patientStorage.set(patientData.id, mergedData);
+            } else {
+                // New patient, just set the data
+                this.patientStorage.set(patientData.id, patientData);
+            }
             
             // Convert map to array and save to localStorage
             const patientsArray = Array.from(this.patientStorage.values());
@@ -3481,6 +3562,234 @@ class Dashboard {
         modal.addEventListener('click', (e) => {
             if (e.target === modal) closeModal();
         });
+    }
+
+    // Medical History Listeners
+    attachMedicalHistoryListeners() {
+        const role = this.currentUser.role;
+        let patientSelectId, patientInfoId, formId, displayId, tableContainerId;
+        
+        // Set IDs based on role
+        if (role === 'HR/Admin') {
+            patientSelectId = 'medicalHistoryPatientAdmin';
+            patientInfoId = 'selectedPatientInfoMedicalHistoryAdmin';
+            displayId = 'medicalHistoryDisplayAdmin';
+            tableContainerId = 'medicalHistoryTableContainerAdmin';
+        } else if (role === 'Nurse') {
+            patientSelectId = 'medicalHistoryPatientNurse';
+            patientInfoId = 'selectedPatientInfoMedicalHistoryNurse';
+            displayId = 'medicalHistoryDisplayNurse';
+            tableContainerId = 'medicalHistoryTableContainerNurse';
+        } else {
+            // Physician
+            patientSelectId = 'medicalHistoryPatient';
+            patientInfoId = 'selectedPatientInfoMedicalHistory';
+            formId = 'medicalHistoryForm';
+            displayId = 'medicalHistoryDisplay';
+            tableContainerId = 'medicalHistoryTableContainer';
+        }
+
+        const patientSelect = document.getElementById(patientSelectId);
+        const medicalHistoryForm = formId ? document.getElementById('newMedicalHistoryForm') : null;
+
+        if (patientSelect) {
+            patientSelect.addEventListener('change', (e) => {
+                this.handleMedicalHistoryPatientSelection(e.target.value, role, patientInfoId, formId, displayId, tableContainerId);
+            });
+
+            // Auto-select patient if coming from quick action
+            if (this.selectedPatientForMedicalHistory) {
+                patientSelect.value = this.selectedPatientForMedicalHistory;
+                this.handleMedicalHistoryPatientSelection(this.selectedPatientForMedicalHistory, role, patientInfoId, formId, displayId, tableContainerId);
+                this.selectedPatientForMedicalHistory = null; // Clear after use
+            }
+        }
+
+        if (medicalHistoryForm) {
+            medicalHistoryForm.addEventListener('submit', (e) => this.saveMedicalHistory(e, patientSelectId, tableContainerId));
+        }
+    }
+
+    handleMedicalHistoryPatientSelection(patientId, role, patientInfoId, formId, displayId, tableContainerId) {
+        const selectedPatientInfo = document.getElementById(patientInfoId);
+        const medicalHistoryForm = formId ? document.getElementById(formId) : null;
+        const medicalHistoryDisplay = document.getElementById(displayId);
+
+        if (!patientId) {
+            if (selectedPatientInfo) selectedPatientInfo.style.display = 'none';
+            if (medicalHistoryForm) medicalHistoryForm.style.display = 'none';
+            if (medicalHistoryDisplay) medicalHistoryDisplay.style.display = 'none';
+            return;
+        }
+
+        // Get patient data
+        const patients = JSON.parse(localStorage.getItem('patients') || '[]');
+        const patient = patients.find(p => p.id === patientId);
+
+        if (patient) {
+            // Display patient info
+            this.displayPatientInfoMedicalHistory(patient, role);
+            if (selectedPatientInfo) selectedPatientInfo.style.display = 'block';
+            if (medicalHistoryForm) medicalHistoryForm.style.display = 'block';
+            if (medicalHistoryDisplay) medicalHistoryDisplay.style.display = 'block';
+
+            // Load medical history
+            this.loadMedicalHistory(patientId, tableContainerId);
+        }
+    }
+
+    displayPatientInfoMedicalHistory(patient, role) {
+        let suffix = role === 'HR/Admin' ? 'Admin' : (role === 'Nurse' ? 'Nurse' : '');
+        
+        const nameEl = document.getElementById('selectedPatientNameMedicalHistory' + suffix);
+        const idEl = document.getElementById('selectedPatientIdMedicalHistory' + suffix);
+        const ageEl = document.getElementById('selectedPatientAgeMedicalHistory' + suffix);
+        const statusEl = document.getElementById('selectedPatientStatusMedicalHistory' + suffix);
+        const doctorEl = document.getElementById('selectedPatientDoctorMedicalHistory' + suffix);
+
+        if (nameEl) nameEl.textContent = patient.fullName;
+        if (idEl) idEl.textContent = patient.id;
+        if (ageEl) ageEl.textContent = patient.age;
+        if (statusEl) statusEl.textContent = patient.status;
+        if (doctorEl) doctorEl.textContent = patient.doctor || 'Not Assigned';
+    }
+
+    saveMedicalHistory(e, patientSelectId, tableContainerId) {
+        e.preventDefault();
+
+        const patientId = document.getElementById(patientSelectId).value;
+        const category = document.getElementById('historyCategory').value;
+        const date = document.getElementById('historyDate').value;
+        const title = document.getElementById('historyTitle').value.trim();
+        const description = document.getElementById('historyDescription').value.trim();
+        const notes = document.getElementById('historyNotes').value.trim();
+
+        if (!patientId || !category || !title || !description) {
+            alert('Please fill in all required fields');
+            return;
+        }
+
+        // Create medical history entry
+        const entry = {
+            id: 'MH' + Date.now(),
+            patientId: patientId,
+            category: category,
+            date: date || null,
+            title: title,
+            description: description,
+            notes: notes || null,
+            recordedBy: this.currentUser.name,
+            recordedDate: new Date().toISOString().split('T')[0],
+            recordedTime: new Date().toTimeString().slice(0, 5)
+        };
+
+        // Save to localStorage
+        let medicalHistory = JSON.parse(localStorage.getItem('medicalHistory') || '[]');
+        medicalHistory.push(entry);
+        localStorage.setItem('medicalHistory', JSON.stringify(medicalHistory));
+
+        // Clear form
+        document.getElementById('newMedicalHistoryForm').reset();
+
+        // Reload history
+        this.loadMedicalHistory(patientId, tableContainerId);
+
+        this.showNotification('Medical history entry added successfully', 'success');
+    }
+
+    loadMedicalHistory(patientId, tableContainerId) {
+        const medicalHistory = JSON.parse(localStorage.getItem('medicalHistory') || '[]');
+        const patientHistory = medicalHistory.filter(h => h.patientId === patientId);
+
+        const container = document.getElementById(tableContainerId);
+        if (!container) return;
+
+        if (patientHistory.length === 0) {
+            container.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">No medical history records found for this patient.</p>';
+            return;
+        }
+
+        // Sort by date (most recent first)
+        patientHistory.sort((a, b) => {
+            if (!a.date) return 1;
+            if (!b.date) return -1;
+            return new Date(b.date) - new Date(a.date);
+        });
+
+        let tableHTML = `
+            <div style="overflow-x: auto;">
+                <table class="patients-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 10%;">Date</th>
+                            <th style="width: 12%;">Category</th>
+                            <th style="width: 18%;">Title</th>
+                            <th style="width: 35%;">Description</th>
+                            <th style="width: 15%;">Recorded By</th>
+                            <th style="width: 10%;">Recorded Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+        `;
+
+        patientHistory.forEach((entry, index) => {
+            const displayDate = entry.date || 'N/A';
+            const categoryColor = this.getCategoryColor(entry.category);
+            
+            tableHTML += `
+                <tr style="border-top: ${index > 0 ? '8px solid #fff' : '0'}; background: #fafafa;">
+                    <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${displayDate}</td>
+                    <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">
+                        <span style="background: ${categoryColor}; padding: 4px 8px; border-radius: 4px; font-size: 12px; color: white; font-weight: 600;">
+                            ${entry.category}
+                        </span>
+                    </td>
+                    <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;"><strong>${entry.title}</strong></td>
+                    <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${entry.description}</td>
+                    <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${entry.recordedBy}</td>
+                    <td style="border-top: 2px solid #e0e0e0; padding-top: 14px;">${entry.recordedDate}</td>
+                </tr>
+            `;
+
+            if (entry.notes) {
+                tableHTML += `
+                    <tr style="background: #fafafa;">
+                        <td colspan="6" style="text-align: left; padding: 12px 12px 14px 12px; border-left: 4px solid var(--dark-pink); border-bottom: 2px solid #e0e0e0; background: #fff3f8;">
+                            <strong style="color: var(--dark-pink);">Notes:</strong> ${entry.notes}
+                        </td>
+                    </tr>
+                `;
+            } else {
+                tableHTML += `
+                    <tr style="background: #fafafa;">
+                        <td colspan="6" style="padding: 0; border-bottom: 2px solid #e0e0e0; height: 4px;"></td>
+                    </tr>
+                `;
+            }
+        });
+
+        tableHTML += `
+                    </tbody>
+                </table>
+            </div>
+        `;
+
+        container.innerHTML = tableHTML;
+    }
+
+    getCategoryColor(category) {
+        const colors = {
+            'Past Illness': '#6c757d',
+            'Surgery': '#dc3545',
+            'Hospitalization': '#fd7e14',
+            'Chronic Condition': '#e83e8c',
+            'Family History': '#6f42c1',
+            'Social History': '#20c997',
+            'Allergy': '#ffc107',
+            'Immunization': '#28a745',
+            'Other': '#17a2b8'
+        };
+        return colors[category] || '#6c757d';
     }
 
     // Nursing Assessment Listeners

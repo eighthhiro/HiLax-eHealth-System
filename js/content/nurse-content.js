@@ -149,6 +149,12 @@ class NurseContent {
                 Vital Signs
             </button>`;
             
+            // Medical History button - view only for nurses
+            const medicalHistoryBtn = `<button class="btn btn-sm btn-medical-history" data-patient-id="${patient.id}" title="View Medical History">
+                <i class="fas fa-notes-medical"></i>
+                History
+            </button>`;
+            
             tableRows += `
                 <tr data-patient-id="${patient.id}">
                     <td>${patient.id}</td>
@@ -160,6 +166,7 @@ class NurseContent {
                     <td>${billingBtn}</td>
                     <td>${recordsContent}</td>
                     <td>${vitalSignsBtn}</td>
+                    <td>${medicalHistoryBtn}</td>
                 </tr>
             `;
         });
@@ -186,6 +193,7 @@ class NurseContent {
                                     <th>Billing</th>
                                     <th>Records</th>
                                     <th>Vital Signs</th>
+                                    <th>Medical History</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -1395,6 +1403,88 @@ class NurseContent {
                                 <i class="fas fa-history"></i> Assessment History
                             </h4>
                             <div id="nursingAssessmentHistoryTable"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    // Patient Medical History (PMH) Content for Nurse (View Only)
+    getMedicalHistoryContent() {
+        let patients = [];
+        try {
+            const stored = localStorage.getItem('patients');
+            if (stored) {
+                patients = JSON.parse(stored);
+            }
+        } catch (e) {
+            console.error('Error loading patients:', e);
+        }
+
+        if (patients.length === 0) {
+            patients = [
+                { id: 'P001', fullName: 'Miranda, Hebrew T.', age: 19, status: 'Active', doctor: 'Dr. Sta. Maria' },
+                { id: 'P002', fullName: 'Sta.Maria, Rizza M.', age: 20, status: 'Admitted', doctor: 'Dr. Sta. Maria' },
+                { id: 'P003', fullName: 'Puquiz, Daniel T.', age: 21, status: 'Active', doctor: 'Dr. Salvador' }
+            ];
+        }
+
+        const patientOptions = patients.map(patient => 
+            `<option value="${patient.id}">${patient.id} - ${patient.fullName}</option>`
+        ).join('');
+
+        return `
+            <div class="medical-history-management">
+                <!-- Info Banner -->
+                <div class="info-banner" style="margin-bottom: 24px; padding: 16px 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 8px; display: flex; align-items: center; gap: 12px;">
+                    <i class="fas fa-info-circle" style="font-size: 24px;"></i>
+                    <div>
+                        <h4 style="margin: 0 0 4px 0; font-size: 16px;">Medical History (View Only)</h4>
+                        <p style="margin: 0; font-size: 13px; opacity: 0.95;">Nurses can view patient medical history records. Only physicians can add or edit entries.</p>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-notes-medical"></i>
+                            Patient Medical History (PMH)
+                        </h3>
+                    </div>
+                    <div class="card-content">
+                        <!-- Patient Selection -->
+                        <div class="patient-selector" style="margin-bottom: 24px; padding: 20px; background: var(--light-pink); border-radius: 8px;">
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label for="medicalHistoryPatientNurse" style="font-weight: 600; margin-bottom: 8px; display: block;">
+                                    <i class="fas fa-user-injured"></i> Select Patient
+                                </label>
+                                <select id="medicalHistoryPatientNurse" class="form-control" required style="font-size: 14px;">
+                                    <option value="">-- Select a patient --</option>
+                                    ${patientOptions}
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Patient Info Display -->
+                        <div id="selectedPatientInfoMedicalHistoryNurse" style="display: none; margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-left: 4px solid var(--dark-pink); border-radius: 4px;">
+                            <h4 style="margin-bottom: 10px; color: var(--dark-pink);">
+                                <i class="fas fa-user-injured"></i> <span id="selectedPatientNameMedicalHistoryNurse"></span>
+                            </h4>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
+                                <div><strong>Patient ID:</strong> <span id="selectedPatientIdMedicalHistoryNurse"></span></div>
+                                <div><strong>Age:</strong> <span id="selectedPatientAgeMedicalHistoryNurse"></span></div>
+                                <div><strong>Status:</strong> <span id="selectedPatientStatusMedicalHistoryNurse"></span></div>
+                                <div><strong>Doctor:</strong> <span id="selectedPatientDoctorMedicalHistoryNurse"></span></div>
+                            </div>
+                        </div>
+
+                        <!-- Medical History Display -->
+                        <div id="medicalHistoryDisplayNurse" style="display: none; margin-top: 24px;">
+                            <h4 style="color: var(--dark-pink); margin-bottom: 16px;">
+                                <i class="fas fa-history"></i> Medical History Records
+                            </h4>
+                            <div id="medicalHistoryTableContainerNurse"></div>
                         </div>
                     </div>
                 </div>

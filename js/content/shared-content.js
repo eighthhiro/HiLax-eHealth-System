@@ -120,6 +120,12 @@ class SharedContent {
                 </button>` : 
                 `<span class="no-record">Not Set</span>`;
             
+            // Medical History button
+            const medicalHistoryBtn = `<button class="btn btn-sm btn-medical-history" data-patient-id="${patient.id}" title="View Medical History">
+                <i class="fas fa-notes-medical"></i>
+                History
+            </button>`;
+            
             tableRows += `
                 <tr class="patient-row">
                     <td>${patient.id}</td>
@@ -130,6 +136,7 @@ class SharedContent {
                     <td>${personalInfoContent}</td>
                     <td>${billingContent}</td>
                     <td>${recordsContent}</td>
+                    <td>${medicalHistoryBtn}</td>
                     <td>${editDeleteButtons}</td>
                 </tr>
             `;
@@ -167,6 +174,7 @@ class SharedContent {
                                     <th>Personal Info</th>
                                     <th>Billing</th>
                                     <th>Records</th>
+                                    <th>Medical History</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>

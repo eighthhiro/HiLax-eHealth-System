@@ -27,6 +27,7 @@ const ROLE_PERMISSIONS = {
             { icon: 'fas fa-tachometer-alt', text: 'Dashboard', id: 'dashboard' },
             { icon: 'fas fa-users', text: 'All Patients', id: 'all-patients' },
             { icon: 'fas fa-user-md', text: 'All Staff', id: 'all-staff' },
+            { icon: 'fas fa-notes-medical', text: 'Medical History', id: 'medical-history' },
             { icon: 'fas fa-flask', text: 'Lab Results', id: 'lab-results' },
             { icon: 'fas fa-x-ray', text: 'Imaging Results', id: 'imaging-results' },
             { icon: 'fas fa-prescription', text: 'Prescriptions', id: 'prescriptions' },
@@ -50,6 +51,7 @@ const ROLE_PERMISSIONS = {
             { icon: 'fas fa-tachometer-alt', text: 'Dashboard', id: 'dashboard' },
             { icon: 'fas fa-user-injured', text: 'Patient List', id: 'patient-list' },
             { icon: 'fas fa-file-medical', text: 'Progress Notes', id: 'progress-notes' },
+            { icon: 'fas fa-notes-medical', text: 'Medical History', id: 'medical-history' },
             { icon: 'fas fa-pills', text: 'Medications', id: 'medications' },
             { icon: 'fas fa-flask', text: 'Lab Results', id: 'lab-results' },
             { icon: 'fas fa-x-ray', text: 'Imaging Results', id: 'imaging-results' },
@@ -72,6 +74,7 @@ const ROLE_PERMISSIONS = {
             { icon: 'fas fa-user-injured', text: 'Patient List', id: 'patient-list' },
             { icon: 'fas fa-heartbeat', text: 'Vital Signs', id: 'vital-signs' },
             { icon: 'fas fa-prescription', text: 'Medications', id: 'medications' },
+            { icon: 'fas fa-notes-medical', text: 'Medical History', id: 'medical-history' },
             { icon: 'fas fa-file-medical-alt', text: 'Progress Notes', id: 'progress-notes' },
             { icon: 'fas fa-file-medical', text: 'Nursing Assessment', id: 'nursing-assessment' }
         ]
@@ -133,6 +136,8 @@ const ROLE_PERMISSIONS = {
             { icon: 'fas fa-user', text: 'My Profile', id: 'my-profile' },
             { icon: 'fas fa-file-medical', text: 'Medical Records', id: 'medical-records' },
             { icon: 'fas fa-prescription', text: 'Prescriptions', id: 'prescriptions' },
+            { icon: 'fas fa-flask', text: 'Lab Results', id: 'lab-results' },
+            { icon: 'fas fa-x-ray', text: 'Imaging Results', id: 'imaging-results' },
             { icon: 'fas fa-heartbeat', text: 'Vital Signs', id: 'vital-signs' },
             { icon: 'fas fa-money-bill', text: 'Billing', id: 'billing' }
         ]
