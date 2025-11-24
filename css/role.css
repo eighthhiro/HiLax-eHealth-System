@@ -1435,3 +1435,23 @@ body.patient-role .patients-table .actions-column {
         grid-template-columns: 1fr;
     }
 }
+
+.btn-success {
+    background-color: #28a745;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.3s;
+}
+
+.btn-success:hover:not(:disabled) {
+    background-color: #218838;
+}
+
+.btn-success:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}

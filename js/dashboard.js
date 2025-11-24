@@ -2889,11 +2889,13 @@ class Dashboard {
                     <i class="fas fa-receipt"></i> Billing Receipt
                 </h2>
 
-                <div style="text-align: center; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 2px solid var(--dark-pink);">
-                    <h1 style="margin: 0; color: var(--dark-pink);">HILAX HOSPITAL</h1>
-                    <p style="margin: 5px 0; color: #666;">Management System</p>
-                    <p style="margin: 0; font-size: 14px; color: #999;">Official Billing Statement</p>
-                </div>
+                <!-- Wrap the receipt content in a div for downloading -->
+                <div id="receiptContent">
+                    <div style="text-align: center; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 2px solid var(--dark-pink);">
+                        <h1 style="margin: 0; color: var(--dark-pink);">HILAX HOSPITAL</h1>
+                        <p style="margin: 5px 0; color: #666;">Management System</p>
+                        <p style="margin: 0; font-size: 14px; color: #999;">Official Billing Statement</p>
+                    </div>
 
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px;">
                         <div>
@@ -2955,11 +2957,20 @@ class Dashboard {
                         <p style="margin: 0;">Thank you for choosing HiLax Hospital</p>
                         <p style="margin: 5px 0 0 0;">For inquiries, please contact our billing department</p>
                     </div>
+                </div>
 
-                <div style="text-align: right; margin-top: 20px;">
+                <!-- Action buttons -->
+                <div style="text-align: right; margin-top: 20px; display: flex; justify-content: flex-end; gap: 10px;">
                     <button type="button" class="btn btn-secondary" id="closeReceiptBtn">Close</button>
+                    <button type="button" class="btn btn-success" id="downloadReceiptBtn">
+                        <i class="fas fa-download"></i>
+                        <span id="downloadText">Download PDF</span>
+                        <span id="downloadSpinner" style="display: none;">
+                            <i class="fas fa-spinner fa-spin"></i>
+                        </span>
+                    </button>
                     ${this.currentUser.role === 'HR/Admin' ? `
-                    <button type="button" class="btn btn-primary" id="editBillingBtn" style="margin-left: 10px;">
+                    <button type="button" class="btn btn-primary" id="editBillingBtn">
                         <i class="fas fa-edit"></i>
                         Edit Billing
                     </button>
@@ -2970,7 +2981,69 @@ class Dashboard {
 
         document.body.appendChild(modal);
 
+        // Close button
         document.getElementById('closeReceiptBtn').addEventListener('click', () => modal.remove());
+        
+        // Download button
+        document.getElementById('downloadReceiptBtn').addEventListener('click', async () => {
+            const downloadBtn = document.getElementById('downloadReceiptBtn');
+            const downloadText = document.getElementById('downloadText');
+            const downloadSpinner = document.getElementById('downloadSpinner');
+            
+            // Disable button and show loading
+            downloadBtn.disabled = true;
+            downloadText.style.display = 'none';
+            downloadSpinner.style.display = 'inline';
+
+            try {
+                // Get the receipt content element
+                const receiptContent = document.getElementById('receiptContent');
+                
+                // Create canvas from the receipt content
+                const canvas = await html2canvas(receiptContent, {
+                    scale: 2, // Higher quality
+                    backgroundColor: '#ffffff',
+                    logging: false,
+                    useCORS: true
+                });
+
+                // Convert canvas to image
+                const imgData = canvas.toDataURL('image/png');
+
+                // Create PDF
+                const { jsPDF } = window.jspdf;
+                const pdf = new jsPDF({
+                    orientation: 'portrait',
+                    unit: 'mm',
+                    format: 'a4'
+                });
+
+                // Calculate dimensions to fit the page
+                const imgWidth = 190; // A4 width in mm minus margins
+                const imgHeight = (canvas.height * imgWidth) / canvas.width;
+                
+                // Add image to PDF
+                pdf.addImage(imgData, 'PNG', 10, 10, imgWidth, imgHeight);
+
+                // Generate filename with patient info and timestamp
+                const timestamp = new Date().toISOString().slice(0, 10);
+                const patientName = patient.fullName.replace(/\s+/g, '_');
+                const filename = `HiLax_Receipt_${patientName}_${patient.id}_${timestamp}.pdf`;
+
+                // Download the PDF
+                pdf.save(filename);
+
+                this.showNotification('Receipt downloaded successfully!', 'success');
+            } catch (error) {
+                console.error('Error generating PDF:', error);
+                this.showNotification('Failed to download receipt. Please try again.', 'error');
+            } finally {
+                // Re-enable button and hide loading
+                downloadBtn.disabled = false;
+                downloadText.style.display = 'inline';
+                downloadSpinner.style.display = 'none';
+            }
+        });
         
         // Edit button only exists for HR/Admin
         const editBtn = document.getElementById('editBillingBtn');

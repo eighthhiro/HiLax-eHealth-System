@@ -651,86 +651,182 @@ class PatientContent {
 
         const billing = patient.billing;
         
+        // After returning the HTML, we'll need to attach the download event listener
+        // Store patient data temporarily for the download function
+        setTimeout(() => {
+            this.attachBillingDownloadListener(patient);
+        }, 0);
+        
         return `
             <div class="billing-management">
                 <div class="card">
-                    <div class="card-header">
+                    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
                         <h3 class="card-title">
                             <i class="fas fa-file-invoice-dollar"></i>
                             My Billing Statement
                         </h3>
+                        <button class="btn btn-success" id="downloadPatientBillingBtn">
+                            <i class="fas fa-download"></i>
+                            <span id="downloadPatientBillingText">Download PDF</span>
+                            <span id="downloadPatientBillingSpinner" style="display: none;">
+                                <i class="fas fa-spinner fa-spin"></i>
+                            </span>
+                        </button>
                     </div>
                     <div class="card-content" style="padding: 30px;">
-                        <div style="text-align: center; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 2px solid var(--dark-pink);">
-                            <h1 style="margin: 0; color: var(--dark-pink);">HILAX HOSPITAL</h1>
-                            <p style="margin: 5px 0; color: #666;">Management System</p>
-                            <p style="margin: 0; font-size: 14px; color: #999;">Official Billing Statement</p>
-                        </div>
-
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px;">
-                            <div>
-                                <p style="margin: 0 0 5px 0; color: #666; font-size: 12px;">PATIENT INFORMATION</p>
-                                <p style="margin: 0; font-weight: 600;">${patient.fullName}</p>
-                                <p style="margin: 0; color: #666;">ID: ${patient.id}</p>
-                                <p style="margin: 0; color: #666;">Age: ${patient.age}</p>
+                        <!-- Wrap content in div for downloading -->
+                        <div id="patientBillingContent">
+                            <div style="text-align: center; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 2px solid var(--dark-pink);">
+                                <h1 style="margin: 0; color: var(--dark-pink);">HILAX HOSPITAL</h1>
+                                <p style="margin: 5px 0; color: #666;">Management System</p>
+                                <p style="margin: 0; font-size: 14px; color: #999;">Official Billing Statement</p>
                             </div>
-                            <div style="text-align: right;">
-                                <p style="margin: 0 0 5px 0; color: #666; font-size: 12px;">BILLING DATE</p>
-                                <p style="margin: 0; font-weight: 600;">${new Date(billing.date).toLocaleDateString()}</p>
-                                <p style="margin: 0; color: #666;">${new Date(billing.date).toLocaleTimeString()}</p>
-                            </div>
-                        </div>
 
-                        <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
-                            <thead>
-                                <tr style="background: var(--light-pink);">
-                                    <th style="padding: 12px; text-align: left; border-bottom: 2px solid var(--dark-pink);">Description</th>
-                                    <th style="padding: 12px; text-align: right; border-bottom: 2px solid var(--dark-pink);">Amount</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${billing.roomCharges > 0 ? `<tr><td style="padding: 10px; border-bottom: 1px solid #f0f0f0;">Room Charges</td><td style="padding: 10px; text-align: right; border-bottom: 1px solid #f0f0f0;">₱${billing.roomCharges.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}</td></tr>` : ''}
-                                ${billing.consultationFee > 0 ? `<tr><td style="padding: 10px; border-bottom: 1px solid #f0f0f0;">Consultation Fee</td><td style="padding: 10px; text-align: right; border-bottom: 1px solid #f0f0f0;">₱${billing.consultationFee.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}</td></tr>` : ''}
-                                ${billing.labTests > 0 ? `<tr><td style="padding: 10px; border-bottom: 1px solid #f0f0f0;">Laboratory Tests</td><td style="padding: 10px; text-align: right; border-bottom: 1px solid #f0f0f0;">₱${billing.labTests.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}</td></tr>` : ''}
-                                ${billing.medications > 0 ? `<tr><td style="padding: 10px; border-bottom: 1px solid #f0f0f0;">Medications</td><td style="padding: 10px; text-align: right; border-bottom: 1px solid #f0f0f0;">₱${billing.medications.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}</td></tr>` : ''}
-                                ${billing.procedures > 0 ? `<tr><td style="padding: 10px; border-bottom: 1px solid #f0f0f0;">Procedures/Surgeries</td><td style="padding: 10px; text-align: right; border-bottom: 1px solid #f0f0f0;">₱${billing.procedures.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}</td></tr>` : ''}
-                                ${billing.imaging > 0 ? `<tr><td style="padding: 10px; border-bottom: 1px solid #f0f0f0;">Imaging/Radiology</td><td style="padding: 10px; text-align: right; border-bottom: 1px solid #f0f0f0;">₱${billing.imaging.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}</td></tr>` : ''}
-                                ${billing.otherCharges > 0 ? `<tr><td style="padding: 10px; border-bottom: 1px solid #f0f0f0;">Other Charges</td><td style="padding: 10px; text-align: right; border-bottom: 1px solid #f0f0f0;">₱${billing.otherCharges.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}</td></tr>` : ''}
-                            </tbody>
-                        </table>
-
-                        <div style="padding: 15px; background: #f8f9fa; border-radius: 8px;">
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                                <span style="font-weight: 600;">Subtotal:</span>
-                                <span style="font-weight: 600;">₱${billing.subtotal.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}</span>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px;">
+                                <div>
+                                    <p style="margin: 0 0 5px 0; color: #666; font-size: 12px;">PATIENT INFORMATION</p>
+                                    <p style="margin: 0; font-weight: 600;">${patient.fullName}</p>
+                                    <p style="margin: 0; color: #666;">ID: ${patient.id}</p>
+                                    <p style="margin: 0; color: #666;">Age: ${patient.age}</p>
+                                </div>
+                                <div style="text-align: right;">
+                                    <p style="margin: 0 0 5px 0; color: #666; font-size: 12px;">BILLING DATE</p>
+                                    <p style="margin: 0; font-weight: 600;">${new Date(billing.date).toLocaleDateString()}</p>
+                                    <p style="margin: 0; color: #666;">${new Date(billing.date).toLocaleTimeString()}</p>
+                                </div>
                             </div>
-                            ${billing.discount > 0 ? `
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 8px; color: #28a745;">
-                                <span style="font-weight: 600;">Discount (${billing.discount}%):</span>
-                                <span style="font-weight: 600;">-₱${billing.discountAmount.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}</span>
+
+                            <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+                                <thead>
+                                    <tr style="background: var(--light-pink);">
+                                        <th style="padding: 12px; text-align: left; border-bottom: 2px solid var(--dark-pink);">Description</th>
+                                        <th style="padding: 12px; text-align: right; border-bottom: 2px solid var(--dark-pink);">Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${billing.roomCharges > 0 ? `<tr><td style="padding: 10px; border-bottom: 1px solid #f0f0f0;">Room Charges</td><td style="padding: 10px; text-align: right; border-bottom: 1px solid #f0f0f0;">₱${billing.roomCharges.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}</td></tr>` : ''}
+                                    ${billing.consultationFee > 0 ? `<tr><td style="padding: 10px; border-bottom: 1px solid #f0f0f0;">Consultation Fee</td><td style="padding: 10px; text-align: right; border-bottom: 1px solid #f0f0f0;">₱${billing.consultationFee.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}</td></tr>` : ''}
+                                    ${billing.labTests > 0 ? `<tr><td style="padding: 10px; border-bottom: 1px solid #f0f0f0;">Laboratory Tests</td><td style="padding: 10px; text-align: right; border-bottom: 1px solid #f0f0f0;">₱${billing.labTests.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}</td></tr>` : ''}
+                                    ${billing.medications > 0 ? `<tr><td style="padding: 10px; border-bottom: 1px solid #f0f0f0;">Medications</td><td style="padding: 10px; text-align: right; border-bottom: 1px solid #f0f0f0;">₱${billing.medications.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}</td></tr>` : ''}
+                                    ${billing.procedures > 0 ? `<tr><td style="padding: 10px; border-bottom: 1px solid #f0f0f0;">Procedures/Surgeries</td><td style="padding: 10px; text-align: right; border-bottom: 1px solid #f0f0f0;">₱${billing.procedures.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}</td></tr>` : ''}
+                                    ${billing.imaging > 0 ? `<tr><td style="padding: 10px; border-bottom: 1px solid #f0f0f0;">Imaging/Radiology</td><td style="padding: 10px; text-align: right; border-bottom: 1px solid #f0f0f0;">₱${billing.imaging.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}</td></tr>` : ''}
+                                    ${billing.otherCharges > 0 ? `<tr><td style="padding: 10px; border-bottom: 1px solid #f0f0f0;">Other Charges</td><td style="padding: 10px; text-align: right; border-bottom: 1px solid #f0f0f0;">₱${billing.otherCharges.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}</td></tr>` : ''}
+                                </tbody>
+                            </table>
+
+                            <div style="padding: 15px; background: #f8f9fa; border-radius: 8px;">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                                    <span style="font-weight: 600;">Subtotal:</span>
+                                    <span style="font-weight: 600;">₱${billing.subtotal.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}</span>
+                                </div>
+                                ${billing.discount > 0 ? `
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 8px; color: #28a745;">
+                                    <span style="font-weight: 600;">Discount (${billing.discount}%):</span>
+                                    <span style="font-weight: 600;">-₱${billing.discountAmount.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}</span>
+                                </div>
+                                ` : ''}
+                                <div style="display: flex; justify-content: space-between; padding-top: 12px; border-top: 2px solid var(--dark-pink); margin-top: 8px;">
+                                    <span style="font-size: 20px; font-weight: 700;">TOTAL AMOUNT DUE:</span>
+                                    <span style="font-size: 20px; font-weight: 700; color: var(--dark-pink);">₱${billing.total.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}</span>
+                                </div>
+                            </div>
+
+                            ${billing.notes ? `
+                            <div style="margin-top: 20px; padding: 15px; background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 4px;">
+                                <p style="margin: 0; font-weight: 600; color: #856404; margin-bottom: 5px;">Notes:</p>
+                                <p style="margin: 0; color: #856404;">${billing.notes}</p>
                             </div>
                             ` : ''}
-                            <div style="display: flex; justify-content: space-between; padding-top: 12px; border-top: 2px solid var(--dark-pink); margin-top: 8px;">
-                                <span style="font-size: 20px; font-weight: 700;">TOTAL AMOUNT DUE:</span>
-                                <span style="font-size: 20px; font-weight: 700; color: var(--dark-pink);">₱${billing.total.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}</span>
+
+                            <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; text-align: center; color: #999; font-size: 12px;">
+                                <p style="margin: 0;">Thank you for choosing HiLax Hospital</p>
+                                <p style="margin: 5px 0 0 0;">For inquiries, please contact our billing department</p>
                             </div>
-                        </div>
-
-                        ${billing.notes ? `
-                        <div style="margin-top: 20px; padding: 15px; background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 4px;">
-                            <p style="margin: 0; font-weight: 600; color: #856404; margin-bottom: 5px;">Notes:</p>
-                            <p style="margin: 0; color: #856404;">${billing.notes}</p>
-                        </div>
-                        ` : ''}
-
-                        <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; text-align: center; color: #999; font-size: 12px;">
-                            <p style="margin: 0;">Thank you for choosing HiLax Hospital</p>
-                            <p style="margin: 5px 0 0 0;">For inquiries, please contact our billing department</p>
                         </div>
                     </div>
                 </div>
             </div>
         `;
+    }
+
+    // Add this helper method to attach the download event listener
+    attachBillingDownloadListener(patient) {
+        const downloadBtn = document.getElementById('downloadPatientBillingBtn');
+        if (!downloadBtn) return;
+
+        // Remove any existing listener
+        const newBtn = downloadBtn.cloneNode(true);
+        downloadBtn.parentNode.replaceChild(newBtn, downloadBtn);
+
+        // Add new listener
+        newBtn.addEventListener('click', async () => {
+            const downloadText = document.getElementById('downloadPatientBillingText');
+            const downloadSpinner = document.getElementById('downloadPatientBillingSpinner');
+            
+            // Disable button and show loading
+            newBtn.disabled = true;
+            if (downloadText) downloadText.style.display = 'none';
+            if (downloadSpinner) downloadSpinner.style.display = 'inline';
+
+            try {
+                // Get the billing content element
+                const billingContent = document.getElementById('patientBillingContent');
+                
+                if (!billingContent) {
+                    throw new Error('Billing content not found');
+                }
+
+                // Create canvas from the billing content
+                const canvas = await html2canvas(billingContent, {
+                    scale: 2, // Higher quality
+                    backgroundColor: '#ffffff',
+                    logging: false,
+                    useCORS: true
+                });
+
+                // Convert canvas to image
+                const imgData = canvas.toDataURL('image/png');
+
+                // Create PDF
+                const { jsPDF } = window.jspdf;
+                const pdf = new jsPDF({
+                    orientation: 'portrait',
+                    unit: 'mm',
+                    format: 'a4'
+                });
+
+                // Calculate dimensions to fit the page
+                const imgWidth = 190; // A4 width in mm minus margins
+                const imgHeight = (canvas.height * imgWidth) / canvas.width;
+                
+                // Add image to PDF
+                pdf.addImage(imgData, 'PNG', 10, 10, imgWidth, imgHeight);
+
+                // Generate filename with patient info and timestamp
+                const timestamp = new Date().toISOString().slice(0, 10);
+                const patientName = patient.fullName.replace(/\s+/g, '_');
+                const filename = `HiLax_Billing_${patientName}_${patient.id}_${timestamp}.pdf`;
+
+                // Download the PDF
+                pdf.save(filename);
+
+                if (this.showNotification) {
+                    this.showNotification('Billing statement downloaded successfully!', 'success');
+                }
+            } catch (error) {
+                console.error('Error generating PDF:', error);
+                if (this.showNotification) {
+                    this.showNotification('Failed to download billing statement. Please try again.', 'error');
+                } else {
+                    alert('Failed to download billing statement. Please try again.');
+                }
+            } finally {
+                // Re-enable button and hide loading
+                newBtn.disabled = false;
+                if (downloadText) downloadText.style.display = 'inline';
+                if (downloadSpinner) downloadSpinner.style.display = 'none';
+            }
+        });
     }
 
     // Awards Carousel
