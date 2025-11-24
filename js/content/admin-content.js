@@ -1553,9 +1553,9 @@ class AdminContent {
         return `
             <div style="margin-top: 24px; text-align: center;">
                 <button style="background: #e9ecef; border: none; cursor: pointer; padding: 8px 16px; border-radius: 20px; color: #6c757d; font-size: 12px; transition: all 0.3s ease;" onclick="this.parentElement.querySelector('.system-management-content').classList.toggle('hidden'); this.querySelector('i').classList.toggle('fa-chevron-down'); this.querySelector('i').classList.toggle('fa-chevron-up');" onmouseover="this.style.background='#dee2e6'" onmouseout="this.style.background='#e9ecef'">
-                    <i class="fas fa-chevron-down" style="font-size: 10px;"></i>
+                    <i class="fas fa-chevron-up" style="font-size: 10px;"></i>
                 </button>
-                <div class="card system-management-content hidden" style="margin-top: 12px; border: none; background: white;">
+                <div class="card system-management-content" style="margin-top: 12px; border: none; background: white;">
                     <div class="card-content" style="padding: 24px;">
                         <div style="background: #fff3cd; padding: 16px; border-left: 4px solid #ffc107; border-radius: 4px; margin-bottom: 20px;">
                             <div style="display: flex; align-items: start; gap: 12px;">
